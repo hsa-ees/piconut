@@ -1,0 +1,32 @@
+{ signal: [
+    {name: 'clk',   wave: '0P.........'},
+    ['Nucleus',
+        {name: 'stb',   wave: '0.hl..hlhl.', node:'..A...B.C.' },
+        {name: 'we (DPort)',    wave: '0..........' },
+        {name: 'bsel[4]',  wave: 'xx8x..3x5x.' },
+        {name: 'adr[32]',   wave: 'xx8x..3x5x.' },
+        {name: 'wdata[32]', wave: 'x..........'}
+
+    ],
+    {},
+    ['MemU',
+        {name: 'ack',   wave: '0...hl.hlhl',node:'....D..E.F.'},
+        {name: 'rdata[32]', wave: 'x...8x.3x5x'},
+    ]
+],
+
+edge: [
+    'A~D','B~E', 'C~F'
+],
+
+
+head: {
+    tick:1,
+    every:1,
+    text: 'DPort/IPort Read'}
+
+}
+
+// Wie lange müssen Daten anliegen?
+
+

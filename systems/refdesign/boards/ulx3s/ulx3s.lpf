@@ -1,0 +1,78 @@
+#  -----------------------------------------------------------------------------
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C)    2024 Lukas Bauer <lukas.bauer1@tha.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#  Description:
+#    PicoNut software section Makefile.
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  -----------------------------------------------------------------------------
+
+BLOCK RESETPATHS;
+BLOCK ASYNCPATHS;
+## ULX3S v3.1.6 and v3.1.7
+
+# The clock "usb" and "gpdi" sheet
+LOCATE COMP "clk" SITE "G2";
+IOBUF  PORT "clk" PULLMODE=NONE IO_TYPE=LVCMOS33;
+FREQUENCY PORT "clk" 25 MHZ;
+
+# write to FLASH possible from user bitstream:
+SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62 SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=DISABLE SLAVE_PARALLEL_PORT=DISABLE;
+
+## LED indicators "blinkey" and "gpio" sheet
+LOCATE COMP "count1[3]" SITE "H3";
+LOCATE COMP "count1[2]" SITE "E1";
+LOCATE COMP "count1[1]" SITE "E2";
+LOCATE COMP "count1[0]" SITE "D1";
+LOCATE COMP "count0[3]" SITE "D2";
+LOCATE COMP "count0[2]" SITE "C1";
+LOCATE COMP "count0[1]" SITE "C2";
+LOCATE COMP "count0[0]" SITE "B2";
+IOBUF  PORT "count0[0]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "count0[1]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "count0[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "count0[3]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "count1[0]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "count1[1]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "count1[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "count1[3]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+
+## Pushbuttons "blinkey", "flash", "power", "gpdi" sheet
+#LOCATE COMP "btn[0]" SITE "D6";  # BTN_PWRn (inverted logic)
+LOCATE COMP "enable" SITE "R1";  # FIRE1
+LOCATE COMP "reset" SITE "T1";  # FIRE2
+#LOCATE COMP "btn[3]" SITE "R18"; # UP
+#LOCATE COMP "btn[4]" SITE "V1";  # DOWN
+#LOCATE COMP "btn[5]" SITE "U1";  # LEFT
+#LOCATE COMP "btn[6]" SITE "H16"; # RIGHT
+#IOBUF  PORT "btn[0]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "enable" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "reset" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;
+#IOBUF  PORT "btn[3]" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;
+#IOBUF  PORT "btn[4]" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;
+#IOBUF  PORT "btn[5]" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;
+#IOBUF  PORT "btn[6]" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;

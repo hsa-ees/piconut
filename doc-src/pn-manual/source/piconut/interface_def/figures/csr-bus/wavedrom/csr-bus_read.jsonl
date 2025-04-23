@@ -1,0 +1,18 @@
+{signal: [
+  {name: 'clk', wave: '0P.........'},
+  {name: 'read_en', wave: '0.hl..h.l..', node:'..A...BC...'},
+  {name: 'write_en', wave: '0..........'},
+  {name: 'adr', wave: 'x.3x..45x..'},
+  {name: 'data_read', wave: 'x..3x..45x.', node:'...D...EF..'},
+  {name: 'data_write', wave: 'x..........'},
+],
+
+edge: [
+    'A~D','B~E', 'C~F'
+],
+  
+head: {
+    tick:1,
+    every:1,
+    text: 'CSR-bus read'}
+}

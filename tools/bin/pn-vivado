@@ -1,0 +1,75 @@
+#!/bin/bash
+
+###########################################################################
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C)  2024      Lukas Bauer <lukas.bauer@hs-augsburg.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#  --------------------- LICENSE ------------------------------------------
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
+
+
+VERSION=0.9
+
+TOOL="${0##*/}"
+CMDLINE="${0##*/} $@"
+
+
+
+check_xilinx_env () {
+  if [[ -z "$PN_VIVADO" ]]; then
+    echo "ERROR: Environment variable PN_VIVADO is not set."
+    echo "  This tool uses Xilinx Vivado synthesis tools."
+    echo "  Please set the environment variable PN_VIVADO to the path of the Vivado settings64.sh."
+    echo "  Information on supported Vivado versions can be found in <README.md> in"
+    echo "  Section Supported Xilinx Vivado Versions."
+    echo "  For example, to set the environment variable for Vivado 2019.1, use:"
+    echo "  export PN_VIVADO=/opt/Xilinx/Vivado/2019.1/settings64.sh"
+    exit 1
+  fi
+}
+
+
+usage () {
+  echo "Usage: $TOOL <vivado tcl-file>"
+  echo
+  echo "Wrapper to enshure that Vivado is usable"
+  echo
+  echo "Options:"
+  echo
+  echo "  -h  Print this help message"
+  echo
+}
+
+error () {
+  echo "ERROR: $1"
+  echo
+  usage
+  exit
+}
+
+
+if [[ "$1" == "-h" || "$1" == "" ]]; then
+  usage
+  exit
+fi
+
+check_xilinx_env
+
+# Run Vivado
+. $PN_VIVADO
+vivado -notrace -nojournal -mode batch -source $1

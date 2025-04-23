@@ -1,0 +1,37 @@
+services:
+  piconut:
+    image: piconut_image:latest
+    container_name: piconut_container
+    hostname: piconut_container
+    command: bash
+    working_dir: /home/piconut-user/piconut
+    volumes:
+      # X11 support (uncomment to use the PicoNut GUI)
+      #~ - /tmp/.X11-unix:/tmp/.X11-unix
+      # audio support (uncomment to use the PicoNut GUI)
+      #   TBD: Remove the requirement for Pulseaudio
+      #~ - ~/.config/pulse/cookie:/root/.config/pulse/cookie
+      #~ - ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native
+      # time
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      # work directory
+      - ./:/home/piconut-user/piconut
+      # .ssh for git access (uncomment for git access from inside the container)
+      #   NOTE: Beware of security implications - any user on the machine can use your SSH identity!
+      #~ - ~/.ssh:/home/piconut-user/.ssh
+      # Mount further directories from host system here ...
+
+    environment:
+      # gui support
+      DISPLAY: $DISPLAY
+      QT_SCALE_FACTOR: 1.0
+      # audio
+      ALSA_CARD: 1 # card from cmd 'aplay -l'
+      PULSE_SERVER: unix:${XDG_RUNTIME_DIR}/pulse/native # pulse audio for sound
+    devices:
+      - "/dev/dri:/dev/dri" # gui support
+      - "/dev/snd:/dev/snd" # sound support
+    privileged: true # used for external usb devices like headset. Maybe also for external monitors.
+    stdin_open: true # docker run -i
+    tty: true # docker run -t

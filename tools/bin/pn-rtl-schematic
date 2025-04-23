@@ -1,0 +1,200 @@
+#!/bin/bash
+
+#  (C) 2024 Lukas Bauer <lukas.bauer1@tha.de>
+#
+#           Efficient Embedded Systems Group
+#           Augsburg Technical University of Applied Sciences
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+VERSION=0.9
+
+TOOL="${0##*/}"
+CMDLINE="${0##*/} $@"
+
+# check if netlistsvg is installed
+if ! command -v netlistsvg &> /dev/null; then
+    echo "Error: netlistsvg is not installed. Please install it first."
+    echo "       Steps:"
+    echo "       1. Clone the repository: git clone https://github.com/nturley/netlistsvg.git"
+    echo "       2. Change to the directory: cd netlistsvg"
+    echo "       3. Install the tool: sudo npm install -g ."
+    exit 1
+fi
+
+
+do_rtl_schematic()
+# Arguments <design> <output_svg> <output_svg_dir> <skin_file> <rtl_schematic> <tech_schematic> <verilog_files>
+{
+    DESIGN=$1
+    OUTPUT_SVG=$2
+    OUTPUT_SVG_DIR=$3
+    SKIN_FILE=$4
+    GEN_RTL_SCHEMATIC=$5
+    GEN_TECH_SCHEMATIC=$6
+    shift 6
+    VERILOG_FILES=$@
+
+    echo "GEN_RTLS: $GEN_RTL_SCHEMATIC"
+    echo "GEN_TECH: $GEN_TECH_SCHEMATIC"
+
+    OUTPUT_FILE_PATH=../../$OUTPUT_SVG
+
+    if [[ "$OUTPUT_SVG_DIR" != "" ]]; then
+        OUTPUT_FILE_PATH=$OUTPUT_SVG_DIR/$OUTPUT_SVG
+    fi
+
+    # Prepare build directory ...
+    BUILD=$DESIGN-ees/rtl_schematic
+
+    # create the build directory
+    mkdir -p $BUILD
+
+    # change to the build directory
+    cd $BUILD
+
+    # create the netlist.....
+    if [[ $GEN_RTL_SCHEMATIC == 1 ]]; then
+        echo "Generating RTL Synthesis for $DESIGN ..."
+        yosys -p "read_verilog $VERILOG_FILES; hierarchy -auto-top;\
+        proc -norom; future; opt_expr -keepdc; opt_clean; check;\
+        opt -noff -keepdc; wreduce -keepdc; opt_clean; memory_collect;\
+        opt -noff -keepdc -fast; stat;  write_json yosys_out.json" || exit 1
+    fi
+
+    if [[ $GEN_TECH_SCHEMATIC == 1 ]]; then
+        echo "Generating Technology Synthesis for $DESIGN ..."
+        yosys -p "read_verilog $VERILOG_FILES; hierarchy -auto-top;\
+        synth_ecp5; write_json yosys_out.json" || exit 1
+    fi
+
+
+    # create the schematic
+    if [[ "$SKIN_FILE" == "" ]]; then
+        netlistsvg yosys_out.json -o $OUTPUT_FILE_PATH || exit 1
+    else
+        netlistsvg yosys_out.json --skin $SKIN_FILE -o $OUTPUT_FILE_PATH || exit 1
+    fi
+}
+
+usage(){
+  echo "Usage: $TOOL [<options>] <Verilog files>"
+  echo
+  echo "Synthesize a SystemC/RTL design to Verilog using the Intel® Compiler for SystemC (ICSC)."
+  echo
+  echo "Options:"
+  echo
+  echo "  -d <design name> [Default: name of the first Verilog file]"
+  echo "     Name of the design."
+  echo
+  echo "  -o <path>"
+  echo "      specify path to the directory where the generated svg file should be placed"
+  echo
+  echo "  -O <output SVG file> [Default: <design name>.svg]"
+  echo "     Name of the output SVG file."
+  echo
+  echo "  -s <skin file> [Default: default skin file]"
+  echo "     Name of the skin file. Constians the default symbols for the schematic."
+  echo
+  echo "  -r generate RTL schematic"
+  echo
+  echo "  -t generate Technology schematic for a ecp5 FPGA"
+  echo
+  echo "  -h"
+  echo "     Print this help message."
+  echo
+  echo "Generated outputs:"
+  echo
+  echo "  <design name>-ees/rtl_schematic : Build directory (can be removed)"
+  echo "  <output SVG file> : Generated RTL schematic"
+  echo
+  echo "  Note: The generated svg files path can be changed using the -o option."
+  echo
+}
+
+error(){
+    echo "Error: $1"
+    echo
+    usage
+    exit 3
+}
+
+DESIGN=""
+OUTPUT_SVG=""
+OUTPUT_SVG_DIR=""
+OUTPUT_SVG_DIR_SET=0
+SKIN_FILE=""
+GEN_RTL_SCHEMATIC=0
+GEN_TECH_SCHEMATIC=0
+PARSE_OPTS="1"
+
+while [[ $PARSE_OPTS == "1" ]]; do
+    case "$1" in
+        -d)
+            DESIGN=$2
+            shift 2
+            ;;
+        -O)
+            OUTPUT_SVG=$2
+            shift 2
+            ;;
+        -o)
+            OUTPUT_SVG_DIR=$2
+            OUTPUT_SVG_DIR_SET=1
+            shift 2
+            ;;
+        -s)
+            SKIN_FILE=$2
+            shift 2
+            ;;
+        -r)
+            GEN_RTL_SCHEMATIC=1
+            shift
+            ;;
+        -t)
+            GEN_TECH_SCHEMATIC=1
+            shift
+            ;;
+        -h)
+            usage
+            exit 0
+            ;;
+        -*)
+            error "Unknown option: $1"
+            ;;
+        *)
+            PARSE_OPTS="0"
+            ;;
+    esac
+done
+
+if [[ "$DESIGN" == "" ]]; then
+    DESIGN=${1%.*}
+fi
+
+if [[ "$OUTPUT_SVG" == "" && GEN_RTL_SCHEMATIC ]]; then
+    OUTPUT_SVG=$DESIGN.svg
+fi
+
+if [[ GEN_RTL_SCHEMATIC == 0 && GEN_TECH_SCHEMATIC == 0 ]]; then
+    error "Please specify the schematic type to generate.\n Must be either -r or -t."
+fi
+
+if [[ "$DESIGN" == "" || "$OUTPUT_SVG" == ""\
+      || ($OUTPUT_SVG_DIR_SET == 1 && "$OUTPUT_SVG_DIR" == "") ]]; then
+    usage
+    exit
+fi
+
+do_rtl_schematic $DESIGN $OUTPUT_SVG $OUTPUT_SVG_DIR $SKIN_FILE $GEN_RTL_SCHEMATIC $GEN_TECH_SCHEMATIC $@

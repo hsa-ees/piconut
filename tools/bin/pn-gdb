@@ -1,0 +1,96 @@
+#!/usr/bin/python3
+
+###########################################################################
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2025 Johannes Hofmann <johannes.hofmann1@tha.de>
+#      Efficient Embedded Systems Group
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#  Description:
+#      This script tests starts an OpenOCD in background and a GDB in foreground.
+#      It requires an already running application to attach to. This script 
+#      requiers the envirnoment variable "PICONUT_HOME" set.
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###########################################################################
+
+import os
+import time
+import sys
+import subprocess
+import signal
+
+PICONUT_HOME: str | None
+
+def start_openocd():
+    command = ["openocd", "-f", f"{PICONUT_HOME}/tools/etc/openocd-sim.cfg"]
+    oocd_process = subprocess.Popen(
+        command, 
+        process_group=0,
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL)
+
+    return oocd_process
+
+def start_riscv_gdb(application_path:str):
+    working_directory = f"{PICONUT_HOME}/tools/etc"
+    command = [
+        "riscv64-unknown-elf-gdb", 
+        f"--command=gdb_start", 
+        application_path]
+
+    process = subprocess.Popen(
+        command, 
+        cwd=working_directory)
+
+    process.wait()
+
+if __name__ == "__main__":
+
+    PICONUT_HOME = os.getenv("PICONUT_HOME")
+
+    if PICONUT_HOME is None:
+        print("Enviroment variable PICONUT_HOME not set.")
+        exit(-1)
+
+    if len(sys.argv) < 1:
+        print("Debug application path must be provided.")
+        exit(-1)
+
+    application_path = sys.argv[1]
+
+    print("PICONUT_HOME: " + PICONUT_HOME)
+    print("Application path: " + application_path)
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    
+    oocd_process = start_openocd()
+    time.sleep(1)
+
+    process = start_riscv_gdb(application_path)
+
+    oocd_process.kill()
+
+    print("GDB and OpenOCD closed successfully!")

@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!--
+  This file is part of the PicoNut project.
+
+  Copyright (C) 2024 Johannes Hofmann <johannes.hofmann1@tha.de>
+      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+
+  Description:
+      This file helps to initialize GDB to filter non-existent registers.
+
+  Redistribution and use in source and binary forms, with or without modification,
+  are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this
+     list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation and/or
+     other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<!DOCTYPE target SYSTEM "gdb-target.dtd">
+<target version="1.0">
+<feature name="org.gnu.gdb.riscv.cpu">
+<reg name="zero" bitsize="32" regnum="0" save-restore="yes" type="int" group="general"/>
+<reg name="ra" bitsize="32" regnum="1" save-restore="yes" type="int" group="general"/>
+<reg name="sp" bitsize="32" regnum="2" save-restore="yes" type="int" group="general"/>
+<reg name="gp" bitsize="32" regnum="3" save-restore="yes" type="int" group="general"/>
+<reg name="tp" bitsize="32" regnum="4" save-restore="yes" type="int" group="general"/>
+<reg name="t0" bitsize="32" regnum="5" save-restore="yes" type="int" group="general"/>
+<reg name="t1" bitsize="32" regnum="6" save-restore="yes" type="int" group="general"/>
+<reg name="t2" bitsize="32" regnum="7" save-restore="yes" type="int" group="general"/>
+<reg name="fp" bitsize="32" regnum="8" save-restore="yes" type="int" group="general"/>
+<reg name="s1" bitsize="32" regnum="9" save-restore="yes" type="int" group="general"/>
+<reg name="a0" bitsize="32" regnum="10" save-restore="yes" type="int" group="general"/>
+<reg name="a1" bitsize="32" regnum="11" save-restore="yes" type="int" group="general"/>
+<reg name="a2" bitsize="32" regnum="12" save-restore="yes" type="int" group="general"/>
+<reg name="a3" bitsize="32" regnum="13" save-restore="yes" type="int" group="general"/>
+<reg name="a4" bitsize="32" regnum="14" save-restore="yes" type="int" group="general"/>
+<reg name="a5" bitsize="32" regnum="15" save-restore="yes" type="int" group="general"/>
+<reg name="a6" bitsize="32" regnum="16" save-restore="yes" type="int" group="general"/>
+<reg name="a7" bitsize="32" regnum="17" save-restore="yes" type="int" group="general"/>
+<reg name="s2" bitsize="32" regnum="18" save-restore="yes" type="int" group="general"/>
+<reg name="s3" bitsize="32" regnum="19" save-restore="yes" type="int" group="general"/>
+<reg name="s4" bitsize="32" regnum="20" save-restore="yes" type="int" group="general"/>
+<reg name="s5" bitsize="32" regnum="21" save-restore="yes" type="int" group="general"/>
+<reg name="s6" bitsize="32" regnum="22" save-restore="yes" type="int" group="general"/>
+<reg name="s7" bitsize="32" regnum="23" save-restore="yes" type="int" group="general"/>
+<reg name="s8" bitsize="32" regnum="24" save-restore="yes" type="int" group="general"/>
+<reg name="s9" bitsize="32" regnum="25" save-restore="yes" type="int" group="general"/>
+<reg name="s10" bitsize="32" regnum="26" save-restore="yes" type="int" group="general"/>
+<reg name="s11" bitsize="32" regnum="27" save-restore="yes" type="int" group="general"/>
+<reg name="t3" bitsize="32" regnum="28" save-restore="yes" type="int" group="general"/>
+<reg name="t4" bitsize="32" regnum="29" save-restore="yes" type="int" group="general"/>
+<reg name="t5" bitsize="32" regnum="30" save-restore="yes" type="int" group="general"/>
+<reg name="t6" bitsize="32" regnum="31" save-restore="yes" type="int" group="general"/>
+<reg name="pc" bitsize="32" regnum="32" save-restore="yes" type="int" group="general"/>
+</feature>
+<feature name="org.gnu.gdb.riscv.csr">
+<reg name="mstatus" bitsize="32" regnum="833" save-restore="no" type="int" group="csr"/>
+<reg name="misa" bitsize="32" regnum="834" save-restore="no" type="int" group="csr"/>
+<reg name="dcsr" bitsize="32" regnum="2033" save-restore="no" type="int" group="csr"/>
+<reg name="dpc" bitsize="32" regnum="2034" save-restore="no" type="int" group="csr"/>
+<reg name="dscratch0" bitsize="32" regnum="2035" save-restore="no" type="int" group="csr"/>
+<reg name="dscratch1" bitsize="32" regnum="2036" save-restore="no" type="int" group="csr"/>
+</feature>
+</target>

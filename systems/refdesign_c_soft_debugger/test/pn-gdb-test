@@ -1,0 +1,128 @@
+#!/usr/bin/python3
+
+###########################################################################
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2025 Johannes Hofmann <johannes.hofmann1@tha.de>
+#      Efficient Embedded Systems Group
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#  Description:
+#      This script tests the refdesign_c_soft_debugger with an actual GDB and 
+#      OpenOCD connected. This script requiers the envirnoment variable 
+#      "PICONUT_HOME" set.
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###########################################################################
+
+import os
+import time
+import subprocess
+
+PICONUT_HOME: str | None
+
+def build_all():
+    # build system
+    working_directory = f"{PICONUT_HOME}/systems/refdesign_c_soft_debugger/hw"
+    command=["make", "clean"]
+    subprocess.run(command, cwd=working_directory)
+    command=["make", "build-tb"]
+    subprocess.run(command, cwd=working_directory)
+
+    # build application
+    working_directory = f"{PICONUT_HOME}/sw/applications/animation"
+    command=["make", "clean"]
+    subprocess.run(command, cwd=working_directory)
+    command=["make", "build"]
+    subprocess.run(command, cwd=working_directory)
+
+
+def start_system():
+    working_directory = f"{PICONUT_HOME}/systems/refdesign_c_soft_debugger/hw"
+    command=["./pn-sim", f"{PICONUT_HOME}/sw/applications/animation/animation.elf"]
+    tb_process = subprocess.Popen(
+        command, 
+        cwd=working_directory,
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL)
+
+    return tb_process
+
+def start_openocd():
+    command = ["openocd", "-f", f"{PICONUT_HOME}/tools/etc/openocd-sim.cfg"]
+    oocd_process = subprocess.Popen(
+        command, 
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL)
+
+    return oocd_process
+
+def start_riscv_gdb_test(command_path:str):
+    working_directory = f"{PICONUT_HOME}/systems/refdesign_c_soft_debugger/test"
+    command = [
+        "riscv64-unknown-elf-gdb", 
+        f"--command={command_path}", 
+        f"{PICONUT_HOME}/sw/applications/animation/animation.elf"]
+
+    result = subprocess.run(
+        command, 
+        cwd=working_directory,
+        capture_output=True,
+        text=True)
+
+    return result.stdout
+
+if __name__ == "__main__":
+
+    PICONUT_HOME = os.getenv("PICONUT_HOME")
+
+    if PICONUT_HOME is None:
+        print("Enviroment variable PICONUT_HOME not set.")
+        exit(-1)
+
+    build_all()
+
+    system_process = start_system()
+    time.sleep(3)
+
+    oocd_process = start_openocd()
+    time.sleep(3)
+
+    result = start_riscv_gdb_test("gdb_start_test")
+
+    oocd_process.kill()
+    system_process.kill()
+
+    start_string = "Breakpoint 1"
+    result = start_string + result.split(start_string, 1)[-1] 
+
+    with open("expected.txt", "r") as file:
+        expected = file.read()
+
+    if expected != result:
+        print(result)
+        print("Test failed")
+        exit(-1)
+
+    print("Test finished successfully")

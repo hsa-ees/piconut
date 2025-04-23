@@ -1,0 +1,211 @@
+#  -----------------------------------------------------------------------------
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2025 Johannes Hofmann <johannes.hofmann1@tha.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  -----------------------------------------------------------------------------
+
+
+FROM debian:bookworm AS base
+
+# commit from where icsc should be built from
+ARG ICSC_COMMIT="7e86dffe31cf611e447691fa9e0baf865c83aa91"
+
+USER root
+
+################################################################################
+# Enviroment variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Qt
+ENV QT_VERSION="6.8.1"
+ENV QT_VERSION_SHORT="6.8"
+ENV QT_HOME="/opt/qt/${QT_VERSION}/gcc_64"
+ENV LB_LIBRARY_PATH=${QT_HOME}
+
+# ICSC
+ENV ICSC_HOME="/opt/icsc"
+
+# OSS CAD Suite
+ENV OSS_CAD_SUITE_HOME="/opt/oss-cad-suite"
+
+# RISC-V GNU Compiler Toolchain
+ENV RISCV_TOOLCHAIN_HOME="/opt/riscv-gnu-toolchain"
+
+# sv2v: SystemVerilog to Verilog
+ENV SV2V_HOME="/opt/sv2v"
+
+
+################################################################################
+
+# install build requirements
+RUN apt-get update && apt install -y \
+    wget build-essential unzip curl git
+
+#### OSS CAD Suite ############################################################
+FROM base AS oss
+# get oss-cad-suite
+RUN mkdir -p /opt && \
+    cd /opt && \
+    wget -q https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2024-07-16/oss-cad-suite-linux-x64-20240716.tgz && \
+    tar axvf oss-cad-suite-linux-x64-20240716.tgz && rm -f oss-cad-suite-linux-x64-20240716.tgz
+# add to path enviroment variable
+ENV PATH="${OSS_CAD_SUITE_HOME}/bin:$PATH"
+
+#### RISC-V Toolchain #########################################################
+FROM oss AS riscv
+# get new gcc 12.2.0 for test
+RUN apt-get update && apt-get install -y \
+    autoconf automake autotools-dev curl python3 python3-pip python3-tomli \
+    libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo \
+    gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake \
+    libglib2.0-dev libslirp-dev libncurses-dev python-is-python3
+RUN mkdir -p /build && \
+    cd /build && \
+    # clone repository
+    git clone https://github.com/riscv/riscv-gnu-toolchain && \
+    cd riscv-gnu-toolchain && \
+    git checkout 2023.01.04 && git submodule update --init --recursive && \
+    # build toolchain
+    mkdir -p ${RISCV_TOOLCHAIN_HOME} && \
+    ./configure --prefix=${RISCV_TOOLCHAIN_HOME} --with-multilib-generator="rv32i-ilp32--;rv32im-ilp32--;rv32ima-ilp32--" && \
+    make -j$(nproc) && \
+    cd / && \
+    rm -rf /build
+
+# add toolchain to path
+ENV PATH="${RISCV_TOOLCHAIN_HOME}/bin:$PATH"
+
+#### Misc ######################################################################
+FROM riscv AS misc
+# install systemc
+RUN apt-get update && apt-get install -y \
+    libsystemc libsystemc-dev
+
+# install gdb, clang-format, picocom
+RUN apt-get update && apt-get install -y \
+    gdb clang-format picocom
+
+###############################################################################
+# Full
+###############################################################################
+
+#### Doc #######################################################################
+FROM misc AS doc
+# install requirments for documentation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-sphinx python3-myst-parser python3-sphinx-rtd-theme \
+    python3-breathe python3-sphinxcontrib.svg2pdfconverter inkscape
+
+# install miktex for pdf generation
+RUN curl -fsSL https://miktex.org/download/key | tee /usr/share/keyrings/miktex-keyring.asc > /dev/null
+RUN echo "deb [signed-by=/usr/share/keyrings/miktex-keyring.asc] https://miktex.org/download/debian bookworm universe" | tee /etc/apt/sources.list.d/miktex.list
+RUN apt-get update && apt-get install -y \
+    miktex
+
+# configure miktex
+RUN miktexsetup --verbose --package-set=basic --shared=yes finish
+RUN initexmf --verbose --admin --set-config-value [MPM]AutoInstall=1
+RUN mpm --admin --verbose --package-level=basic --upgrade
+
+#### NetlistSVG ################################################################
+FROM doc AS netlistsvg
+# get netlistsvg
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    npm
+RUN mkdir -p /build && \
+    cd /build && \
+    git clone https://github.com/nturley/netlistsvg.git && \
+    cd netlistsvg && \
+    npm install -g && \
+    cd / && \
+    rm -rf /build
+
+#### SV2V #####################################################################
+FROM netlistsvg AS sv2v
+# get sv2v
+RUN mkdir -p /opt && \
+    cd /opt && mkdir sv2v && cd sv2v && \
+    wget -q https://github.com/zachjs/sv2v/releases/download/v0.0.11/sv2v-Linux.zip && \
+    unzip -j sv2v-Linux.zip && rm sv2v-Linux.zip
+# add to path enviroment variable
+ENV PATH="${SV2V_HOME}:$PATH"
+
+#### ICSC #####################################################################
+FROM sv2v AS icsc
+
+# add cmake for icsc
+RUN apt-get update && apt-get install -y \
+    cmake
+
+# get icsc and extract
+RUN mkdir -p ${ICSC_HOME}
+RUN mkdir -p /build && \
+    # clone repository
+    git clone https://github.com/intel/systemc-compiler.git /build/icsc && \
+    cd /build/icsc && \
+    git checkout ${ICSC_COMMIT} && \
+    # build and install icsc
+    yes | /build/icsc/install2.sh ${ICSC_HOME} --release llvm proto icsc && \
+    cd / && \
+    rm -rf /build
+
+#### Qt #######################################################################
+FROM icsc AS qt
+# install Qt dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake clang git ca-certificates wget python3 llvm-dev \
+    libgl1-mesa-dev libxcb-xinerama0-dev libfontconfig1-dev libclang-dev \
+    libc++-dev libc++abi-dev ninja-build curl doxygen graphviz libfontconfig1-dev \
+    libfreetype-dev libx11-dev libx11-xcb-dev libxcb-cursor-dev libxcb-glx0-dev \
+    libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev \
+    libxcb-render-util0-dev libxcb-shape0-dev libxcb-shm0-dev libxcb-sync-dev \
+    libxcb-util-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-xkb-dev \
+    libxcb1-dev libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev \
+    libxkbcommon-x11-dev libxrender-dev xvfb xauth libxcb-cursor0 libxcb-cursor-dev && \
+    rm -rf /var/lib/apt/lists/* \
+    && apt-get -y autoremove \
+    && apt-get -y autoclean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /build && \
+    cd /build && \
+    # download the qt src
+    wget -q https://download.qt.io/official_releases/qt/${QT_VERSION_SHORT}/${QT_VERSION}/single/qt-everywhere-src-${QT_VERSION}.tar.xz && \
+    # build qt
+    mkdir -p ${QT_HOME} && \
+    tar xf qt-everywhere-src-${QT_VERSION}.tar.xz && \
+    cd qt-everywhere-src-${QT_VERSION} && mkdir build && cd build && \
+    ../configure -platform linux-g++ -prefix ${QT_HOME} -nomake examples -nomake tests -xcb && \
+    ninja -j$(nproc) && ninja install && \
+    cd / && \
+    rm -rf /build
+
+# currently mold linker is used to link qt application, hopefully this can be removed
+# in the future
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    mold

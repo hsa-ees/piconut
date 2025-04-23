@@ -1,0 +1,88 @@
+#!/usr/bin/python3
+
+###########################################################################
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2023 Lukas Bauer <lukas.bauer@hs-augsburg.de>
+#      Efficient Embedded Systems Group
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#  Description:
+#      This script extracts the data and text section from a elf file.
+#      The output is a .mem file with the same name as the section.
+#      This can be used to initialize the bram of a vivado project.
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###########################################################################
+
+import sys
+import subprocess
+
+
+
+def extract_section(filename:str, section_name:str):
+
+    # Objdump to dump the wanted section
+    command = ['riscv64-unknown-elf-objdump', '-j', f'{section_name}', '-s', filename]
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    # Extract the hex values from the output
+    output_lines = result.stdout.split('\n')
+
+    # Find the index of the first line with hex values
+    start_index:int = 0
+    for i, line in enumerate(output_lines):
+        if line.startswith(("Contents of")):
+            start_index = i
+            break
+
+    # Exclude the lines before the hex values and create list for hex values
+    lines = output_lines[start_index + 1:]
+    hex_values = []
+
+    # extract the hex values for each line
+    for line in lines:
+        line = line[9:-18]
+        blocks = line.split()
+        # make the data little endian
+        blocks = [block[6:8] + block[4:6] + block[2:4] + block[0:2] for block in blocks]
+        hex_values.extend(blocks)
+
+    #convert the hex blocks from hex strings to binary strings
+    hex_values = [bin(int(hex_value, 16))[2:].zfill(32) for hex_value in hex_values]
+
+
+    # Write the formatted lines to the output file
+    with open(f'{section_name[1:]}.mem', 'w') as file:
+        file.write('\n'.join(hex_values))
+
+if __name__ == "__main__":
+
+
+    if len(sys.argv) != 3:
+        print("Usage: extract_bin.py <binary file> <section name>")
+        print("Example: extract_bin.py bootloader.elf .text")
+        exit(1)
+
+    extract_section(sys.argv[1], sys.argv[2])
