@@ -1,50 +1,14 @@
-*~
-*.bak
-*.[oa]
-*.la
-*.so
-*.c.s
-*.log
-*.vcd
-*.geany
-*.o
-*.d
-*.a
-*.aux
-*.o.s
-*.bin
-*_dump
-*.dump
-*.jou
-.nfs*
-*.swp
-**/.vscode
-Makefile.deps
-core
-version.env
-sctool.cpp
-*_tb_sctool
-sc_build
-sv_out
-v_out
-
-doc/src
-doc/pn-manual.pdf
-doc/libparanut
-doc-src/**/build
-
-*-ees/
-lib/
-include/
-v_out/
+# local build folder
 build/
-synth/
 
+# docs
 *.svg
-!doc-src/**/*.svg
 !doc/**/*.svg
 
-*.gtkw
+**/.vscode
 
-*.elf
-*.mem
+# dumps and local settings
+*.local
+*.local.*
+*.dump
+*.dump.*

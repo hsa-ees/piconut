@@ -6,10 +6,7 @@
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
   Description:
-    This file contains genereal implementations of simple block rams.
-    As synthesising these for different verndors may necessitate different
-    implementations, these implementations will be held in seperate files and
-    included here.
+    Devcontainer configuration
 
   Redistribution and use in source and binary forms, with or without modification,
   are permitted provided that the following conditions are met:
@@ -33,7 +30,6 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   */
-
 {
     "dockerComposeFile": "../docker-compose.yml",
     "service": "piconut",
@@ -44,12 +40,15 @@
         "vscode": {
             "extensions": [
                 "ms-vscode.cpptools",
-                "ms-vscode.cpptools-extension-pack",
+                "xaver.clang-format", // default formatter
+                "ms-python.vscode-pylance", // python scripts
+                "ms-vscode.makefile-tools", // makefile support
+                "hediet.vscode-drawio", // drawio diagrams for documentation
                 "eamodio.gitlens",
-                "mhutchie.git-graph",
-                "xaver.clang-format",
-                "hediet.vscode-drawio"
-            ]
+                "mhutchie.git-graph" // git graph is a paid feature in gitlens
+            ],
+            "settings": { // precedence = 1: user, 2: devcontainer, 3: workspace
+            }
         }
     }
 }

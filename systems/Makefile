@@ -2,13 +2,12 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2010-2020 Alexander Bahle <alexander.bahle@hs-augsburg.de>
-#                          Gundolf Kiefer <gundolf.kiefer@hs-augsburg.de>
-#					  2024 Lukas Bauer <lukas.bauer1@tha.de>void run_cycle(int cycles = 1)
-#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#    Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
-#    PicoNut software section Makefile.
+#    Master Makefile to prebuild and verify the reference design and a set of
+#    demo systems for a standard PicoNut installation.
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -34,76 +33,41 @@
 #  -----------------------------------------------------------------------------
 
 
-PICONUT_HOME ?= $(abspath $(CURDIR)/..)
-include $(PICONUT_HOME)/directory-base.mk
-
-TARGET_DIRS := $(shell find $(SYSTEMS_DIR)/* -maxdepth 0 -type d )
-
-################################################################################
-#                                                                              #
-#     Default and help targets                                                 #
-#                                                                              #
-################################################################################
+# TBD+: Port all demo systems for particular peripherals and add them to
+#       PN_SUBMODULES below.
 
 
-# Default target ...
-.PHONY: all
-all: help
 
-.PHONY: $(TARGET_DIRS)
-$(TARGET_DIRS):
-	-$(MAKE) -C $@ clean 2> /dev/null
-
-.PHONY: $(PN_SYSTEM)
-$(PN_SYSTEM):
-	-$(MAKE) -C $@ clean 2> /dev/null
-
-# Print usage info ...
-.PHONY: help
-help:
-	@echo "This makefile is mainly used to clean system directories. Usually there sould be no need for you to use it."
-	@echo
-	@echo "Usage: make [<target>] [<parameter>=<value> ...]"
-	@echo
-	@echo "Targets:"
-	@echo
-	@echo "  install     : Install hardware source files to the directory given by parameter INSTALL_DIR"
-	@echo "                (default: /opt/paranut)"
-	@echo "  clean-all   : Clean all subdirectories (delete compilation artefacts)"
-	@echo "                (default: /opt/paranut)"
-	@echo "  clean       : Clean only PN_SYSTEM (default: $(PN_SYSTEM_DEFAULT))"
-	@echo "                (default: /opt/paranut)"
 
 
 ################################################################################
 #                                                                              #
-#     Installing                                                               #
+#   Configuration                                                              #
 #                                                                              #
 ################################################################################
-INSTALL_DIR_SUFFIX=$(subst $(PICONUT_HOME),,$(SYSTEMS_DIR))
-INSTALL_PN_SIM_BIN=$(INSTALL_DIR)/$(subst $(PICONUT_HOME),,$(PN_SIM_BIN))
-INSTALL_BIN_DIR=$(INSTALL_DIR)/$(subst $(PICONUT_HOME),,$(BIN_DIR))
-.PHONY: install
-install:
-	@echo
-	@echo "### Installing System sources to $(INSTALL_DIR) ###"
-	@echo "# Note: only system $(PN_SYSTEM) will be installed #"
-	mkdir -p $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX)
-	cp -dr --no-preserve=ownership $(PNS_DIR) $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX)
-	@echo "# Create link to pn-sim in bin dir #"
-	rm -f $(INSTALL_BIN_DIR)/$(PN_SIM_BIN_NAME)
-	ln -s $(INSTALL_PN_SIM_BIN) $(INSTALL_BIN_DIR)/$(PN_SIM_BIN_NAME)
+
+
+# Submodules ...
+#   Define the submodules this module depends on.
+#
+#   The build system will automatically build them by the 'build' target before
+#   executing the 'build-all' recipe defined below. Submodules are "installed"
+#   into $PN_BUILD_DIR, so that no search paths for compiling/linking must be
+#   set here.
+#   Only PN_HW_LDFLAGS must be extended to load the submodules when linking.
+#
+PN_SUBMODULES := refdesign demo_debugger_soft uart_test demo_clint demo_clint_soft
+
+
+# Include PicoNut setup ...
+include ../piconut.mk
+
+
+
 
 
 ################################################################################
 #                                                                              #
-#     Cleaning                                                                 #
+#   Global Targets                                                             #
 #                                                                              #
 ################################################################################
-.PHONY: clean-all
-clean-all: $(TARGET_DIRS)
-	@echo
-	@echo "### All system directories cleaned ###"
-
-.PHONY: clean
-clean: $(PN_SYSTEM)

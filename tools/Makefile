@@ -2,7 +2,7 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2021 Michael Schaeferling <michael.schaeferling@hs-augsburg.de>
+#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
@@ -31,17 +31,45 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  -----------------------------------------------------------------------------
 
-# TOOL_PARTS will be copied to $INSTALL_DIR/tools/:
-TOOL_PARTS = bin etc lib share src application-base.mk hal-base.mk sysc-base.mk
 
 
-build:
-	# nothing to be done here
 
-install:
-	@test "$(INSTALL_DIR)" != "" || ( echo "ERROR: Make variable 'INSTALL_DIR' must be set for the 'install' target."; exit 3; )
-	@mkdir -p $(INSTALL_DIR)/tools/ ; \
-	cp -dr --no-preserve=ownership ${TOOL_PARTS} $(INSTALL_DIR)/tools/
 
-clean:
-	# nothing to be done here
+################################################################################
+#                                                                              #
+#   Configuration                                                              #
+#                                                                              #
+################################################################################
+
+
+# Environment ...
+PN_BUILD_COMMON := 0
+
+
+# Include PicoNut setup ...
+include ../piconut.mk
+
+
+# Module dependency ...
+#   This is a layer-1 module: Requiring config would be legal.
+#   However, this should be avoided!
+#build-prepare: prepare-config
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Exported global targets                                                    #
+#                                                                              #
+################################################################################
+
+
+build-all:
+
+
+install-all:
+	$(PN_INSTALL_TREE) . bin
+	$(PN_INSTALL_TREE) . etc
+	$(PN_INSTALL_TREE) . share

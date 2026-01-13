@@ -51,7 +51,7 @@ def build_all():
     subprocess.run(command, cwd=working_directory)
 
     # build application
-    working_directory = f"{PICONUT_HOME}/sw/applications/animation"
+    working_directory = f"{PICONUT_HOME}/sw/apps/animation"
     command=["make", "clean"]
     subprocess.run(command, cwd=working_directory)
     command=["make", "build"]
@@ -60,7 +60,7 @@ def build_all():
 
 def start_system():
     working_directory = f"{PICONUT_HOME}/systems/refdesign_c_soft_debugger/hw"
-    command=["./pn-sim", f"{PICONUT_HOME}/sw/applications/animation/animation.elf"]
+    command=["./pn-sim", f"{PICONUT_HOME}/sw/apps/animation/animation.rv32"]
     tb_process = subprocess.Popen(
         command, 
         cwd=working_directory,
@@ -83,7 +83,7 @@ def start_riscv_gdb_test(command_path:str):
     command = [
         "riscv64-unknown-elf-gdb", 
         f"--command={command_path}", 
-        f"{PICONUT_HOME}/sw/applications/animation/animation.elf"]
+        f"{PICONUT_HOME}/sw/apps/animation/animation.rv32"]
 
     result = subprocess.run(
         command, 

@@ -2,13 +2,13 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2023 Felix Wagner <felix.wagner1@hs-augsburg.de
-#                2024 Lukas Bauer <lukas.bauer1.tha.de>
+#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#                2024 Lukas Bauer <lukas.bauer1@tha.de>
+#                2023 Felix Wagner <felix.wagner1@hs-augsburg.de
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
-#    Makefile of the module CPU which provides the PicoNut cores of
-#    all currently available Capability levels
+#    Makefile for building the hardware of the reference system for simulation and synthesis.
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -33,98 +33,184 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  -----------------------------------------------------------------------------
 
-##### EDIT HERE
-################# Module Configuration #########################################
 
-# MODULE_SRC:               Sources that are used for Simulation as well as
-#                           synthesis. (including the testbench/sc_main file)
-MODULE_SRC = top.cpp
 
-# TESTBENCH_SRC:            Source that contains tb (and thus sc_main)
-TESTBENCH_SRC = top_tb.cpp
 
-# SIM_SRC:                  Sources that are only used in simulationon
-SIM_SRC =
-
-# MEMU_VERSION:             Version of the MEMU module to use in the piconut
-MEMU_VERSION = simonlymemu
-
-#NUCLEUS_VERSION:             Version of the CORE module to use in the piconut
-NUCLEUS_VERSION = minimalnucleus
-
-# PHERIPHERAL_MODULES:      List of peripheral modules to include into the system
-PERIPHERAL_MODULES = c_soft_uart
-
-# MODULE_INCLUDES:          Include directives for the compiler (e.g. -I..)
-MODULE_INCLUDES =
-
-# MODULE_CFLAGS:            Additional compiler flags this module needs
-MODULE_CFLAGS =
-
-# MODULE_LDFLAGS:           Additional linker flags this module needs
-MODULE_LDFLAGS =
-
-# SYNTHESIS_TOPMODULE:      Defines the Top Module for synthesis as defined inside
-#							the test bench cpp
-SYNTHESIS_TOP_MODULE = dut_inst
-
-# PICONUT_MEMU_NUCLEUS_SELECT: 	Selects the version of the MEMU and NUCLEUS module
-#								used for the build of the piconut library (don't touch)
-PICONUT_MEMU_NUCLEUS_SELECT = -D__$(shell echo ${NUCLEUS_VERSION} | tr '[:lower:]' '[:upper:]')__ \
-							  -D__$(shell echo ${MEMU_VERSION} | tr '[:lower:]' '[:upper:]')__
-
-# name the sim target different from the module name for
-# historical reasons
-SIM_TARGET = pn-sim
-
-# BOARD: 					The default target board for the synthesis
-BOARD ?= ulx3s
-
-# CONSTRAINT_FILE: 			The constraint file name for the target board
-#							Located in systems/<system-name>/boards/<board-name>
-CONSTRAINT_FILE_NAME ?= ulx3s.lpf
-
-# VERILOG_SRC: 				Path to addtitonal verilog sources that are needed
-VERILOG_SRC = $(PNS_V_DIR)/pll.v
-
-# TOP_MODULE: 				The top verilog module name used for the board specific
-#							synthesis
-TOP_MODULE = m_top
-
-# CUSTOM TARGETS OPTIONS
-# INPUT_CLK_FEQ:            The frequency of the input clock for the PLL
-INPUT_CLK_FEQ ?= 25
-
-# PLL_CLK_FEQ:              The frequency of the output clock for the PLL
-PLL_CLK_FEQ ?= 5
 
 ################################################################################
-##### DO NOT EDIT FROM HERE ON #################################################
+#                                                                              #
+#   Configuration                                                              #
+#                                                                              #
 ################################################################################
 
-################# Module Makefile ##############################################
-SYSC_MODULE_DIR:= $(abspath $(CURDIR))
-PICONUT_HOME ?= $(CURDIR)/../../..
 
-################# Automatic Name Generation ####################################
-# Get Module name from folder name
-MODULE_NAME = $(lastword $(subst /, ,$(abspath $(SYSC_MODULE_DIR)/..)))
-PNS_DIR = $(abspath $(SYSC_MODULE_DIR)/..)
-PN_SYSTEM = $(MODULE_NAME)
-
-################# System Configuration  #########################################
-
-USE_PICONUT_MODULE = 1
+# Declare that this is part of a system ...
+PN_SYSTEM := ..
 
 
-################# Directory Makefile Include #####################################
-include $(PICONUT_HOME)/directory-base.mk
+# Include PicoNut setup ...
+include ../../../piconut.mk
 
-################# Master Makefile Include #####################################
-include $(SYSC_BASE_MK)
-include $(SYN_BASE_MK)
 
-# CUSTOM TARGETS
 
-$(PNS_V_DIR)/pll.v: $(PNS_V_DIR)
-	ecppll -n pll --clkin_name clk_in -i $(INPUT_CLK_FEQ) --clkout0_name clk_out -o $(PLL_CLK_FEQ) -f $@
+
+
+################################################################################
+#                                                                              #
+#   Source Files                                                               #
+#                                                                              #
+################################################################################
+
+
+# Module name ...
+#   By convention,
+#   - the module name is equal to the directory name,
+#   - the top-level entity has the same name, prefixed with "m_",
+#   - the top-level entity is defined in a file named $(MODULE).cpp,
+#   - the testbench is defined in a file named $(MODULE)_tb.cpp.
+#   The following lines can be copied to new modules with very little
+#   modifications. However, if required and adequate for some module, other
+#   variables may be used. Any variables not starting with "PN_" and which are
+#   not special variables (like DEBUG, VERBOSE, ... - see `make help`) are local
+#   and can be defined freely in this file.
+MODULE := refdesign
+
+
+# Module sources that are used for simulation and for synthesis ...
+MODULE_SRC := top.cpp
+
+
+# Simulator and its source(s), containing `sc_main` - for simulation ...
+SIMULATOR := $(MODULE)_sim
+SIMULATOR_SRC := top_sim.cpp
+
+
+# Testbench and its source(s), containing `sc_main` - for synthesis ...
+TESTBENCH := $(MODULE)_tb
+TESTBENCH_SRC := top_tb.cpp
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Simulation                                                                 #
+#                                                                              #
+################################################################################
+
+
+# Define set of object files and output binaries ...
+#   As many hardware modules, this section builds
+#   a) a shared library with the simulation model of the module ('MODULE_*'),
+#   b) a simulation binary based on a testbench using this library ('SIMULATOR_*').
+MODULE_OBJ := $(MODULE_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+MODULE_LIB := $(PN_MODULE_BUILD_DIR)/sim/lib$(MODULE).a
+
+SIMULATOR_OBJ := $(SIMULATOR_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+SIMULATOR_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(MODULE)_sim
+
+
+# Automatic dependencies ...
+#   The default compile command generates a .d file for each .o file
+#   containing the .h files it depends on. These files are included here.
+-include $(MODULE_OBJ:%.o=%.d)
+-include $(SIMULATOR_OBJ:%.o=%.d)
+
+
+# Set object files to link ...
+#   The PicoNut setup script ('piconut.mk') contains predefined (implicit) rules
+#   for compiling and linking. If they are used (as in this file), an additional
+#   linking rule must be supplied here to identify all object files the binary
+#   depends on. The recipe must be left out, it is supplied by 'piconut.mk'.
+#
+
+#   dependencies of the library ...
+$(MODULE_LIB): $(MODULE_OBJ)
+
+#   dependencies of the executable ...
+$(SIMULATOR_BIN): $(SIMULATOR_OBJ) $(MODULE_LIB)
+
+
+# Add libraries used ...
+PN_HW_LDFLAGS += -lcpu -luart_soft -lpn_interconnect
+
+
+# Add dependencies for libraries used (optional) ...
+#   The following lines are optional. If present, this makefile will automatically
+#   trigger a re-linking if an imported library has been rebuilt. This is useful
+#   if you are developing both on the system and an imported PicoNut module.
+$(SIMULATOR_BIN): $(PN_STAGE_DIR)/hw/lib/libcpu.a
+$(SIMULATOR_BIN): $(PN_STAGE_DIR)/hw/lib/libuart_soft.a
+$(SIMULATOR_BIN): $(PN_STAGE_DIR)/hw/lib/libpn_interconnect.a
+
+
+
+
+
+#################### Exported simulation targets ###############################
+
+
+# Build ...
+build-sim: $(MODULE_LIB) $(SIMULATOR_BIN)
+
+
+# Install ...
+.PHONY: install-sim
+install-sim:
+	$(PN_INSTALL_HW_BIN) $(SIMULATOR_BIN)
+
+
+# TBD: Verify-sim
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Synthesis                                                                  #
+#                                                                              #
+################################################################################
+
+# At this level, (only) ICSC synthesis is performed for the complete hardware
+# system excluding embedded memories. Gate-level and layout synthesis are performed
+# later after the embedded memories are added.
+
+
+
+
+
+#################### Phase 1: SystemC synthesis (build-systemc) ####################
+
+# The following definitions direct the synthesis by the Intel Compiler for
+# SystemC (ICSC). ICSC comes with its own build system an C++ compiler, and it
+# may handle a complete tree of modules at once.
+
+
+# Module sources for ICSC ...
+#   Module source files including the testbench. Sources exported by an
+#   'icsc-sources' recipe must be left out.
+PN_SYSTEMC_SRC := $(MODULE_SRC) $(TESTBENCH_SRC)
+
+
+# Submodules for ICSC ...
+#   Define the submodules that ICSC must process together with this one.
+PN_SYSTEMC_SUBMODULES := $(PN_SOURCE_DIR)/hw/interconnect
+
+
+
+#################### Exported synthesis targets ################################
+
+
+# Build ...
+build-syn: build-systemc
+
+
+# Verify ...
+#~ verify-syn: build-netlist
+
+
+# Install ...
+install-syn: build-syn
+	$(PN_INSTALL_HW_SYN) $(PN_SYSTEMC_OUTPUT)

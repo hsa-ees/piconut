@@ -2,12 +2,11 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2023 Felix Wagner <felix.wagner1@hs-augsburg.de
-#                2024 Lukas Bauer <lukas.bauer1.tha.de>
+#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
-#    PicoNut software section Makefile.
+#    Makefile for building the reference system for simulation and synthesis.
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -33,66 +32,179 @@
 #  -----------------------------------------------------------------------------
 
 
-################# Module Makefile ##############################################
-PICONUT_HOME ?= $(abspath $(CURDIR))/../..
-
-################# Automatic Name Generation ####################################
-# Get PN System name from folder
-PN_SYSTEM = $(lastword $(subst /, ,$(abspath $(CURDIR))))
-PNS_DIR = $(abspath $(CURDIR))
-
-################# Directory Makefile Include ###################################
-include $(PICONUT_HOME)/directory-base.mk
-
-
-TARGET_DIRS := $(PNS_SYSC_DIR)
-################################################################################
-#                                                                              #
-#     Default and help targets                                                 #
-#                                                                              #
-################################################################################
-
-
-# Default target ...
-.PHONY: all
-all: build
-
-.PHONY: $(TARGET_DIRS)
-$(TARGET_DIRS):
-	-$(MAKE) -C $@ clean 2> /dev/null
-
-# Print usage info ...
-.PHONY: help
-help:
-	@echo "This makefile is mainly used to install SW sources to your system. Usually there sould be no need for you to use it."
-	@echo
-	@echo "Usage: make [<target>] [<parameter>=<value> ...]"
-	@echo
-	@echo "Targets:"
-	@echo
-	@echo "  install     : Install software source files to the directory given by parameter INSTALL_DIR"
-	@echo "                (default: /opt/paranut), (not viable when working in a pn-newproject dir)"
-	@echo "  build       : currently equivalent to build-sim, as hardware-synthesis is temporarily not supported"
-	@echo "  build-sim   : build pn-sim binary from sysc sources"
-	@echo "  clean       : Clean all subdirectories (delete compilation artefacts)"
-	@echo "                (default: /opt/paranut)"
-
-
-.PHONY: build
-build: build-sim
-
-.PHONY: build-sim
-build-sim:
-	$(MAKE) -C $(PNS_SYSC_DIR) build-sim
 
 
 ################################################################################
 #                                                                              #
-#     Cleaning                                                                 #
+#   Configuration                                                              #
 #                                                                              #
 ################################################################################
-.PHONY: clean
-clean: $(TARGET_DIRS)
-	rm -rf $(PNS_SYSC_INC_DIR) $(PNS_SYSC_LIB_DIR) $(PNS_SYSC_SV_DIR) $(PNS_SYSC_V_DIR) $(PNS_HAL_INC_DIR) $(PNS_HAL_LIB_DIR)
+
+
+# Declare that this is the root of a system ...
+PN_BUILD_INIT := 1
+PN_SYSTEM := .
+
+
+# Submodules ...
+#   Define the submodules this module depends on.
+#
+#   The build system will automatically build them by the 'build' target before
+#   executing the 'build-all' recipe defined below. Submodules are "installed"
+#   into $PN_BUILD_DIR, so that no search paths for compiling/linking must be
+#   set here.
+#   Only PN_HW_LDFLAGS must be extended to load the submodules when linking.
+PN_SUBMODULES := hw
+
+
+# Include PicoNut setup ...
+include ../../piconut.mk
+
+
+
+# Software to integrate ...
+SW ?= sw/apps/hello_piconut
+
+
+# Prebuild all required PicoNut modules ...
+build-prepare:
+	$(PN_PREBUILD) MODULES=hw/cpu:hw/interconnect:hw/peripherals/uart:hw/peripherals/uart_soft:$(SW)
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Software                                                                   #
+#                                                                              #
+################################################################################
+
+
+SW_NAME := $(notdir $(SW))
+SW_ELF := $(PN_STAGE_DIR)/sw/bin/$(SW_NAME).rv32
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Simulation                                                                 #
+#                                                                              #
+################################################################################
+
+
+.PHONY: sim
+sim: build
+	$(PN_MODULE_BUILD_DIR)/hw/sim/refdesign_sim $(PN_STAGE_DIR)/sw/bin/$(SW_NAME).rv32
+
+.PHONY: run-hello
+run-hello: sim
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Synthesis                                                                  #
+#                                                                              #
+################################################################################
+
+# At this level, the RTL model of the complete system (from 'hw/') is
+# combined with a memory pre-initialized with the software (from 'sw/').
+
+
+
+
+
+##### Phase 2+3: Gate-level and layout synthesis ###############################
+
+# (Nothing to be done here)
+
+# Embedded memory (eMem) Verilog module ...
+#   NOTE: The configuration (MEMBRANA_EMEM_CONFIG) must match the rules given by the
+#         respective Membrana module (presently documented in `membrana_hw/Makefile`)
+MEMBRANA_EMEM := $(PN_MODULE_BUILD_DIR)/syn/membrana_hw_emem.v
+MEMBRANA_EMEM_CONFIG := -m m_membrana_hw_emem -p 2 -a 32 -d 4x8 -s $(PN_CFG_MEMBRANA_EMEM_SIZE)
+
+$(MEMBRANA_EMEM): $(SW_ELF)
+	@$(PN_TOOLS_BIN)/pn-memgen $(MEMBRANA_EMEM_CONFIG) -i $(SW_ELF) -ib $(PN_CFG_MEMBRANA_EMEM_BASE) $@
+
+.PHONY: build-emem
+build-emem: $(MEMBRANA_EMEM)
+
+
+# Synthesis inputs ...
+#   Name all RTL files (Verilog, VDHL) and presynthesized modules to be passed
+#   to the synthesis tool. In most cases, (only) the SystemC synthesis result
+#   (PN_SYSTEMC_OUTPUT) will be passed here.
+#
+PN_NETLIST_SRC := $(PN_MODULE_BUILD_DIR)/hw/syn/hw.v \
+  $(PN_STAGE_DIR)/hw/syn/cpu.$(PN_CFG_BOARD).v \
+  $(PN_STAGE_DIR)/hw/syn/uart.$(PN_CFG_BOARD).v \
+  $(MEMBRANA_EMEM)
+
+
+# Name of the top-level module ...
+PN_TOPLEVEL := m_refdesign
+
+
+# Board constraints ...
+PN_BOARD_CONSTRAINTS := boards/ulx3s/ulx3s.lpf
+
+
+# Declare dependencies ...
+#   Declare the source files on which the netlist generation step depends.
+#   Usually, the following line can be left untouched.
+$(PN_NETLIST_OUTPUT): $(PN_NETLIST_SRC)
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Help                                                                       #
+#                                                                              #
+################################################################################
+
+
+define HELP_TARGETS_LOCAL
 	@echo
-	@echo "### All $(PN_SYSTEM) directories cleaned ###"
+	@echo "  sim   : Build and run the simulator with software SW for the system."
+endef
+
+
+define HELP_PARAMETERS_LOCAL
+	@echo "  SW    : Select the software to run in the refdesign system."
+	@echo "          This either means the software to simulate (sim target) or"
+	@echo "           the software to to include in the flashable bit-file."
+	@echo "          Input in module form so from repository root to the directory of the Software Makefile"
+	@echo "          (Default = $(subst $() $(),:,$(SW)))"
+	@echo
+endef
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Exported global targets                                                    #
+#                                                                              #
+################################################################################
+
+
+# Build ...
+build-syn: build-layout
+
+
+# Verify ...
+verify-syn: build-layout
+
+
+# Install ...
+install-syn: build-syn
+	$(PN_INSTALL_HW_SYN) $(PN_LAYOUT_OUTPUT)

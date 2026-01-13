@@ -1,3 +1,6 @@
+/* OBSOLETE: [2025-08-12] This file appears to be unused and will be removed soon. */
+
+
 /*************************************************************************
 
   This file is part of the PicoNut project.
@@ -33,7 +36,7 @@
 #ifndef PN_PORTS_H
 #define PN_PORTS_H
 #include "systemc.h"
-#include "base.h"
+#include <piconut.h>
 
 // IPort Struct for PicoNut
 struct IPort_Core {

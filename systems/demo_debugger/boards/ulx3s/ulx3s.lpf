@@ -1,0 +1,63 @@
+#  -----------------------------------------------------------------------------
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2025-2026 Johannes Hofmann <johannes.hofmann1@tha.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  -----------------------------------------------------------------------------
+
+BLOCK RESETPATHS;
+BLOCK ASYNCPATHS;
+## ULX3S v3.1.6 and v3.1.7
+
+# The clock "usb" and "gpdi" sheet
+LOCATE COMP "clk" SITE "G2";
+IOBUF  PORT "clk" PULLMODE=NONE IO_TYPE=LVCMOS33;
+FREQUENCY PORT "clk" 25 MHZ;
+
+# JTAG and SPI FLASH voltage 3.3V and options to boot from SPI flash
+# write to FLASH possible any time from JTAG:
+SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62 SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=ENABLE SLAVE_PARALLEL_PORT=DISABLE;
+
+LOCATE COMP "reset" SITE "R1";  # FIRE1
+IOBUF  PORT "reset" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;
+
+# UART over the FTDI/USB connector
+LOCATE COMP "tx_o" SITE "L4"; # FPGA transmits to ftdi
+LOCATE COMP "rx_i" SITE "M1"; # FPGA receives from ftdi
+IOBUF  PORT "tx_o" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "rx_i" PULLMODE=UP IO_TYPE=LVCMOS33;
+
+# JTAG
+LOCATE COMP "tdo_o" SITE "C18";
+LOCATE COMP "tck_i" SITE "B15";
+LOCATE COMP "tms_i" SITE "B17";
+LOCATE COMP "tdi_i" SITE "C16";
+IOBUF PORT  "tdo_o" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT  "tck_i" PULLMODE=UP IO_TYPE=LVCMOS33;
+IOBUF PORT  "tms_i" PULLMODE=UP IO_TYPE=LVCMOS33;
+IOBUF PORT  "tdi_i" PULLMODE=UP IO_TYPE=LVCMOS33;
+

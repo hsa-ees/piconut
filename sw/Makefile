@@ -2,12 +2,11 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2010-2020 Alexander Bahle <alexander.bahle@hs-augsburg.de>
-#                          Gundolf Kiefer <gundolf.kiefer@hs-augsburg.de>
+#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
-#    PicoNut software section Makefile.
+#    Master Makefile for all software modules.
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -33,79 +32,32 @@
 #  -----------------------------------------------------------------------------
 
 
-PICONUT_HOME ?= $(abspath $(CURDIR)/..)
-include $(PICONUT_HOME)/directory-base.mk
 
-TARGET_DIRS := $(shell find $(SW_APPLICATIONS_DIR)/* -type d)
-# TARGET_DIRS += $(shell find $(SW_TEST_APPLICATIONS_DIR)/* -type d)
-# TARGET_DIRS += $(shell find $(SW_OS_DIR)/* -type d)
-TARGET_DIRS += $(shell find $(HAL_DIR)/* -type d)
-TARGET_DIRS += $(shell find $(SW_BOOTLOADER_DIR)/* -type d)
-
-################################################################################
-#                                                                              #
-#     Default and help targets                                                 #
-#                                                                              #
-################################################################################
-
-
-# Default target ...
-.PHONY: all
-all: help
-
-.PHONY: $(TARGET_DIRS)
-$(TARGET_DIRS):
-	-$(MAKE) -C $@ clean 2> /dev/null
-
-# Print usage info ...
-.PHONY: help
-help:
-	@echo "This makefile is mainly used to install SW sources to your system. Usually there sould be no need for you to use it."
-	@echo
-	@echo "Usage: make [<target>] [<parameter>=<value> ...]"
-	@echo
-	@echo "Targets:"
-	@echo
-	@echo "  install     : Install software source files to the directory given by parameter INSTALL_DIR"
-	@echo "                (default: /opt/paranut)"
-	@echo "  clean-all       : Clean all subdirectories (delete compilation artefacts)""
-	@echo "                (default: /opt/paranut)"
 
 
 ################################################################################
 #                                                                              #
-#     Installing                                                               #
+#   Configuration                                                              #
 #                                                                              #
 ################################################################################
-INSTALL_DIR_SUFFIX=$(subst $(PICONUT_HOME),,$(SW_DIR))
-.PHONY: install
-install: | install-base $(OS_INSTALL)
 
 
-.PHONY: install-base
-install-base:
-	@echo
-	@echo "### Installing SW sources to $(INSTALL_DIR) ###"
-	mkdir -p $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX); \
-	cp -dr --no-preserve=ownership $(HAL_DIR) $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX); \
-	cp -dr --no-preserve=ownership $(SW_APPLICATIONS_DIR)/hello_newlib $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX)
+# TBD+: Port and add more software modules here.
 
-freertos:
-	@make -C $(SW_OS_DIR)/freertos externals; \
-	cp -dr --no-preserve=ownership $(SW_OS_DIR)/freertos $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX)/freertos; \
-	cp -dr --no-preserve=ownership $(SW_OS_DIR)/freertos_hello $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX)/freertos_hello
 
-linux:
-	cp -dr --no-preserve=ownership $(SW_OS_DIR)/linux $(INSTALL_DIR)/$(INSTALL_DIR_SUFFIX)/linux;
+# Submodules ...
+PN_SUBMODULES := apps/hello_piconut apps/animation
 
-all-os: freertos linux
+
+# Include PicoNut setup ...
+include ../piconut.mk
+
+
+
+
 
 ################################################################################
 #                                                                              #
-#     Cleaning                                                                 #
+#   Global Targets                                                             #
 #                                                                              #
 ################################################################################
-.PHONY: clean-all
-clean-all: $(TARGET_DIRS)
-	@echo
-	@echo "### All sw directories cleaned ###"

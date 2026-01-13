@@ -46,8 +46,8 @@ TESTBENCH_SRC = top_tb.cpp
 # SIM_SRC:                  Sources that are only used in simulationon
 SIM_SRC = top.cpp
 
-# MEMU_VERSION:             Version of the MEMU module to use in the piconut
-MEMU_VERSION = simonlymemu
+# MEMBRANA_VERSION:             Version of the membrana module to use in the piconut
+MEMBRANA_VERSION = membrana_soft
 
 #NUCLEUS_VERSION:             Version of the CORE module to use in the piconut
 NUCLEUS_VERSION = minimalnucleus
@@ -71,10 +71,10 @@ MODULE_LDFLAGS =
 #							the test bench cpp
 SYNTHESIS_TOP_MODULE =
 
-# PICONUT_MEMU_NUCLEUS_SELECT: 	Selects the version of the MEMU and NUCLEUS module
-#								used for the build of the piconut library (don't touch)
-PICONUT_MEMU_NUCLEUS_SELECT = -D__$(shell echo ${NUCLEUS_VERSION} | tr '[:lower:]' '[:upper:]')__ \
-							  -D__$(shell echo ${MEMU_VERSION} | tr '[:lower:]' '[:upper:]')__
+# PICONUT_MEMBRANA_NUCLEUS_SELECT: 	Selects the version of the membrana and nucleus module
+#									used for the build of the piconut library (don't touch)
+PICONUT_MEMBRANA_NUCLEUS_SELECT = -D__$(shell echo ${NUCLEUS_VERSION} | tr '[:lower:]' '[:upper:]')__ \
+							  -D__$(shell echo ${MEMBRANA_VERSION} | tr '[:lower:]' '[:upper:]')__
 
 # name the sim target different from the module name for
 # historical reasons

@@ -1,8 +1,10 @@
+
 /*************************************************************************
 
   This file is part of the PicoNut project.
 
-  Copyright (C)      2024 Marco Milenkovic <Marco.Milenkovic@hs-augsburg.de>
+  Copyright (C) 2025 Claus Janicher <claus.janicher@tha.de>
+                2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
 
@@ -32,117 +34,77 @@
 #include <stdint.h>
 #include <systemc.h>
 #include "top.h"
-// This is only needed for current debugging
-#include "c_soft_peripheral.h"
-#include "c_soft_uart.h"
-#include "c_soft_memory.h"
-//-------------------------------------------
 
 #define PERIOD_NS 10.0
-#define UART_BASE_ADDR 0x30000000
-#define debug
 
 // initialize TB signals
-sc_signal<bool> PN_NAME(clk);
+sc_signal<bool> PN_NAME(clk_25);
 sc_signal<bool> PN_NAME(reset);
+
+sc_signal<bool> PN_NAME(rx_i);
+sc_signal<bool> PN_NAME(tx_o);
 
 void run_cycle(int cycles = 1)
 {
-    for(int i = 0; i < cycles; i++)
+    for (int i = 0; i < cycles; i++)
     {
-        clk = 0;
+        clk_25 = 0;
         sc_start(PERIOD_NS / 2, SC_NS);
-        clk = 1;
+        clk_25 = 1;
         sc_start(PERIOD_NS / 2, SC_NS);
     }
 }
 
-int sc_main(int argc, char** argv)
+int sc_main(int argc, char **argv)
 {
-
-    pn_parse_enable_trace_core = 1;                   // enable core trace dump
     pn_cfg_enable_application_path = 1;               // enable application path in program args
     PN_PARSE_CMD_ARGS(argc, argv);                    // parse command line arguments
-    sc_trace_file* tf = PN_BEGIN_TRACE("piconut_tb"); // create trace file
+    sc_trace_file *tf = PN_BEGIN_TRACE("piconut_tb"); // create trace file
 
     // Initialliaze the Design under Testing (DUT)
-    m_top dut_inst{"dut_inst"}; // this is the Design name needed by the svc_too
-
-    // Connect the signals
-    dut_inst.clk(clk);
-    dut_inst.reset(reset);
-
-    std::unique_ptr<c_soft_uart> uart = std::make_unique<c_soft_uart>(0x22, UART_BASE_ADDR);
-    dut_inst.piconut->simmemu->add_peripheral(UART_BASE_ADDR, std::move(uart));
+    m_refdesign i_dut{"i_dut"}; // this is the Design name needed by the svc_tool
 
     // connects signals from TOP to TB
-    dut_inst.piconut->simmemu->load_elf(pn_cfg_application_path);
+    i_dut.clk(clk_25);
+    i_dut.reset(reset);
+    i_dut.rx_i(rx_i);
+    i_dut.tx_o(tx_o);
 
-    dut_inst.piconut->simmemu->list_all_peripherals();
-
-    // Traces of Signals
-    dut_inst.Trace(tf, pn_cfg_vcd_level); // Trace signals of the DUT
-    // traces of local signals here
-
-    uint64_t memory_address = 0x10000000;
-    c_soft_peripheral* found_peripheral = dut_inst.piconut->simmemu->find_peripheral(memory_address); // search for peripheral in the list of peripherals
-    if(found_peripheral)
-    {
-        c_soft_memory* memory = dynamic_cast<c_soft_memory*>(found_peripheral); // cast the found peripheral to Memory object
-        if(memory)
-        {
-            // If the peripheral is correctly identified as a Memory object, dump its contents
-            memory->dump_memory("memory_dump_pre.txt");
-            std::cout << "Memory dump successful." << std::endl;
-        }
-        else
-        {
-            std::cerr << "Found peripheral is not a Memory object." << std::endl;
-        }
-    }
-    else
-    {
-        std::cerr << "No peripheral found at address 0x" << std::hex << memory_address << "." << std::endl;
-    }
+    i_dut.pn_trace(tf, pn_cfg_vcd_level); // trace signals of DUT
 
     sc_start(SC_ZERO_TIME); // start simulation
+
+#ifndef __SYNTHESIS__
+
     cout << "\n\t\t*****Simulation started*****" << endl;
 
     // Testbench code here
+
     reset = 1;
-    run_cycle(); // end with a wait
-    reset = 0;
     run_cycle(2);
+    reset = 0;
 
-    while(dut_inst.piconut->state_is_not_halt())
-    {
-        run_cycle(1);
+    while (i_dut.cpu->state_is_not_halt()) {
+        run_cycle();
     }
-    run_cycle(1);
 
-    memory_address = 0x10000000;
-    found_peripheral = dut_inst.piconut->simmemu->find_peripheral(memory_address); // search for peripheral in the list of peripherals
-    if(found_peripheral)
-    {
-        c_soft_memory* memory = dynamic_cast<c_soft_memory*>(found_peripheral); // cast the found peripheral to Memory object
-        if(memory)
-        {
-            // If the peripheral is correctly identified as a Memory object, dump its contents
-            memory->dump_memory("memory_dump.txt");
-            std::cout << "Memory dump successful." << std::endl;
-        }
-        else
-        {
-            std::cerr << "Found peripheral is not a Memory object." << std::endl;
-        }
-    }
-    else
-    {
-        std::cerr << "No peripheral found at address 0x" << std::hex << memory_address << "." << std::endl;
+    // Testing if resetting the Nucleus works after completing the Hello World program
+
+    reset = 1;
+    run_cycle(10);
+    reset = 0;
+    run_cycle(10);
+
+    cout << "\n\t\t*****Simulation waiting reset and repeat*****" << endl;
+
+    while (i_dut.cpu->state_is_not_halt()) {
+        run_cycle();
     }
 
     PN_END_TRACE();
     cout << "\n\t\t*****Simulation complete*****" << endl;
+
+#endif // __SYNTHESIS__
 
     return 0;
 }

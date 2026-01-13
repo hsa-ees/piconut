@@ -32,11 +32,8 @@
 #ifndef __TOP_H__
 #define __TOP_H__
 
-#include <systemc.h>
-#include "elab_alloc.h"
+#include <piconut.h>
 
-// Include the header files of the submodules
-#include "piconut.h"
 
 SC_MODULE(m_top)
 {
@@ -53,19 +50,23 @@ public:
     // Constructor/Destructors
     SC_CTOR(m_top)
     {
+        SC_METHOD(proc_cmb);
 
         init_submodules();
     }
 
     // Functions
-    void Trace(sc_trace_file * tf, int level = 1);
+    void pn_trace(sc_trace_file * tf, int level = 1);
 
     // Processes
+    void proc_cmb();
 
     // Submodules
     m_piconut* piconut;
 
 protected:
+
+    sc_signal<bool> PN_NAME(dummy_low);
     // Methods
     void init_submodules();
 };

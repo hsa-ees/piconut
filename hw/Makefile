@@ -2,13 +2,11 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2010-2020 Alexander Bahle <alexander.bahle@hs-augsburg.de>
-#                          Gundolf Kiefer <gundolf.kiefer@hs-augsburg.de>
-#					  2024 Lukas Bauer <lukas.bauer1@tha.de>
+#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
-#    PicoNut hardware section Makefile.
+#    Master Makefile for all hardware modules.
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -34,61 +32,29 @@
 #  -----------------------------------------------------------------------------
 
 
-PICONUT_HOME ?= $(abspath $(CURDIR)/..)
-include $(PICONUT_HOME)/directory-base.mk
 
-TARGET_DIRS := $(shell find $(HW_PICONUT_MEMUS_DIR)/* -type d)
-TARGET_DIRS += $(shell find $(HW_PICONUT_NUCLEI_DIR)/* -type d)
-TARGET_DIRS += $(shell find $(HW_PERIPHERALS_DIR)/* -type d)
-TARGET_DIRS += $(HW_COMMON_DIR)
-################################################################################
-#                                                                              #
-#     Default and help targets                                                 #
-#                                                                              #
-################################################################################
-
-
-# Default target ...
-.PHONY: all
-all: help
-
-.PHONY: $(TARGET_DIRS)
-$(TARGET_DIRS):
-	-$(MAKE) -C $@ clean 2> /dev/null
-
-# Print usage info ...
-.PHONY: help
-help:
-	@echo "This makefile is mainly used to clean HW directories. Usually there sould be no need for you to use it."
-	@echo
-	@echo "Usage: make [<target>] [<parameter>=<value> ...]"
-	@echo
-	@echo "Targets:"
-	@echo
-	@echo "  install     : Install hardware source files to the directory given by parameter INSTALL_DIR"
-	@echo "                (default: /opt/piconut)"
-	@echo "  clean-all       : Clean all subdirectories (delete compilation artefacts)""
-	@echo "                (default: /opt/piconut)"
 
 
 ################################################################################
 #                                                                              #
-#     Installing                                                               #
+#   Configuration                                                              #
 #                                                                              #
 ################################################################################
-.PHONY: install
-install:
-	@echo
-	@echo "### Installing HW sources to $(INSTALL_DIR) ###"
-	cp -dr --no-preserve=ownership $(HW_DIR) $(INSTALL_DIR);
 
 
+# Submodules ...
+PN_SUBMODULES := cpu peripherals cpu_peripherals interconnect
+
+
+# Include PicoNut setup ...
+include ../piconut.mk
+
+
+
+
+
 ################################################################################
 #                                                                              #
-#     Cleaning                                                                 #
+#   Global Targets                                                             #
 #                                                                              #
 ################################################################################
-.PHONY: clean-all
-clean-all: $(TARGET_DIRS)
-	@echo
-	@echo "### All hw directories cleaned ###"

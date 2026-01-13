@@ -1,0 +1,326 @@
+#!/usr/bin/python3
+
+###########################################################################
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2023 Lukas Bauer <lukas.bauer@hs-augsburg.de>
+#                2025 Niklas Sirch <niklas.sirch1@tha.de>
+#      Efficient Embedded Systems Group
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###########################################################################
+
+
+"""
+Tool to create memory initialization files from ELF files.
+"""
+
+from dataclasses import dataclass
+import os
+import subprocess
+import argparse
+from itertools import islice
+from typing import Literal, Sequence, TypeVar
+
+# WORD size has to match implementation. This is not configurable here as it is part of the general output format which is not configurable.
+WORD_SIZE = 4  # bytes
+
+T = TypeVar("T")
+
+
+def chunk(iterable: Sequence[T], size: int) -> Sequence[tuple[T, T]]:
+    it = iter(iterable)
+    return iter(lambda: tuple(islice(it, size)), ())  # type: ignore
+
+
+def extract_section(
+    filename: str, section_name: str, *, objdump_path: str
+) -> list[str]:
+    """
+    Extract a section from an ELF file and return its contents as a list of WORD sized binary strings.
+    """
+    # Objdump to dump the wanted section
+    command = [objdump_path, "-j", f"{section_name}", "-s", filename]
+    result = subprocess.run(command, capture_output=True, text=True, check=True)
+
+    # Extract the hex values from the output
+    output_lines = result.stdout.split("\n")
+
+    # Find the index of the first line with hex values
+    start_index: int = 0
+    for i, line in enumerate(output_lines):
+        if line.startswith(("Contents of")):
+            start_index = i
+            break
+
+    # Exclude the lines before the hex values and create list for hex values
+    lines = output_lines[start_index + 1 :]
+    word_values: list[str] = []
+
+    # extract the hex values for each line
+    for line in lines:
+        line = line[9:-18]
+        blocks = line.split()
+        # make the data little endian
+        blocks = [block[6:8] + block[4:6] + block[2:4] + block[0:2] for block in blocks]
+        word_values.extend(blocks)
+
+    # convert the hex blocks from hex strings to binary strings
+    word_values = [bin(int(hex_value, 16))[2:].zfill(32) for hex_value in word_values]
+
+    return word_values
+
+
+@dataclass
+class Section:
+    name: str
+    size: int
+    vma: int
+    lma: int
+    file_off: int
+    flags: list[str]
+
+
+def parse_sections(filename: str, *, objdump_path: str):
+    command = [objdump_path, "-h", filename]
+    result = subprocess.run(command, capture_output=True, text=True)
+    """ Example output
+    ...
+    Sections: # VMA (virtual memory address), LMA (load memory address)
+    Idx Name          Size      VMA       LMA       File off  Algn
+    0 .text         00015ee8  10000000  10000000  00001000  2**3
+                    CONTENTS, ALLOC, LOAD, READONLY, CODE
+    1 .data         000009c4  10020000  10015f98  00017000  2**3
+                    CONTENTS, ALLOC, LOAD, DATA
+    """
+
+    out_lines = result.stdout.splitlines()
+
+    try:
+        table_start = next(
+            i for i, line in enumerate(out_lines) if line.startswith("Idx Name")
+        )
+    except StopIteration:
+        raise ValueError("Could not find section table in objdump output", result)
+    table_lines = out_lines[table_start + 1 :]
+    sections: list[Section] = []
+    for section, flags in chunk(table_lines, 2):
+        parts = section.split()
+        if len(parts) != 7:
+            raise ValueError("Unexpected format of objdump output", section)
+        sections.append(
+            Section(
+                name=parts[1],
+                size=int(parts[2], 16),
+                vma=int(parts[3], 16),
+                lma=int(parts[4], 16),
+                file_off=int(parts[5], 16),
+                flags=list(map(str.strip, flags.split(", "))),
+            )
+        )
+    return sections
+
+
+def parse_entrypoint(filename: str, *, objdump_path: str):
+    command = [objdump_path, "-f", filename]
+    result = subprocess.run(command, capture_output=True, text=True)
+    """ Example output
+    ...
+    architecture: riscv:rv32
+    start address 0x10000000
+    """
+
+    # Extract the hex values from the output
+    output_lines = result.stdout.split("\n")
+
+    # Find the index of the first line with hex values
+    entrypoint: int | None = None
+    for line in output_lines:
+        if line.startswith(("start address")):
+            entrypoint = int(line.split()[2], 16)
+            break
+
+    if entrypoint is None:
+        raise ValueError("Could not find entrypoint in objdump output", result)
+
+    return entrypoint
+
+
+class Args(argparse.Namespace):
+    command: Literal["sections", "rom"]
+
+    in_path: str
+    start_address: int
+    entrypoint: int | None
+    size: int
+    objdump_path: str
+
+    sections: list[str]
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument(
+        "--objdump-path",
+        type=str,
+        help="Path to the objdump binary",
+        default="riscv64-unknown-elf-objdump",
+    )
+
+    subparsers = parser.add_subparsers(dest="command")
+    sections_parser = subparsers.add_parser(
+        "sections", help=create_sections_mem.__doc__
+    )
+    sections_parser.add_argument(
+        "--sections",
+        nargs="+",
+        help="Name of the sections to extract (e.g. --sections .text .data)",
+    )
+    sections_parser.add_argument("in_path", type=str, help="Path to the elf file")
+    sections_parser.add_argument(
+        "out_path", type=str, help="Path to the output mem file"
+    )
+
+    rom_parser = subparsers.add_parser("rom", help=create_rom_mem.__doc__)
+    rom_parser.add_argument("in_path", type=str, help="Path to the elf file")
+    rom_parser.add_argument("out_path", type=str, help="Path to the output mem file")
+
+    rom_parser.add_argument(
+        "--entrypoint",
+        type=lambda x: int(x, 0),
+        help="Entry point address",
+        required=False,
+    )
+    rom_parser.add_argument(
+        "--start-address",
+        type=lambda x: int(x, 0),
+        help="Start address of the section",
+    )
+    rom_parser.add_argument(
+        "--size",
+        type=lambda x: int(x, 0) * WORD_SIZE,
+        help=f"Size of memory in WORDS ({WORD_SIZE} bytes each)",
+    )
+    args = parser.parse_args(namespace=Args())
+    if args.command is None:  # type: ignore
+        parser.print_help()
+        parser.exit(1)
+    return args
+
+
+def validate_section(section: Section, start_address: int, size: int):
+    # This also checks if ram is large enough to hold with this section
+    #   4 ._usr_stack_heap 00002000  10020a04  1001695c  00017a04  2**0
+    #          ALLOC
+    if section.lma < start_address or section.lma + section.size > start_address + size:
+        raise ValueError(
+            f"Section {section.name} at loaded address {section.lma:#x} with size {section.size:#x} is out of bounds ({start_address:#x}, {size:#x})"
+        )
+
+    if section.vma < start_address or section.vma + section.size > start_address + size:
+        raise ValueError(
+            f"Section {section.name} at virtual address {section.vma:#x} with size {section.size:#x} is out of bounds ({start_address:#x}, {size:#x})"
+        )
+
+
+def create_rom_mem(args: Args):
+    """
+    Create a ROM mem file by extracting all ALLOC sections from an ELF file and
+    Validating fit for specified blockram and optional entrypoint.
+    """
+    if args.entrypoint is not None:
+        elf_entrypoint = parse_entrypoint(args.in_path, objdump_path=args.objdump_path)
+        if args.entrypoint != elf_entrypoint:
+            raise ValueError(
+                f"Entrypoint mismatch: (args) {args.entrypoint:#x} != (elf) {elf_entrypoint:#x}"
+            )
+
+    sections = parse_sections(args.in_path, objdump_path=args.objdump_path)
+
+    # initialize memory with zeros
+    memory = ["1" * 8 * WORD_SIZE for _ in range(args.size // WORD_SIZE)]
+    for section in sections:
+        if "ALLOC" not in section.flags:
+            continue
+        validate_section(section, args.start_address, args.size)
+
+        if "CONTENTS" not in section.flags:
+            continue  # e.g. .bss section
+
+        word_values = extract_section(
+            args.in_path, section.name, objdump_path=args.objdump_path
+        )
+        if len(word_values) * WORD_SIZE != section.size:
+            raise ValueError(
+                f"Extracted section {section.name} has unexpected size {len(word_values) * WORD_SIZE:#x} != {section.size:#x}"
+            )
+        offset = (section.lma - args.start_address) // WORD_SIZE
+        # replace the values in memory
+        memory[offset : offset + len(word_values)] = word_values
+
+    dirname = os.path.dirname(args.out_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    with open(args.out_path, "w") as f:
+        for line in memory:
+            f.write(line + "\n")
+
+
+def create_sections_mem(args: Args):
+    """
+    Create a mem file by extracting specified sections from an ELF file.
+    """
+    if not args.sections:
+        raise ValueError("No sections specified for extraction")
+
+    memory: list[str] = []
+
+    for section_name in args.sections:
+        word_values = extract_section(
+            args.in_path, section_name, objdump_path=args.objdump_path
+        )
+        memory.extend(word_values)
+
+    dirname = os.path.dirname(args.out_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    with open(args.out_path, "w") as f:
+        for line in memory:
+            f.write(line + "\n")
+
+
+def main():
+    args = parse_args()
+
+    match args.command:
+        case "rom":
+            create_rom_mem(args)
+        case "sections":
+            create_sections_mem(args)
+
+
+if __name__ == "__main__":
+    main()

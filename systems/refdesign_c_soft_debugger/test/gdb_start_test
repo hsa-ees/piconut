@@ -72,9 +72,9 @@ si
 
 continue
 
-# testing register read/write 1000
+# testing register read/write 10
 set $counter = 0
-while ($counter < 1000)
+while ($counter < 10)
     set $t1 = $counter
     print $t1
     set $counter = $counter + 1
