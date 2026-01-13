@@ -1,0 +1,200 @@
+/**
+ * @file dm_defs.h
+ * @brief This file contains definittions of the m_dm module.
+ * @author Johannes Hofmann
+ */
+
+/*************************************************************************
+
+  This file is part of the PicoNut project.
+
+  Copyright (C) 2025 Johannes Hofmann <johannes.hofmann1@tha.de>
+      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+
+  Description:
+      This file contains definitions of the m_dm module.
+
+  Redistribution and use in source and binary forms, with or without modification,
+  are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this
+     list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation and/or
+     other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ *************************************************************************/
+
+/**
+ * @addtogroup m_dm
+ * TODO
+ */
+
+#ifndef __DM_DEFS_H__
+#define __DM_DEFS_H__
+
+#define DMSTATUS_VERSION 3, 0
+#define DMSTATUS_CONFSTRPTRVALID 4
+#define DMSTATUS_HASRESETHALTREQ 5
+#define DMSTATUS_AUTHBUSY 6
+#define DMSTATUS_AUTHENTICATED 7
+#define DMSTATUS_ANYHALTED 8
+#define DMSTATUS_ALLHALTED 9
+#define DMSTATUS_ANYRUNNING 10
+#define DMSTATUS_ALLRUNNING 11
+#define DMSTATUS_ANYUNAVAIL 12
+#define DMSTATUS_ALLUNAVAIL 13
+#define DMSTATUS_ANYNONEEXISTANT 14
+#define DMSTATUS_ALLNONEEXISTENT 15
+#define DMSTATUS_ANYRESUMEACK 16
+#define DMSTATUS_ALLRESUMEACK 17
+#define DMSTATUS_ANYHAVERESET 18
+#define DMSTATUS_ALLHAVERESET 19
+#define DMSTATUS_IMPEBREAK 22
+#define DMSTATUS_STICKYUNAVAIL 23
+#define DMSTATUS_NDMRESETPENDING 24
+
+#define DMCONTROL_DMACTIVE 0
+#define DMCONTROL_NDMRESET 1
+#define DMCONTROL_CLRRESETHALTREQ 2
+#define DMCONTROL_SETRESETHALTREQ 3
+#define DMCONTROL_CLRKEEPALIVE 4
+#define DMCONTROL_SETKEEPALIVE 5
+#define DMCONTROL_HARTSELHI 15, 6
+#define DMCONTROL_HARTSELLO 25, 16
+#define DMCONTROL_HASEL 26
+#define DMCONTROL_ACKUNAVAIL 27
+#define DMCONTROL_ACKHAVERESET 28
+#define DMCONTROL_HARTRESET 29
+#define DMCONTROL_RESUMEREQ 30
+#define DMCONTROL_HALTREQ 31
+
+#define ABSTRACTCS_DATACOUNT 3, 0
+#define ABSTRACTCS_CMDERR 10, 8
+#define ABSTRACTCS_RELAXEDPRIV 11
+#define ABSTRACTCS_BUSY 12
+#define ABSTRACTCS_PROGBUFSIZE 28, 24
+
+#define COMMAND_CMDTYPE 31, 24
+#define COMMAND_REG_REGNO 15, 0
+#define COMMAND_REG_WRITE 16
+#define COMMAND_REG_TRANSFER 17
+#define COMMAND_REG_POSTEXEC 18
+#define COMMAND_REG_AARPOSTINCREMENT 19
+#define COMMAND_REG_AARSIZE 22, 20
+#define COMMAND_MEM_TARGET_SPECIFIC 15, 14
+#define COMMAND_MEM_WRITE 16
+#define COMMAND_MEM_AAMPOSTINCREMENT 19
+#define COMMAND_MEM_AAMSIZE 22, 20
+#define COMMAND_MEM_AAMVIRTUAL 23
+
+#define ABSTRACTAUTO_AUTOEXECDATA 0, 11
+#define ABSTRACTAUTO_AUTOEXECPROGBUF 16, 31
+
+#define HARTSTATUS_HALTED 0
+#define HARTSTATUS_RUNNING 1
+#define HARTSTATUS_HAVERESSET 2
+#define HARTSTATUS_COMMANDS_RUNNING 3
+
+#define HARTCONTROL_RESUMEREQ 0
+#define HARTCONTROL_ACMDS_RUNREQ 1
+
+constexpr unsigned long NUM_ABSTRACT_REGS = 8;
+
+enum e_dmi_reg_adrs
+{
+    DMI_DATA0 = 0x04,
+    DMI_DATA1 = 0x05,
+    DMI_DMCONTROL = 0x10,
+    DMI_DMSTATUS = 0x11,
+    DMI_ABSTRACTCS = 0x16,
+    DMI_COMMAND = 0x17,
+    DMI_ABSTRACTAUTO = 0x18,
+    DMI_PROGBUF0 = 0x20,
+    DMI_PROGBUF1 = 0x21,
+    DMI_PROGBUF2 = 0x22,
+};
+
+enum e_wb_reg_adrs
+{
+    WB_DATA0 = 0x00,
+    WB_DATA1 = 0x04,
+    WB_PROGBUG0 = 0x08,
+    WB_PROGBUG1 = 0x0C,
+    WB_PROGBUG2 = 0x10,
+    WB_ABSTRACT0 = 0x14,
+    WB_ABSTRACT1 = 0x18,
+    WB_ABSTRACT2 = 0x1C,
+    WB_ABSTRACT3 = 0x20,
+    WB_ABSTRACT4 = 0x24,
+    WB_ABSTRACT5 = 0x28,
+    WB_ABSTRACT6 = 0x2C,
+    WB_ABSTRACT7 = 0x30,
+    WB_HARTCONTROL = 0x34,
+    WB_HARTSTATUS = 0x38,
+};
+
+enum e_dmstatus_version
+{
+    DMSTATUS_VERSION_NONE = 0,
+    DMSTATUS_VERSION_0_11 = 1,
+    DMSTATUS_VERSION_0_13 = 2,
+    DMSTATUS_VERSION_1_0 = 3,
+    DMSTATUS_VERSION_CUSTOM = 15,
+};
+
+enum e_abstractcs_cmderr
+{
+    ABSTRACTCS_CMDERR_NONE = 0,
+    ABSTRACTCS_CMDERR_BUSY = 1,
+    ABSTRACTCS_CMDERR_NOTSUPPORT = 2,
+    ABSTRACTCS_CMDERR_EXCEPTION = 3,
+    ABSTRACTCS_CMDERR_HALT_RESUME = 4,
+    ABSTRACTCS_CMDERR_BUS = 5,
+    ABSTRACTCS_CMDERR_OTHER = 7,
+};
+
+enum e_command_cmdtype
+{
+    COMMAND_CMDTYPE_REG = 0,
+    COMMAND_CMDTYPE_QUICK = 1,
+    COMMAND_CMDTYPE_MEMORY = 2,
+};
+
+enum e_command_cmdtype_reg
+{
+    COMMAND_CMDTYPE_REG_CSR = 0x0fff,
+    COMMAND_CMDTYPE_REG_GPR = 0x101f,
+    COMMAND_CMDTYPE_REG_FLOAT = 0x103f,
+    COMMAND_CMDTYPE_REG_RESERVED = 0xffff,
+};
+
+enum e_command_reg_aarsize
+{
+    COMMAND_REG_AARSIZE_32BIT = 2,
+    COMMAND_REG_AARSIZE_64BIT = 3,
+    COMMAND_REG_AARSIZE_128BIT = 4,
+};
+
+enum e_command_mem_aamsize
+{
+    COMMAND_MEM_AAMSIZE_8BIT = 0,
+    COMMAND_MEM_AAMSIZE_16BIT = 1,
+    COMMAND_MEM_AAMSIZE_32BIT = 2,
+    COMMAND_MEM_AAMSIZE_64BIT = 3,
+    COMMAND_MEM_AAMSIZE_128BIT = 4,
+};
+
+#endif

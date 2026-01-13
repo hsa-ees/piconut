@@ -1,22 +1,25 @@
 services:
   piconut:
-    image: piconut_image:latest
+    image: piconut:latest
     container_name: piconut_container
     hostname: piconut_container
     command: bash
+    entrypoint: ["/home/piconut-user/piconut/compose-entrypoint.sh"]
     working_dir: /home/piconut-user/piconut
     volumes:
-      # X11 support (uncomment to use the PicoNut GUI)
-      #~ - /tmp/.X11-unix:/tmp/.X11-unix
+      # X11 support
+      - /tmp/.X11-unix:/tmp/.X11-unix
       # audio support (uncomment to use the PicoNut GUI)
-      #   TBD: Remove the requirement for Pulseaudio
-      #~ - ~/.config/pulse/cookie:/root/.config/pulse/cookie
-      #~ - ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native
+      #   TBD+: Remove the requirement for Pulseaudio
+      - ~/.config/pulse/cookie:/root/.config/pulse/cookie
+      - ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native
       # time
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      # work directory
+      # source directory
       - ./:/home/piconut-user/piconut
+      # build directory
+      # - /var/tmp/piconut-build/:/var/tmp/piconut-build/
       # .ssh for git access (uncomment for git access from inside the container)
       #   NOTE: Beware of security implications - any user on the machine can use your SSH identity!
       #~ - ~/.ssh:/home/piconut-user/.ssh

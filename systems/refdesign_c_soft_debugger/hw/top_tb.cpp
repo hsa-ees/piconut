@@ -67,8 +67,7 @@ std::unique_ptr<c_soft_debugger> make_soft_debugger()
     };
 
     return std::make_unique<c_soft_debugger>(
-        callback_signal_debug_haltrequest,
-        CFG_DEBUG_OPENOCD_PORT);
+        callback_signal_debug_haltrequest);
 }
 
 int sc_main(int argc, char** argv)
@@ -88,23 +87,23 @@ int sc_main(int argc, char** argv)
     dut_inst.debug_haltrequest_ack_out(debug_haltrequest_ack);
 
     std::unique_ptr<c_soft_uart> uart = std::make_unique<c_soft_uart>(0x22, UART_BASE_ADDR);
-    dut_inst.piconut->simmemu->add_peripheral(UART_BASE_ADDR, std::move(uart));
+    dut_inst.piconut->membrana_soft->add_peripheral(UART_BASE_ADDR, std::move(uart));
 
     std::unique_ptr<c_soft_debugger> debugger = make_soft_debugger();
-    dut_inst.piconut->simmemu->add_peripheral(CFG_DEBUG_DEBUGGER_BASE_ADDRESS, std::move(debugger));
+    dut_inst.piconut->membrana_soft->add_peripheral(CFG_DEBUG_DEBUGGER_BASE_ADDRESS, std::move(debugger));
 
     // Connects signals from TOP to TB
-    dut_inst.piconut->simmemu->load_elf(pn_cfg_application_path);
+    dut_inst.piconut->membrana_soft->load_elf(pn_cfg_application_path);
 
-    dut_inst.piconut->simmemu->list_all_peripherals();
+    dut_inst.piconut->membrana_soft->list_all_peripherals();
 
     // Traces of Signals
-    dut_inst.Trace(tf, pn_cfg_vcd_level); // Trace signals of the DUT
+    dut_inst.pn_trace(tf, pn_cfg_vcd_level); // Trace signals of the DUT
                                           // traces of local signals here
 
     // Get soft debugger
     c_soft_peripheral* found_peripheral_dm =
-        dut_inst.piconut->simmemu->find_peripheral(CFG_DEBUG_DEBUGGER_BASE_ADDRESS);
+        dut_inst.piconut->membrana_soft->find_peripheral(CFG_DEBUG_DEBUGGER_BASE_ADDRESS);
     PN_ASSERT(found_peripheral_dm);
 
     c_soft_debugger* soft_debugger = dynamic_cast<c_soft_debugger*>(found_peripheral_dm);

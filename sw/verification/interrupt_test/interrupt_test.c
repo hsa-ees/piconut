@@ -1,0 +1,462 @@
+/**
+ * @file interrupt_demo.c
+ * @brief RISC-V interrupt demonstration program and test application
+ *
+ * This program demonstrates the implementation and handling of various interrupt types
+ * on a RISC-V system using the Core Local Interruptor (CLINT). It showcases:
+ * - Timer interrupts using CLINT's memory-mapped timer
+ * - Software interrupts triggered via CLINT's MSIP register
+ * - External interrupts (placeholder implementation)
+ * - Proper interrupt handler registration and enabling
+ *
+ * It also serves as a system test for interrupts.
+ *
+ * The program runs in a main loop that periodically triggers software interrupts
+ * while timer interrupts occur at regular intervals in the background.
+ *
+ * THIS PROGRAM NEEDS `IS_HW_CLINT` TO BE DEFINED AS 0 or 1
+ */
+
+#include <stdio.h>
+#include <stdint.h>
+#include <assert.h>
+
+#include <clint_defs.h>
+
+#ifndef IS_HW_CLINT
+#error "IS_HW_CLINT must be defined as 0 (software CLINT) or 1 (hardware CLINT)"
+#define IS_HW_CLINT -1 // make linter happy
+#endif
+
+/**
+ * Global variables for interrupt tracking and state management
+ * These variables are declared volatile to prevent compiler optimizations
+ * that could interfere with interrupt-driven updates
+ */
+volatile uint32_t timer_interrupt_count = 0; // Counter for timer interrupts received
+volatile uint32_t sw_interrupt_count = 0;    // Counter for software interrupts received
+volatile uint32_t timer_running = 0;         // Flag indicating if periodic timer is active
+volatile uint32_t timer_interval = 0;        // Interval between timer interrupts (in clock ticks)
+volatile uint32_t mtime_hi_value = 0;        // Stored value of MTIME high register for overflow detection
+volatile uint32_t overflow_count = 0;        // Counter for MTIME lower register overflows
+volatile uint32_t sw_interrupt_active = 0;   // Flag indicating if a software interrupt is currently pending
+
+/**
+ * @brief Software Interrupt Service Routine (ISR)
+ *
+ * This function is called automatically when a software interrupt occurs.
+ * It clears the interrupt condition, updates tracking variables, and provides
+ * debug output to indicate the interrupt was handled.
+ */
+void sw_isr(void)
+{
+    // Clear the software interrupt by writing 0 to the MSIP register
+    // This is required to acknowledge the interrupt and prevent it from firing again
+    volatile uint32_t* msip = (volatile uint32_t*)CLINT_REG_MSIP_ADDR;
+    *msip = 0;
+
+    // Reset the software interrupt active flag and increment the counter
+    // These variables help track interrupt state and provide statistics
+    sw_interrupt_active = 0;
+    sw_interrupt_count++;
+
+    // Debug output to confirm interrupt handling
+    printf("Software interrupt handled\n");
+    printf("sw interrupt active: %d\n", sw_interrupt_active);
+}
+
+/**
+ * @brief Timer Interrupt Service Routine (ISR)
+ *
+ * This function is called by the main interrupt handler when a timer interrupt occurs.
+ * It handles the periodic timer interrupt by:
+ * - Incrementing the interrupt counter
+ * - Reading the current timer value
+ * - Tracking timer overflow events
+ * - Setting up the next timer interrupt
+ *
+ * The timer uses a 64-bit comparison between MTIME and MTIMECMP registers.
+ */
+void timer_isr(void)
+{
+    // Increment the timer interrupt counter for statistics
+    timer_interrupt_count++;
+
+    // Read current timer values from CLINT registers
+    // MTIME is a 64-bit register split into two 32-bit parts
+    volatile uint32_t* mtime_lo = (volatile uint32_t*)CLINT_REG_MTIME_LO;
+    volatile uint32_t* mtime_hi = (volatile uint32_t*)CLINT_REG_MTIME_HI;
+    uint32_t current_time_lo = *mtime_lo;
+    uint32_t current_time_hi = *mtime_hi;
+
+    // Track high register changes to detect timer overflows
+    // This is useful for debugging and understanding timer behavior
+    if(current_time_hi != mtime_hi_value)
+    {
+        overflow_count++;
+        mtime_hi_value = current_time_hi;
+    }
+
+    // Get pointers to MTIMECMP registers for setting next interrupt time
+    volatile uint32_t* mtimecmp_lo = (volatile uint32_t*)CLINT_REG_MTIMECMP_LO;
+    volatile uint32_t* mtimecmp_hi = (volatile uint32_t*)CLINT_REG_MTIMECMP_HI;
+
+    // Calculate next compare time using full 64-bit arithmetic
+    // This ensures proper handling of timer overflow conditions
+    uint64_t current_time = ((uint64_t)current_time_hi << 32) | current_time_lo;
+    uint64_t next_time = current_time + timer_interval;
+
+    // Set both registers for proper 64-bit comparison (first set LO to maximum value to prevent
+    // spurious timer interrupts during the atomic 64-bit update sequence)
+    *mtimecmp_lo = -1;
+    // Write high register to avoid race conditions during the update
+    *mtimecmp_hi = (uint32_t)(next_time >> 32);
+    *mtimecmp_lo = (uint32_t)(next_time & 0xFFFFFFFF);
+}
+
+/**
+ * @brief External Interrupt Service Routine (ISR)
+ *
+ * This function serves as a placeholder for handling external interrupts.
+ * External interrupts are typically generated by peripheral devices or
+ * external hardware components connected to the RISC-V system.
+ *
+ * In a real implementation, this function would:
+ * - Identify the source of the external interrupt
+ * - Perform appropriate handling based on the interrupt source
+ * - Acknowledge the interrupt to the interrupt controller
+ */
+void extern_isr(void)
+{
+    // Placeholder implementation - simply print a message
+    // In a real system, this would contain device-specific interrupt handling
+    printf("External interrupt handled\n");
+}
+
+/**
+ * @brief Main Interrupt Handler
+ *
+ * This is the top-level interrupt handler that is called by the RISC-V hardware
+ * when any interrupt occurs. It uses the interrupt attribute to ensure proper
+ * context saving and restoration.
+ *
+ * The function reads the MCAUSE CSR to determine the type of interrupt and
+ * dispatches to the appropriate specific interrupt service routine.
+ *
+ * RISC-V interrupt encoding in MCAUSE:
+ * - Bit 31: Interrupt flag (1 = interrupt, 0 = exception)
+ * - Bits 30-0: Interrupt/exception code
+ *   - Code 3: Machine software interrupt
+ *   - Code 7: Machine timer interrupt
+ *   - Code 11: Machine external interrupt
+ */
+void __attribute__((interrupt)) handle_interrupt()
+{
+    // Read the Machine Cause (MCAUSE) CSR to determine interrupt type
+    // MCAUSE contains both the interrupt flag and the specific cause code
+    uint32_t mcause;
+    __asm__ volatile("csrr %0, mcause"
+                     : "=r"(mcause));
+
+    // Check if it's a timer interrupt (interrupt flag set, code = 7)
+    if((mcause & 0x80000000) && ((mcause & 0x7FFFFFFF) == 7))
+    {
+        // Dispatch to timer interrupt service routine
+        timer_isr();
+    }
+    // Check if it's a software interrupt (interrupt flag set, code = 3)
+    else if((mcause & 0x80000000) && ((mcause & 0x7FFFFFFF) == 3))
+    {
+        // Dispatch to software interrupt service routine
+        sw_isr();
+    }
+    // Check if it's an external interrupt (interrupt flag set, code = 11)
+    else if((mcause & 0x80000000) && ((mcause & 0x7FFFFFFF) == 11))
+    {
+        // Dispatch to external interrupt service routine
+        extern_isr();
+    }
+    // Note: Other interrupt types would be handled here in a more complete implementation
+}
+
+/**
+ * @brief Trigger a Software Interrupt
+ *
+ * This function initiates a software interrupt by setting the Machine Software
+ * Interrupt Pending (MSIP) bit in the CLINT. The function includes safety checks
+ * to prevent multiple pending software interrupts.
+ *
+ * Software interrupts are useful for:
+ * - Inter-core communication in multi-core systems
+ * - Self-interruption for task scheduling
+ * - Testing interrupt handling mechanisms
+ */
+void trigger_sw_interrupt()
+{
+    // Get pointer to the MSIP register in CLINT
+    volatile uint32_t* msip = (volatile uint32_t*)CLINT_REG_MSIP_ADDR;
+    uint32_t current_msip = *msip;
+
+    printf("Debug: About to trigger interrupt, MSIP=%d\n", current_msip);
+
+    // Only set MSIP if it's not already set to avoid duplicate pending interrupts
+    // MSIP = 0: No software interrupt pending
+    // MSIP = 1: Software interrupt pending
+    if(current_msip == 0)
+    {
+        *msip = 1;               // Set MSIP to trigger software interrupt
+        sw_interrupt_active = 1; // Update our tracking flag
+        printf("Software interrupt triggered\n");
+    }
+    else
+    {
+        printf("Debug: Not triggering - MSIP already set\n");
+    }
+}
+
+/**
+ * @brief Start Periodic Timer Interrupts
+ *
+ * This function configures the CLINT timer to generate periodic interrupts at
+ * the specified interval. It sets up the initial MTIMECMP value and enables
+ * the timer interrupt mechanism.
+ *
+ * The timer uses a 64-bit comparison between the MTIME register (current time)
+ * and MTIMECMP register (compare time). When MTIME >= MTIMECMP, a timer
+ * interrupt is generated.
+ *
+ * @param interval_ticks Number of clock ticks between timer interrupts
+ */
+void start_periodic_timer_interrupts(uint32_t interval_ticks)
+{
+    // Store the interval for use in the timer ISR
+    timer_interval = interval_ticks;
+
+    // Read the current MTIME value (64-bit timer split into two 32-bit registers)
+    volatile uint32_t* mtime_lo = (volatile uint32_t*)CLINT_REG_MTIME_LO;
+    volatile uint32_t* mtime_hi = (volatile uint32_t*)CLINT_REG_MTIME_HI;
+    uint32_t current_time_lo = *mtime_lo;
+    uint32_t current_time_hi = *mtime_hi;
+
+    // Store the current high value for overflow detection in the ISR
+    mtime_hi_value = current_time_hi;
+
+    // Calculate the next compare time using full 64-bit arithmetic
+    // This prevents issues with 32-bit overflow
+    uint64_t current_time = ((uint64_t)current_time_hi << 32) | current_time_lo;
+    uint64_t next_time = current_time + interval_ticks;
+
+    // Get pointers to MTIMECMP registers (64-bit compare value split into two 32-bit registers)
+    volatile uint32_t* mtimecmp_lo = (volatile uint32_t*)CLINT_REG_MTIMECMP_LO;
+    volatile uint32_t* mtimecmp_hi = (volatile uint32_t*)CLINT_REG_MTIMECMP_HI;
+
+    // Set both MTIMECMP registers for proper 64-bit comparison
+    // Write high register first to avoid race conditions during the update
+    *mtimecmp_hi = (uint32_t)(next_time >> 32);
+    *mtimecmp_lo = (uint32_t)(next_time & 0xFFFFFFFF);
+
+    // Debug output to show timer configuration
+    printf("mtime: 0x%08x%08x\n", current_time_hi, current_time_lo);
+    printf("setting mtimecmp to 0x%08x%08x\n",
+        (uint32_t)(next_time >> 32),
+        (uint32_t)(next_time & 0xFFFFFFFF));
+
+    // Mark timer as running for status tracking
+    timer_running = 1;
+
+    // Confirmation messages
+    printf("Started periodic timer interrupts every %u ticks (using full 64-bit comparison)\n",
+        interval_ticks);
+    printf("Current time: %u:%u, Next interrupt at: %u:%u\n",
+        current_time_hi,
+        current_time_lo,
+        (uint32_t)(next_time >> 32),
+        (uint32_t)(next_time & 0xFFFFFFFF));
+}
+
+/**
+ * @brief Enable Machine-Level Interrupts
+ *
+ * This function configures the RISC-V processor to handle interrupts by:
+ * 1. Setting the trap vector (MTVEC) to point to our interrupt handler
+ * 2. Enabling global interrupts (MIE bit in MSTATUS)
+ * 3. Enabling specific interrupt types (MTIE, MSIE, MEIE bits in MIE)
+ *
+ * RISC-V CSR (Control and Status Register) configuration:
+ * - MTVEC: Machine Trap Vector Base Address register
+ * - MSTATUS: Machine Status register (contains global interrupt enable)
+ * - MIE: Machine Interrupt Enable register (controls specific interrupt types)
+ */
+void enableInterrupts()
+{
+    // Set the trap vector to point to our interrupt handler function
+    // MTVEC defines where the processor jumps when an interrupt occurs
+    void* trap_vector = handle_interrupt;
+    printf("Setting up interrupt handler at address: %p\n", trap_vector);
+    __asm__ volatile("csrw mtvec, %0"
+                     :
+                     : "r"(trap_vector));
+
+    // Enable global interrupts by setting the MIE bit (bit 3) in MSTATUS
+    // Without this bit set, no interrupts will be processed
+    uint32_t mstatus;
+    __asm__ volatile("csrr %0, mstatus"
+                     : "=r"(mstatus)); // Read current MSTATUS
+    mstatus |= (1 << 3);               // Set MIE (Machine Interrupt Enable) bit
+    __asm__ volatile("csrw mstatus, %0"
+                     :
+                     : "r"(mstatus)); // Write back modified MSTATUS
+
+    // Enable specific interrupt types in the MIE register
+    // Each bit controls whether that specific interrupt type can occur
+    uint32_t mie;
+    __asm__ volatile("csrr %0, mie"
+                     : "=r"(mie)); // Read current MIE
+    mie |= (1 << 7);               // Set MTIE bit - enables machine timer interrupts
+    mie |= (1 << 3);               // Set MSIE bit - enables machine software interrupts
+    mie |= (1 << 11);              // Set MEIE bit - enables machine external interrupts
+    __asm__ volatile("csrw mie, %0"
+                     :
+                     : "r"(mie)); // Write back modified MIE
+}
+
+/**
+ * @brief Main Function - RISC-V Interrupt Demonstration
+ *
+ * This is the main entry point for the interrupt demonstration program.
+ * The program performs the following sequence:
+ *
+ * 1. Initialize system and configure stdout for interrupt-safe printing
+ * 2. Enable all interrupt types (timer, software, external)
+ * 3. Start periodic timer interrupts at 1MHz interval
+ * 4. Enter main loop that periodically triggers software interrupts
+ * 5. Display status information showing interrupt counts
+ * 6. Exit after processing a limited number of software interrupts
+ *
+ * The main loop demonstrates how a program can continue executing while
+ * interrupts are being processed in the background.
+ *
+ * @return 0 on successful completion
+ */
+int main()
+{
+    if(IS_HW_CLINT)
+    {
+        printf("Running on hardware CLINT implementation\n");
+    }
+    else
+    {
+        printf("Running on software CLINT implementation\n");
+    }
+    // Configure stdout to be unbuffered for immediate output during interrupt handling
+    // This ensures printf output appears immediately even when called from ISRs
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    // Enable all interrupt types and set up the interrupt handler
+    printf("Configuring RISC-V interrupt system...\n");
+    enableInterrupts();
+
+    // Start periodic timer interrupts every 1,000,000 clock cycles
+    // This creates a regular heartbeat for the system
+    printf("Starting periodic timer interrupts...\n");
+    start_periodic_timer_interrupts(1000000);
+
+    // Main program loop - demonstrates foreground processing with background interrupts
+    printf("Entering main program loop with both timer and software interrupts...\n");
+
+    // Counters for controlling software interrupt generation
+    uint32_t sw_counter = 0;   // Counter for triggering software interrupts
+    uint32_t sw_interval = 10; // Trigger software interrupt every 10 main loop iterations
+    uint32_t main_counter = 0; // General counter to show main program activity
+
+    // Main execution loop - runs until we've processed enough software interrupts
+    while(sw_interrupt_count < 5)
+    {
+        // Increment our software interrupt counter
+        sw_counter++;
+
+        // Periodically trigger a software interrupt for demonstration
+        if(sw_counter >= sw_interval)
+        {
+            // Check if a software interrupt is already pending before triggering a new one
+            volatile uint32_t* msip = (volatile uint32_t*)CLINT_REG_MSIP_ADDR;
+
+            if(*msip == 0)
+            {
+                printf("Debug: sw_counter(%u) reached threshold, MSIP=%u\n",
+                    sw_counter,
+                    *msip);
+                trigger_sw_interrupt();
+            }
+            else
+            {
+                printf("Debug: Not triggering - MSIP already pending\n");
+            }
+
+            sw_counter = 0; // Reset counter after each trigger attempt
+        }
+
+        // Add a small delay to control loop timing and avoid excessive console output
+        // This also gives interrupts time to be processed
+        for(int i = 0; i < 100; i++)
+        {
+            __asm__ volatile("nop"); // No-operation instruction for timing
+        }
+
+        if(IS_HW_CLINT)
+        {
+            if(sw_counter == 10)
+            {
+                assert(timer_interrupt_count == 6);
+            }
+            if(sw_counter == 11)
+            {
+                assert(timer_interrupt_count == 6);
+            }
+        }
+        else
+        {
+            if(sw_counter == 10)
+            {
+                assert(timer_interrupt_count == 2);
+            }
+            if(sw_counter == 11)
+            {
+                assert(timer_interrupt_count == 2);
+            }
+        }
+
+        assert(main_counter < 60); // Ensure we don't run indefinitely
+
+        // Update main program counter and display status
+        main_counter++;
+        printf("Status: Timer interrupts: %u, Software interrupts: %u\n",
+            timer_interrupt_count,
+            sw_interrupt_count);
+    }
+
+    printf("Final counts - Timer: %u, Software: %u, Overflows: %u Main Counter: %u\n",
+        timer_interrupt_count,
+        sw_interrupt_count,
+        overflow_count,
+        main_counter);
+
+    assert(overflow_count == 0);
+    if(IS_HW_CLINT)
+    {
+        assert(timer_interrupt_count == 8);
+        assert(sw_interrupt_count == 5);
+    }
+    else
+    {
+        assert(timer_interrupt_count == 2);
+        assert(sw_interrupt_count == 5);
+    }
+
+    printf("Interrupt demonstration completed successfully!\n");
+
+    // flush hardware uart in simulation
+    printf("\n\n\n\n\n");
+
+    return 0;
+}

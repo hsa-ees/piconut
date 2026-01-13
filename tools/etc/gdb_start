@@ -34,3 +34,5 @@
 
 tar ext :3333
 set tdesc filename gdb_piconut.xml
+
+set remotetimeout 300

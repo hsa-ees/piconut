@@ -1,0 +1,3 @@
+# Disable temporary for ELF for the test-bench
+# TBD: See Makefile. Eliminate/move ELF and soft peripheral code to hw/common
+!hello_piconut.elf

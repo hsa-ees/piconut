@@ -1,0 +1,126 @@
+#  -----------------------------------------------------------------------------
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2025 Johannes Hofmann <johannes.hofmann1@tha.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  -----------------------------------------------------------------------------
+
+
+ARG PREV_IMAGE=piconut_raw
+FROM ${PREV_IMAGE} AS qt_base
+
+USER root
+
+################################################################################
+# Arguments
+ARG QT_MODULES=qtmultimedia
+ARG QT_HOST=linux
+ARG QT_TARGET=desktop
+ARG QT_ARCH=linux_gcc_64
+ARG QT_HOME_BASE="/opt/qt"
+
+################################################################################
+
+################################################################################
+# Enviroment
+ENV QT_VERSION="6.8.1"
+ENV QT_VERSION_SHORT="6.8"
+ENV QT_HOME="${QT_HOME_BASE}/${QT_VERSION}/gcc_64"
+ENV QT_QPA_PLATFORM_PLUGIN_PATH="${QT_HOME}/plugins/platforms"
+
+ENV LD_LIBRARY_PATH="${QT_HOME}/lib:$LD_LIBRARY_PATH"
+
+ENV LANG=C.UTF-8
+
+# Following packages are not supported on Debian 13 (trixie)
+# Therefore there is currently no support for wayland (expect trough xwayland)
+# TBD: check if package is needed or there is an alternative
+# https://doc.qt.io/qt-6.8/wayland-requirements.html
+#
+# libwayland-egl1-mesa
+
+################################################################################
+# Install
+# currently mold linker is used to link qt application, hopefully this can be removed
+# in the future
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-venv \
+    xvfb \
+    mold \
+    \
+    libpulse0 \
+    libpulse-dev \
+    pulseaudio \
+    \
+    libfontconfig1-dev \
+    libfreetype-dev \
+    libgtk-3-dev \
+    libx11-dev \
+    libx11-xcb-dev \
+    libxcb-cursor-dev \
+    libxcb-glx0-dev \
+    libxcb-icccm4-dev \
+    libxcb-image0-dev \
+    libxcb-keysyms1-dev \
+    libxcb-randr0-dev \
+    libxcb-render-util0-dev \
+    libxcb-shape0-dev \
+    libxcb-shm0-dev \
+    libxcb-sync-dev \
+    libxcb-util-dev \
+    libxcb-xfixes0-dev \
+    libxcb-xkb-dev \
+    libxcb1-dev \
+    libxext-dev \
+    libxfixes-dev \
+    libxi-dev \
+    libxkbcommon-dev \
+    libxkbcommon-x11-dev \
+    libxrender-dev \
+    \
+    libwayland-dev \
+    libwayland-server0 \
+    libgles2-mesa-dev \
+    libxkbcommon-dev && \
+    \  
+    rm -rf /var/lib/apt/lists/* \
+    && apt-get -y autoremove \
+    && apt-get -y autoclean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /build && \
+    cd /build && \
+    python3 -m venv qt_venv && \
+    . qt_venv/bin/activate && \
+    pip install -U pip && \
+    pip install aqtinstall && \
+    aqt install-qt --outputdir ${QT_HOME_BASE} ${QT_HOST} ${QT_TARGET} ${QT_VERSION} ${QT_ARCH} -m ${QT_MODULES} && \
+    cd / && \
+    rm -rf /build
+
+################################################################################

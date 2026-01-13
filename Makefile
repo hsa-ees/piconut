@@ -2,15 +2,11 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2010-2021 Alexander Bahle <alexander.bahle@hs-augsburg.de>
-#                          Gundolf Kiefer <gundolf.kiefer@hs-augsburg.de>
-#                          Felix Wagner <felix.wagner1@hs-augsburg.de>
-#                          Michael Schaeferling <michael.schaeferling@hs-augsburg.de>
-#					  2024 Lukas Bauer <lukas.bauer1@tha.de>
+#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
-#    PicoNut top-level Makefile.
+#    Main Makefile of the project.
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -41,93 +37,25 @@
 
 ################################################################################
 #                                                                              #
-#     Settings                                                                 #
+#   Configuration                                                              #
 #                                                                              #
 ################################################################################
 
 
-# When settings.sh is sourced you can access the root of the PicoNut project
-# - PICONUT_HOME is to be set within a project / specific make files to point to the PicoNut (editable) sources to work with.
-
-# define default target
-.PHONY: all
-all: build-all
-
-# This file is located at the root of the PicoNut git/install dir
-PICONUT_HOME ?= $(abspath $(CURDIR))
-
-ifdef INSTALL_PREFIX
-INSTALL_DIR = $(abspath $(INSTALL_PREFIX))
+# Submodules ...
+#   NOTE: By default, systems and doc (layer 3) are not built.
+#         They must be built by setting MODULES explicitly.
+#
+#    default modules for a top-level build ...
+PN_SUBMODULES := hw sw boards
+#    override if MODULES is defined ...
+ifneq (,$(MODULES))
+  PN_SUBMODULES := $(subst :, ,$(MODULES))
 endif
 
-# include common variables
-include directory-base.mk
 
-# PicoNut Xilinx IP core target directory
-IP_XILINX_TARGET_DIR ?= paranut_ip
-
-################################################################################
-#                                                                              #
-#     Help targets                                                 #
-#                                                                              #
-################################################################################
-
-# Update version file
-$(VERSION_ENV): update-version
-
-.PHONY: update-version
-update-version:
-	$(TOOLS_BIN_DIR)/generate_versionfile.sh -g -t $(VERSION_ENV) -p ./
-
-
-# Print usage info ...
-.PHONY: help
-help:
-	@echo
-	@echo "Main Makefile for building and installing PicoNut"
-	@echo
-	@echo "Usage: make [<target>] [<parameter>=<value> ...]"
-	@echo
-	@echo "Targets:"
-	@echo
-	@echo "  build                 : Build SystemC simulator and the PicoNut support library,"
-	@echo "                          prepare for installation"
-	@echo "  clean                 : Delete most files created during the build process"
-	@echo
-	@echo "  help                  : Print this help"
-	@echo
-	@echo "  hello                 : Build and simulate an example PicoNut program"
-	@echo "                          (from '$(SW_APPLICATIONS_DIR)/hello_newlib')"
-	@echo
-	@echo "  build-all             : Build everything, including software projects and systems"
-	@echo
-	@echo "  build-sim             : Build the SystemC simulator ('libparanutsim.a' and 'pn-sim')"
-	@echo "  build-lib             : Build the PicoNut support library ('libparanut.a')"
-	@echo "  build-doc             : Build the PicoNut documentation files"
-	@echo
-	@echo "  install               : Install PicoNut to the directory given by parameter INSTALL_DIR"
-	@echo "                          (default: $(INSTALL_DIR_DEFAULT))"
-	@echo
-	@echo "  run-application       : Run an application defined by APPLICATION="
-	@echo "                          (located in $(SW_APPLICATIONS_DIR))"
-	@echo "Parameters:"
-	@echo
-	@echo "  INSTALL_PREFIX        : Target directory for make install"
-	@echo "  USE_SYSC_ICSC         : Use the ICSC config section from systemc-config.mk to enable its libsystemc"
-	@echo "  USE_SYSC_ACCELLERA    : Use the Accellera config section from systemc-config.mk to enable its libsystemc"
-
-# Not implemented yet needs to be done
-# @echo "  build-systems     : Build all systems (may be defined by PN_SYSTEMS,"
-# @echo "                      defaults to the ones declared in 'systems/Makefile')"
-# @echo "  build-sw          : Build all software projects (as defined by PN_SW_DIRS)"
-# @echo "  test-sim          : Run test to verify basic functionality of simulation"
-# @echo "  test-vhdl         : Run testbenches to test vhdl code"
-# @echo "  test-sysc         : Run testbenches to test sysc code"
-
-# Build and run "hello world" example ...
-PHONY: hello
-hello: build
-	$(MAKE) -C $(SW_DIR)/applications/hello_newlib sim
+# Include PicoNut setup ...
+include piconut.mk
 
 
 
@@ -135,142 +63,95 @@ hello: build
 
 ################################################################################
 #                                                                              #
-#     Building: Simulator, Support Libraries                                   #
+#   Help                                                                       #
 #                                                                              #
 ################################################################################
 
-# Build target alias for build-all
-.PHONY: build
-build: build-all
 
-# Build everything except vendor-specific synthesis products ...
-.PHONY: build-all
-build-all: build-sim build-lib
-
-
-.PHONY: build-sim
-build-sim: $(PN_CONFIG_MK) $(VERSION_ENV)
+define HELP_TARGETS_LOCAL
 	@echo
-	@echo "######### Building SystemC Simulator #########";
+	@echo "  hello       : Build a (simulated) demo system and run a RISC-V program"
 	@echo
-	$(MAKE) -C $(PNS_HW_DIR) build-sim
-
-
-# Build the PicoNut support library/libraries ...
-.PHONY: build-lib
-build-lib: $(VERSION_ENV)
+	@echo "  hello-ulx3s : Build a hardware demo system for the ULX3S board (TBD)"
+	@echo "                (requires the board and the ICSC & Yosys toolchain)"
 	@echo
-	@echo "######### Building PicoNut Support Library #########";
+	@echo "  howdy       : Ask me how I'm doing and how *you* can help *me*!"
+
+endef
+
+
+PN_HELP_TARGETS := $(PN_HELP_TARGETS) $(HELP_TARGETS_LOCAL)
+
+
+define HELP_PARAMETERS_LOCAL
+	@echo "  MODULES : Select subset of modules, given by a colon-separated list of paths."
+	@echo "            Example: MODULES=hw/cpu:hw/uart_soft:sw/apps/hello_piconut"
+	@echo "            (Default = $(subst $() $(),:,$(PN_SUBMODULES)))"
 	@echo
-	+$(MAKE) -C $(HAL_DIR)/libuzlib build-lib
-
-.PHONY: build-doc
-build-doc:
+	@echo "            Note: The documentation and the supplied systems are not built by"
+	@echo "            default. To build the documentation or all demo systems,"
+	@echo "            add 'MODULES=doc' or 'MODULES=systems' to the make invocation."
 	@echo
-	@echo "######### Building PicoNut Documentation #########";
+
+endef
+
+
+PN_HELP_PARAMETERS := $(HELP_PARAMETERS_LOCAL) $(PN_HELP_PARAMETERS)
+
+
+
+
+
+################################################################################
+#                                                                              #
+#   Global Targets                                                             #
+#                                                                              #
+################################################################################
+
+
+# Demos ...
+#   The recipe commands are not hidden by intention.
+.PHONY: hello
+hello:
+	$(MAKE) -C systems/refdesign TECHS=sim run-hello
+
+
+.PHONY: hello-ulx3s
+hello-ulx3s:
+	$(MAKE) -C systems/refdesign TECHS=syn build
+	$(MAKE) -C systems/refdesign TECHS=syn program
+
+
+# Howdy ...
+PN_HOWDY_EXCLUDES := *~ *.svg build
+
+.PHONY: howdy
+howdy:
 	@echo
-	$(MAKE) -C $(DOC_SRC_DIR)/pn-manual html latexpdf
-
-
-################################################################################
-#                                                                              #
-#     Running: Targets for running software from the main Makefile             #
-#                                                                              #
-################################################################################
-.PHONY: run-application
-run-application: build
-	$(MAKE) -C $(SW_DIR)/applications/$(APPLICATION) sim
-
-################################################################################
-#                                                                              #
-#     Installing                                                               #
-#                                                                              #
-################################################################################
-
-# Settings files
-ROOT_FILES =
-
-# Top-Level info, config and Makefile
-SRC_FILES = README.md \
-            Makefile \
-			directory-base.mk \
-			systemc-config.mk
-
-
-# Install the PicoNut repository to the directory specified by INSTALL_DIR ...
-.PHONY: install
-install: build
+	@echo "Hi, I'm fine! Thank you for asking me about how I'm doing."
 	@echo
-	@echo "######### Installing to $(INSTALL_DIR) #########"
+	@echo "However, the PicoNut project is still growing, and there are a lot of things"
+	@echo "left to do. If you want to help, please look into the following places:"
 	@echo
-	@if [ -d src ]; then \
-	  echo "INFO: The install target is only available inside the source repository!";\
-	else \
-	  # Create target dir \
-	    mkdir -p $(INSTALL_DIR) \
-	  # Install ROOT_FILES \
-	    for FILE in $(ROOT_FILES); do \
-	      install -Dp -m 644 -t $(INSTALL_DIR)/`dirname $$FILE` $$FILE; \
-	    done; \
-	  # Install SRC_FILES \
-	    for FILE in $(SRC_FILES); do \
-	      install -Dp -m 644 -t $(INSTALL_DIR)/`dirname $$FILE` $$FILE; \
-	    done; \
-	  # Install DOCUMENTATION \
-	    $(MAKE) -C $(DOC_SRC_DIR)/pn-manual install; \
-	  # Install SW \
-	    $(MAKE) -C $(SW_DIR) install; \
-	  # Install HW \
-	    $(MAKE) -C $(HW_DIR) install; \
-	  # Install tools \
-	    $(MAKE) -C $(TOOLS_DIR) install; \
-	  # Install config creator \
-	    $(MAKE) -C $(CFG_CREATOR_DIR) install; \
-	  # Install default system \
-	    $(MAKE) -C $(SYSTEMS_DIR) install; \
-	  # Add $(VERSION_ENV) \
-	    cp $(VERSION_ENV)  $(INSTALL_DIR)/version.env; \
-	fi
-
-################################################################################
-#                                                                              #
-#     Testing                                                                  #
-#                                                                              #
-################################################################################
-
-# test basic functionality of simulator
-PHONY: test-sim
-test-sim: test-hello_newlib
-
-
-
-
-################################################################################
-#                                                                              #
-#     Cleaning                                                                 #
-#                                                                              #
-################################################################################
-
-# Clean up most files created during the build process
-PHONY: clean
-clean: clean-hw  clean-systems clean-doc clean-sw
-	@rm -f $(VERSION_ENV)
-
-# These are most likely never intentionally called by a user, but include them here for documentation
-# These are also not tracked by version control and created by prepase_sdl.sh in sw/sdl_demo
-
-PHONY: clean-hw
-clean-hw:
-	@$(MAKE) --silent -C $(HW_DIR) clean-all
-
-PHONY: clean-sw
-clean-sw:
-	@$(MAKE) --silent -C $(SW_DIR) clean-all
-
-PHONY: clean-systems
-clean-systems:
-	@$(MAKE) --silent -C $(SYSTEMS_DIR) clean-all
-
-PHONY: clean-doc
-clean-doc:
-	@$(MAKE) --silent -C $(DOC_SRC_DIR)/pn-manual clean
+	@( grep -nr --exclude-dir=.git $(PN_HOWDY_EXCLUDES:%=--exclude=%) -E "TBD\+(\([[:alnum:]_]+\))?:" || true )
+	@( grep -nr --exclude-dir=.git $(PN_HOWDY_EXCLUDES:%=--exclude=%) -E "TBD(\([[:alnum:]_]+\))?:" | grep -v "TBD(Sam)" || true )
+	@( grep -nr --exclude-dir=.git $(PN_HOWDY_EXCLUDES:%=--exclude=%) -E "TBD\-(\([[:alnum:]_]+\))?:" || true )
+	@echo
+	@echo "If you decide to help:"
+	@echo
+	@echo "1. Please first mark the place with your name, for example, change it"
+	@echo "   to 'TBD(Sam): ...', so that others see that you are working on it."
+	@echo
+	@echo "2. Then resolve the issue until you believe it is resolved."
+	@echo
+	@echo "3. Mark the issue presumably resolved by changing the title to 'TBD(Sam):RESOLVED:'"
+	@echo "   (replace 'Sam' with your name or initials)."
+	@echo
+	@echo "4. AFTER the original reporter has agreed that the issue is resolved, remove the"
+	@echo "   comment and, depending on your location and role:"
+	@echo "   - commit the fix (authorized core developers)"
+	@echo "   - prepare and submit a merge request (developers with access to the Gitlab repo)"
+	@echo "   - send a patch to the PicoNut team: https://ees.tha.de/piconut"
+	@echo
+	@echo "Thank you for improving PicoNut!"
+	@echo

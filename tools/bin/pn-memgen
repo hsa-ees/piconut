@@ -1,0 +1,331 @@
+#!/bin/bash
+
+#  (C) 2025 Niklas Sirch <niklas.sirch1@tha.de>
+#           Gundolf Kiefer <gundolf.kiefer@tha.de>
+#
+#           Efficient Embedded Systems Group
+#           Augsburg Technical University of Applied Sciences
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  -----------------------------------------------------------------------------
+
+
+# NOTE: This is just a mock-up that only works for a very special combination of
+#       parameters!
+#
+# TBD(ns)+: Implement this tool.
+#       NOTE: A template for single-ported (and dual-ported) RAM can be found in 'lost+found'.
+#             However, wrt to style and formatting, the (inlined) model in this file
+#             should be taken as a reference.
+#
+# TBD(ns)+: Switch .mem format from binary to hex (`$readmemh(...)`) to improve memory efficiency.
+#
+# TBD(ns)+: Add the generation of a SystemC model (.h and .cpp file) and eliminate
+#       'membrana_hw/membrana_hw_emem.[h|cpp]'. The latter may serve as a template.
+#       If the '-i' option is given, memory contents should be integrated as a
+#       pre-initialized C array to avoid file search conflicts at runtime.
+#       In any case, a `read_elf()` method should be provided to load data at run time.
+
+
+# Identify myself ...
+TOOL="${0##*/}"
+CMDLINE="${0##*/} $@"
+
+
+# Parameters & defaults ...
+OPT_VERBOSITY=1
+OPT_MODULE=""
+OPT_OUTPUT=""
+OPT_PORTS=1
+OPT_ADDR_WIDTH=16
+OPT_SIZE=""
+OPT_DATA_SPEC=1x32
+OPT_BLACKBOX=0
+OPT_INIT_ELF=""
+OPT_INIT_BASE=0
+
+
+# Usage & error handling ...
+usage () {
+  echo "Usage: $TOOL [<options>] <output>"
+  echo
+  echo "Generate a model for an embedded FPGA memory synthesizable with Yosys."
+  echo
+  echo "Options:"
+  echo
+  echo "  -h | --help"
+  echo "      Print this help."
+  echo
+  echo "  -q | --quiet"
+  echo "      Minimize console output."
+  echo
+  echo "  -m | --module <name>"
+  echo "      Module (entity) name. [ Default: Base of the output file name ]"
+  echo
+  echo "  -p | --ports <n>"
+  echo "      Set number of ports (1 or 2). [ Default = $OPT_PORTS ]"
+  echo
+  echo "  -a | --addr-width <n>"
+  echo "      Set number of address bits. [ Default = $OPT_ADDR_WIDTH ]"
+  echo
+  echo "  -s | --size <n>"
+  echo "      Set the size in data words. [ Default = 2^<addr width> ]"
+  echo
+  echo "  -d | --data-spec <cols>x<col_width>"
+  echo "      Set the data width and partitioning."
+  echo "      Each column will have a separate write enable signal. Examples:"
+  echo "        1x32: data width is 32 bits, only a whole word can be written at a time."
+  echo "        4x8 : data width is 32 (= 4 * 8) bits, bytes can be written individually"
+  echo "              by means of 4 byte enable lines."
+  echo "      [ Default = $OPT_DATA_SPEC ]"
+  echo
+  echo "  -b | --blackbox"
+  echo "      Only create a module declaration with the 'blackbox' attribute."
+  echo
+  echo "  -i | --init <ELF file>"
+  echo "      Preset the memory with the contents of an ELF file."
+  echo
+  echo "  -ib | --init-base <adr>"
+  echo "      Prospective base address if the memory is preset using the -i option."
+  echo "      Contents of the ELF file are assigned to the memory accordingly."
+  echo "      [ Default = $OPT_INIT_BASE ]"
+  echo
+  echo "The output is a Verilog file. Depending on the options, additional files with"
+  echo "the same prefix may be generated (e.g. a binary file with preset memory contents)."
+}
+
+
+error () {
+  echo "ERROR: $1"
+  echo
+  usage
+  exit 3
+}
+
+
+# Parse known options...
+PARSE_OPTS="1"
+while [[ $PARSE_OPTS == "1" ]]; do
+  case "$1" in
+
+    -h|--help)
+      usage
+      exit 0
+      ;;
+      
+    -q|--quiet)
+      OPT_VERBOSITY="0"
+      shift
+      ;;
+
+    -m|--module)
+      OPT_MODULE="$2"
+      shift 2
+      ;;
+
+    -p|--ports)
+      OPT_PORTS="$2"
+      shift 2
+      ;;
+
+    -a|--addr-width)
+      OPT_ADDR_WIDTH="$2"
+      shift 2
+      ;;
+
+    -s|--size)
+      OPT_SIZE="$(($2 / 4))"
+      shift 2
+      ;;
+
+    -d|--data-spec)
+      OPT_DATA_SPEC="$2"
+      shift 2
+      ;;
+
+    -b|--blackbox)
+      OPT_BLACKBOX=1
+      shift
+      ;;
+
+    -i|--init)
+      OPT_INIT_ELF="$2"
+      shift 2
+      ;;
+
+    -ib|--init-base)
+      OPT_INIT_BASE="$2"
+      shift 2
+      ;;
+
+    -*)
+      error "Unknown option '$1'"
+      ;;
+
+    *)
+      OPT_OUTPUT="$1"
+      PARSE_OPTS="0"
+      ;;
+  esac
+done
+
+
+# Complete defaults ...
+if [[ "$OPT_SIZE" == "" ]]; then
+  OPT_SIZE=`python3 -c "print (pow (2, $OPT_ADDR_WIDTH - 2))"`
+fi
+if [[ "$OPT_MODULE" == "" ]]; then
+  OPT_MODULE="${OPT_OUTPUT##*/}"
+  OPT_MODULE="${OPT_MODULE%%.v}"
+fi
+
+
+# Print status ...
+if [[ "$OPT_INIT_ELF" == "" ]]; then
+  echo "[$PN_MODULE_ID] MEMGEN ${OPT_OUTPUT##*/}"
+else
+  echo "[$PN_MODULE_ID] MEMGEN ${OPT_OUTPUT##*/} (${OPT_INIT_ELF##*/})"
+fi
+
+
+# Sanity ...
+if [[ "$OPT_PORTS" != "2" || "$OPT_ADDR_WIDTH" != "32" || "$OPT_DATA_SPEC" != "4x8" ]]; then
+  error "This tool only supports the following options: -p 2 -a 32 -d 4x8"
+fi
+if [[ "$OPT_OUTPUT" == "" ]]; then
+  error "Missing output specification"
+fi
+# TBD(ns): Check ports / all variables for validity
+# TBD(ns): Check data spec
+# TBD(ns): Check size (must by <= 2^OPT_ADDR_WIDTH)
+
+
+# Parse data spec ...
+DATA_COLS=4
+DATA_COL_WIDTH=8
+DATA_WIDTH=32
+
+
+# Prepare .mem file (if applicable) ...
+OUTPUT_BASE="${OPT_OUTPUT%%.v}"
+MEM_FILE="${OUTPUT_BASE}.mem"
+VERILOG_INIT=""
+if [[ "$OPT_INIT_ELF" != "" ]]; then
+  VERILOG_INIT="\$readmemb(\"${OUTPUT_BASE##*/}.mem\", ram, 32'h0);"
+  ${PN_TOOLS_BIN}/pn-elf2mem \
+    --objdump-path $PN_SW_OBJDUMP \
+    rom \
+    --size $OPT_SIZE --start-address $OPT_INIT_BASE \
+    $OPT_INIT_ELF ${OUTPUT_BASE}.mem
+	# TBD(ns): What is "rom"?
+fi
+
+
+# Helper to convert (hex) numbers to Verilog ...
+unsigned2verilog () {
+  if [[ "${1:0:2}" == "0x" ]]; then
+    echo "'h${1:2}"
+  else
+    echo $1
+  fi
+}
+
+
+# Select Verilog template ...
+if [[ "$OPT_BLACKBOX" == "1" ]]; then
+  TEMPLATE=`cat << EOF
+(* blackbox *)
+module MODULE_NAME (clka, clkb, ena, enb, wea, web, addra, addrb, dia, dib, doa, dob);
+  input clka, clkb, ena, enb;
+  input [DATA_COLS-1:0] wea, web;
+  input [ADDR_WIDTH-1:0] addra, addrb;
+  input [DATA_WIDTH-1:0] dia, dib;
+  output [DATA_WIDTH-1:0] doa, dob;
+endmodule
+EOF
+`
+
+else
+  TEMPLATE=`cat << EOF
+module MODULE_NAME (clka, clkb, ena, enb, wea, web, addra, addrb, dia, dib, doa, dob);
+
+  input clka, clkb, ena, enb;
+  input [DATA_COLS-1:0] wea, web;
+  input [ADDR_WIDTH-1:0] addra, addrb;
+  input [DATA_WIDTH-1:0] dia, dib;
+  output [DATA_WIDTH-1:0] doa, dob;
+
+  reg [DATA_WIDTH-1:0] ram [MEM_SIZE-1:0];
+  reg [DATA_WIDTH-1:0] doa, dob;
+
+  wire [ADDR_WIDTH - 1:0] addra_internal = addra - (MEM_BASE >> 2);
+  wire [ADDR_WIDTH - 1:0] addrb_internal = addrb - (MEM_BASE >> 2);
+
+  initial begin
+    VERILOG_INIT
+  end
+
+  integer i;
+
+  always @(posedge clka) begin
+    if (ena) begin
+      for (i = 0; i < DATA_COLS; i = i + 1) begin
+        if (wea[i]) begin
+          ram[addra_internal][i*DATA_COL_WIDTH +: DATA_COL_WIDTH] <= dia[i*DATA_COL_WIDTH +: DATA_COL_WIDTH];
+        end
+      end
+      doa <= ram[addra_internal];
+    end
+  end
+
+  always @(posedge clkb) begin
+    if (enb) begin
+      for (i = 0; i < DATA_COLS; i = i + 1) begin
+        if (web[i]) begin
+          ram[addrb_internal][i*DATA_COL_WIDTH +: DATA_COL_WIDTH] <= dib[i*DATA_COL_WIDTH +: DATA_COL_WIDTH];
+        end
+      end
+      dob <= ram[addrb_internal];
+    end
+  end
+
+endmodule
+EOF
+`
+
+fi
+
+
+# Write Verilog file ...
+MEM_SIZE_VERILOG=`unsigned2verilog $OPT_SIZE`
+MEM_BASE_VERILOG=`unsigned2verilog $OPT_INIT_BASE`
+echo "$TEMPLATE" | sed \
+  -e "s#MODULE_NAME#$OPT_MODULE#g" \
+  -e "s#ADDR_WIDTH#$OPT_ADDR_WIDTH#g" \
+  -e "s#DATA_COLS#$DATA_COLS#g" \
+  -e "s#DATA_COL_WIDTH#$DATA_COL_WIDTH#g" \
+  -e "s#DATA_WIDTH#$DATA_WIDTH#g" \
+  -e "s#MEM_SIZE#$MEM_SIZE_VERILOG#g" \
+  -e "s#MEM_BASE#$MEM_BASE_VERILOG#g" \
+  -e "s#VERILOG_INIT#$VERILOG_INIT#g" \
+  > $OPT_OUTPUT

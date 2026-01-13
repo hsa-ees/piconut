@@ -1,0 +1,67 @@
+#  -----------------------------------------------------------------------------
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C) 2025 Johannes Hofmann <johannes.hofmann1@tha.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  -----------------------------------------------------------------------------
+
+
+ARG PREV_IMAGE=piconut_raw
+FROM ${PREV_IMAGE} AS doc_base
+
+USER root
+
+#### Doc #######################################################################
+# install requirments for documentation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-sphinx \
+    python3-myst-parser \
+    python3-sphinx-rtd-theme \
+    python3-breathe \
+    python3-sphinxcontrib.svg2pdfconverter \
+    inkscape \
+    gpg && \
+    \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get -y autoremove && \
+    apt-get -y autoclean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Currently miktex has no support for Debian 13 (trixie)
+# # install miktex for pdf generation
+# RUN curl -fsSL https://miktex.org/download/key | gpg --dearmor | tee /usr/share/keyrings/miktex-keyring.gpg > /dev/null
+# RUN echo "deb [signed-by=/usr/share/keyrings/miktex-keyring.gpg] https://miktex.org/download/debian bookworm universe" | tee /etc/apt/sources.list.d/miktex.list
+# RUN apt-get update && apt-get install -y \
+#     miktex
+# 
+# # configure miktex
+# RUN miktexsetup --verbose --package-set=basic --shared=yes finish
+# RUN initexmf --verbose --admin --set-config-value [MPM]AutoInstall=1
+# RUN mpm --admin --verbose --package-level=basic --upgrade
+
+################################################################################

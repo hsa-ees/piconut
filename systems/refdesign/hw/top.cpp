@@ -2,7 +2,9 @@
 
   This file is part of the PicoNut project.
 
-  Copyright (C)      2024 Marco Milenkovic <Marco.Milenkovic@hs-augsburg.de>
+  Copyright (C) 2024 Marco Milenkovic <Marco.Milenkovic@hs-augsburg.de>
+                2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
 
@@ -29,30 +31,62 @@
 
  *************************************************************************/
 
-
 #include "top.h"
 
-void m_top::Trace(sc_trace_file* tf, int level)
+void m_refdesign::pn_trace(sc_trace_file* tf, int level)
 {
 
     // calling trace of submodules
     if(level >= 2)
     {
-        piconut->Trace(tf, level);
+        pn_interconnect->pn_trace(tf, level);
+        cpu->pn_trace(tf, level);
+#ifdef __SYNTHESIS__
+        uart->pn_trace(tf, level);
+#endif
     }
     // Internal traces
 }
 
-void m_top::init_submodules()
+void m_refdesign::init_submodules()
 {
-    piconut = sc_new<m_piconut>("piconut");
-    piconut->clk(clk);
-    piconut->reset(reset);
-    piconut->debug_haltrequest_in(dummy_low);
-    piconut->debug_haltrequest_ack_out(vh_open);
+    pn_interconnect = sc_new<m_pn_interconnect>("i_pn_interconnect");
+
+    // ----------- Create submodules -----------
+    // ----------- CPU -----------
+    cpu = sc_new<m_cpu>("i_cpu");
+    cpu->clk(clk);
+    cpu->reset(reset);
+
+    // Issue: vh_const not working right now. Uncomment the line below
+    // after vh_const updated and remove dummy signal.
+    // cpu->debug_haltrequest_in(vh_const<bool>(0));
+    cpu->debug_haltrequest_in(dummy_low);
+    cpu->debug_haltrequest_ack_out(vh_open);
+
+    cpu->mtip_in(dummy_low);
+    cpu->msip_in(dummy_low);
+    cpu->meip_in(dummy_low);
+
+    pn_interconnect->add_module(cpu);
+
+    // ----------- UART -----------
+#ifdef __SYNTHESIS__
+    uart = sc_new<m_uart>("i_uart", PN_CFG_UART_BASE_ADDRESS);
+
+    uart->reset(reset);
+    uart->clk(clk);
+
+    uart->rx(rx_i);
+    uart->tx(tx_o);
+
+    pn_interconnect->add_module(uart);
+#endif
+
+    pn_interconnect->elaborate();
 }
 
-void m_top::proc_cmb()
+void m_refdesign::proc_cmb()
 {
-   dummy_low.write(0);
+    dummy_low.write(0);
 }
