@@ -46,6 +46,7 @@
 #       pre-initialized C array to avoid file search conflicts at runtime.
 #       In any case, a `read_elf()` method should be provided to load data at run time.
 
+set -e
 
 # Identify myself ...
 TOOL="${0##*/}"

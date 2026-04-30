@@ -36,7 +36,6 @@
 
 #include "../nucleus_ref.h"
 
-
 #define PERIOD_NS 10.0
 
 sc_signal<bool> PN_NAME(clk);
@@ -119,7 +118,7 @@ int sc_main(int argc, char** argv)
     i_dut.iport_ack_in(iport_ack_in);
     i_dut.dport_rdata_in(dport_rdata_in);
     i_dut.dport_ack_in(dport_ack_in);
-    i_dut.debug_haltrequest_in(debug_haltrequest_in);
+    i_dut.debug_slave.haltrequest_i(debug_haltrequest_in);
     i_dut.msip_in(msip_in);
     i_dut.mtip_in(mtip_in);
     i_dut.meip_in(meip_in);
@@ -134,7 +133,7 @@ int sc_main(int argc, char** argv)
     i_dut.dport_stb_out(dport_stb_out);
     i_dut.dport_lrsc_out(dport_lrsc_out);
     i_dut.dport_amo_out(dport_amo_out);
-    i_dut.debug_haltrequest_ack_out(debug_haltrequest_ack_out);
+    i_dut.debug_slave.haltrequest_ack_o(debug_haltrequest_ack_out);
 
     i_dut.pn_trace(tf, pn_cfg_vcd_level); // Trace signals of the DUT
 

@@ -48,15 +48,15 @@ void m_dm_registers::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, dmi_we_i);
 
     // Wishbone
-    PN_TRACE(tf, wb_ack_o);
-    PN_TRACE(tf, wb_adr_i);
-    PN_TRACE(tf, wb_cyc_i);
-    PN_TRACE(tf, wb_stb_i);
-    PN_TRACE(tf, wb_dat_i);
-    PN_TRACE(tf, wb_dat_o);
-    PN_TRACE(tf, wb_sel_i);
-    PN_TRACE(tf, wb_we_i);
-    PN_TRACE(tf, wb_err_o);
+    PN_TRACE(tf, wb_slave.ack_o);
+    PN_TRACE(tf, wb_slave.adr_i);
+    PN_TRACE(tf, wb_slave.cyc_i);
+    PN_TRACE(tf, wb_slave.stb_i);
+    PN_TRACE(tf, wb_slave.dat_i);
+    PN_TRACE(tf, wb_slave.dat_o);
+    PN_TRACE(tf, wb_slave.sel_i);
+    PN_TRACE(tf, wb_slave.we_i);
+    PN_TRACE(tf, wb_slave.err_o);
     PN_TRACE(tf, c_wb_write_en);
 
     // Data flow signals
@@ -147,10 +147,10 @@ void m_dm_registers::proc_cmb_read_dmi()
 
 void m_dm_registers::proc_cmb_wb()
 {
-    wb_ack_o = 0;
-    wb_dat_o = 0;
-    wb_err_o = 0;
-    wb_rty_o = 0;
+    wb_slave.ack_o = 0;
+    wb_slave.dat_o = 0;
+    wb_slave.err_o = 0;
+    wb_slave.rty_o = 0;
 
     c_wb_write_en = 0;
 
@@ -159,14 +159,14 @@ void m_dm_registers::proc_cmb_wb()
     switch(wb_current_state.read())
     {
         case WB_IDLE:
-            if(wb_stb_i.read() == 1 && wb_cyc_i.read() == 1)
+            if(wb_slave.stb_i.read() == 1 && wb_slave.cyc_i.read() == 1)
             {
                 // if((wb_adr_i.read() >= wb_base_address) &&
                 //     (wb_adr_i.read() < (wb_base_address + wb_size)))
-                if((wb_adr_i.read() >= 0) &&
-                    (wb_adr_i.read() < 0x3C))
+                if((wb_slave.adr_i.read() >= 0) &&
+                    (wb_slave.adr_i.read() < 0x3C))
                 {
-                    if(wb_we_i.read() == 1)
+                    if(wb_slave.we_i.read() == 1)
                     {
                         wb_next_state = WB_WRITE1;
                     }
@@ -184,8 +184,8 @@ void m_dm_registers::proc_cmb_wb()
             break;
 
         case WB_WRITE2:
-            wb_ack_o = 1;
-            if(wb_stb_i.read() == 0 /* && wb_cyc_i.read() == 0*/)
+            wb_slave.ack_o = 1;
+            if(wb_slave.stb_i.read() == 0 /* && wb_cyc_i.read() == 0*/)
             {
                 wb_next_state = WB_IDLE;
             }
@@ -193,61 +193,61 @@ void m_dm_registers::proc_cmb_wb()
 
         case WB_READ:
 
-            switch(wb_adr_i.read() - wb_base_address)
+            switch(wb_slave.adr_i.read() - wb_base_address)
             {
                 case e_wb_reg_adrs::WB_DATA0:
-                    wb_dat_o = read_with_byte_select(data_regs[0].read());
+                    wb_slave.dat_o = read_with_byte_select(data_regs[0].read());
                     break;
                 case e_wb_reg_adrs::WB_DATA1:
-                    wb_dat_o = read_with_byte_select(data_regs[1].read());
+                    wb_slave.dat_o = read_with_byte_select(data_regs[1].read());
                     break;
                 case e_wb_reg_adrs::WB_PROGBUG0:
-                    wb_dat_o = read_with_byte_select(progbuf_regs[0].read());
+                    wb_slave.dat_o = read_with_byte_select(progbuf_regs[0].read());
                     break;
                 case e_wb_reg_adrs::WB_PROGBUG1:
-                    wb_dat_o = read_with_byte_select(progbuf_regs[1].read());
+                    wb_slave.dat_o = read_with_byte_select(progbuf_regs[1].read());
                     break;
                 case e_wb_reg_adrs::WB_PROGBUG2:
-                    wb_dat_o = read_with_byte_select(progbuf_regs[2].read());
+                    wb_slave.dat_o = read_with_byte_select(progbuf_regs[2].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT0:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[0].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[0].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT1:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[1].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[1].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT2:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[2].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[2].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT3:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[3].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[3].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT4:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[4].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[4].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT5:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[5].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[5].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT6:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[6].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[6].read());
                     break;
                 case e_wb_reg_adrs::WB_ABSTRACT7:
-                    wb_dat_o = read_with_byte_select(abstract_regs_i[7].read());
+                    wb_slave.dat_o = read_with_byte_select(abstract_regs_i[7].read());
                     break;
                 case e_wb_reg_adrs::WB_HARTCONTROL:
-                    wb_dat_o = read_with_byte_select(hartcontrol_reg.read());
+                    wb_slave.dat_o = read_with_byte_select(hartcontrol_reg.read());
                     break;
                 case e_wb_reg_adrs::WB_HARTSTATUS:
                     // This register is write-only from wishbone bus
                     break;
                 default:
-                    wb_dat_o = 0;
+                    wb_slave.dat_o = 0;
                     break;
             }
 
-            wb_ack_o = 1;
+            wb_slave.ack_o = 1;
 
-            if(wb_stb_i.read() == 0 /* && wb_cyc_i.read() == 0*/)
+            if(wb_slave.stb_i.read() == 0 /* && wb_cyc_i.read() == 0*/)
             {
                 wb_next_state = WB_IDLE;
             }
@@ -288,13 +288,13 @@ void m_dm_registers::proc_clk_data()
         }
         else if(c_wb_write_en.read() == 1)
         {
-            switch(wb_adr_i.read() - wb_base_address)
+            switch(wb_slave.adr_i.read() - wb_base_address)
             {
                 case e_wb_reg_adrs::WB_DATA0:
-                    data_regs[0] = write_with_byte_select(wb_dat_i.read());
+                    data_regs[0] = write_with_byte_select(wb_slave.dat_i.read());
                     break;
                 case e_wb_reg_adrs::WB_DATA1:
-                    data_regs[1] = write_with_byte_select(wb_dat_i.read());
+                    data_regs[1] = write_with_byte_select(wb_slave.dat_i.read());
                     break;
                 default:
                     break;
@@ -593,9 +593,9 @@ void m_dm_registers::proc_clk_hartstatus()
             hartstatus_reg_var |= 1U << 1; // Running
         }
         else if(c_wb_write_en.read() == 1 &&
-                (wb_adr_i.read() - wb_base_address) == e_wb_reg_adrs::WB_HARTSTATUS)
+                (wb_slave.adr_i.read() - wb_base_address) == e_wb_reg_adrs::WB_HARTSTATUS)
         {
-            hartstatus_reg_var = write_with_byte_select(wb_dat_i.read());
+            hartstatus_reg_var = write_with_byte_select(wb_slave.dat_i.read());
         }
 
         hartstatus_reg = hartstatus_reg_var;
@@ -622,7 +622,7 @@ sc_uint<WB_DAT_WIDTH> m_dm_registers::write_with_byte_select(
     sc_uint<WB_DAT_WIDTH> input_word)
 {
     sc_uint<WB_DAT_WIDTH> mask = 0;
-    sc_uint<WB_DAT_WIDTH / 8> wb_sel_i_var = wb_sel_i.read();
+    sc_uint<WB_DAT_WIDTH / 8> wb_sel_i_var = wb_slave.sel_i.read().range(32 / 8 - 1, 0);
 
     // Selective byte masking
     if(wb_sel_i_var & 0b0001)
@@ -642,14 +642,14 @@ sc_uint<WB_DAT_WIDTH> m_dm_registers::write_with_byte_select(
         mask |= 0xFF000000; // Byte 3
     }
 
-    return (input_word & ~mask) | (wb_dat_i.read() & mask);
+    return (input_word & ~mask) | (wb_slave.dat_i.read().range(31, 0) & mask);
 }
 
 sc_uint<WB_DAT_WIDTH> m_dm_registers::read_with_byte_select(
     sc_uint<WB_DAT_WIDTH> input_word)
 {
     sc_uint<WB_DAT_WIDTH> mask = 0;
-    sc_uint<WB_DAT_WIDTH / 8> wb_sel_i_var = wb_sel_i.read();
+    sc_uint<WB_DAT_WIDTH / 8> wb_sel_i_var = wb_slave.sel_i.read().range(32 / 8 - 1, 0);
 
     // Selective byte masking
     if(wb_sel_i_var & 0b0001)

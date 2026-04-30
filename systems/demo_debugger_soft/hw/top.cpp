@@ -53,8 +53,8 @@ void m_demo_debugger_soft::init_submodules()
     cpu->clk(clk);
     cpu->reset(reset);
 
-    cpu->debug_haltrequest_in(debug_haltrequest_in);
-    cpu->debug_haltrequest_ack_out(debug_haltrequest_ack_out);
+    cpu->debug_slave.haltrequest_i(debug_haltrequest_in);
+    cpu->debug_slave.haltrequest_ack_o(debug_haltrequest_ack_out);
 
     cpu->mtip_in(dummy_low);
     cpu->msip_in(dummy_low);

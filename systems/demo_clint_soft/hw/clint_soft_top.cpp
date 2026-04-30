@@ -53,11 +53,11 @@ void m_demo_clint_soft::init_submodules()
     cpu->clk(clk);
     cpu->reset(reset);
 
-    cpu->debug_haltrequest_in(dummy_low);
+    cpu->debug_slave.haltrequest_i(dummy_low);
     // Issue: vh_const not working right now. Uncomment the line below
     // after vh_const updated and remove dummy signal.
     // cpu->debug_haltrequest_in(vh_const<bool>(0));
-    cpu->debug_haltrequest_ack_out(vh_open);
+    cpu->debug_slave.haltrequest_ack_o(vh_open);
 
     // Connect the interrupt signals to the PicoNut processor
     cpu->mtip_in(mtip_signal);

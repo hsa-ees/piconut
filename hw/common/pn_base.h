@@ -36,13 +36,11 @@
 
  *************************************************************************/
 
-
 /// @file
 /// @brief Helpers, Makros and performance measuring Classes used in most *PicoNut* files.
 /// @defgroup helpers Helpers
 /// @brief Helpers, Makros and performance measuring Classes used in most *PicoNut* files.
 /// @{
-
 
 // clang-format off
 // There are too many macros in this file so we disable clang-format for this file.
@@ -428,6 +426,24 @@ std::string pn_get_trace_name (sc_object *obj, const char *name, int dim, int ar
         }                                                                     \
     }
 
+/// @brief Helper macro for tracing interfaces.
+///
+/// Macro for easily adding interfaces to the trace file.
+/// \param TF is the trace file.
+/// \param OBJ is the interface object.
+#define PN_TRACE_INTERFACE(TF, OBJ) \
+    if(TF) (OBJ).pn_trace((TF), std::string(this->name()) + "." #OBJ)
+
+/// @brief Helper macro for tracing interface members.
+///
+/// Macro for easily adding the signals of an interface to the trace file.
+/// \param TF is the trace file.
+/// \param MEMBER is the member signal of an interface.
+/// \param STR is the calling sc_trace string to which the member name + index will be appended.
+#define PN_TRACE_INTERFACE_MEMBER(TF, MEMBER, STR) \
+    if(TF) sc_trace(TF, this->MEMBER, (STR) + "/" + #MEMBER)
+
+
 
 #else  // __SYNTHESIS__
 
@@ -440,6 +456,8 @@ std::string pn_get_trace_name (sc_object *obj, const char *name, int dim, int ar
 #define PN_TRACE_R(TF, OBJ, MEMBER, STR)
 #define PN_TRACE_R_BUS(TF, OBJ, MEMBER, STR, N_MAX)
 #define PN_TRACE_R_BUS_BUS(TF, OBJ, MEMBER, STR, N_MAX, K_MAX)
+#define PN_TRACE_INTERFACE(TF, OBJ)
+#define PN_TRACE_INTERFACE_MEMBER(TF, MEMBER, STR)
 
 #endif  // __SYNTHESIS__
 

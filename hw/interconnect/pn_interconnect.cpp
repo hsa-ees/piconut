@@ -34,6 +34,7 @@
 #include "pn_interconnect.h"
 
 #include "pn_interconnect_backend.h"
+#include "pn_interconnect_backend_debug.h"
 
 void m_pn_interconnect::pn_trace(sc_trace_file* tf, int level)
 {
@@ -42,8 +43,14 @@ void m_pn_interconnect::pn_trace(sc_trace_file* tf, int level)
 
 void m_pn_interconnect::elaborate()
 {
+    // System Bus ...
     pn_interconnect_backend = sc_new<m_pn_interconnect_backend>(
-        "pn_interconnect_backend",
+        "i_pn_interconnect_backend",
+        modules);
+
+    // Debug ...
+    pn_interconnect_backend_debug = sc_new<m_pn_interconnect_backend_debug>(
+        "i_pn_interconnect_backend_debug",
         modules);
 }
 

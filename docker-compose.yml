@@ -18,11 +18,10 @@ services:
       - /etc/timezone:/etc/timezone:ro
       # source directory
       - ./:/home/piconut-user/piconut
-      # build directory
-      # - /var/tmp/piconut-build/:/var/tmp/piconut-build/
       # .ssh for git access (uncomment for git access from inside the container)
       #   NOTE: Beware of security implications - any user on the machine can use your SSH identity!
-      #~ - ~/.ssh:/home/piconut-user/.ssh
+      #   (Not needed with devcontainer)
+      # - ~/.ssh:/home/piconut-user/.ssh
       # Mount further directories from host system here ...
 
     environment:
@@ -32,6 +31,10 @@ services:
       # audio
       ALSA_CARD: 1 # card from cmd 'aplay -l'
       PULSE_SERVER: unix:${XDG_RUNTIME_DIR}/pulse/native # pulse audio for sound
+      # Set build and install paths inside already mounted piconut source directory. Can be overridden with compose-entrypoint.local.sh
+      # this circumvents that folders to be mounted need to exist on the host system beforehand otherwise permission issues arise. https://github.com/moby/moby/issues/13121 (fixed for a short time, but fix not planned anymore)
+      PICONUT_BUILD: /home/piconut-user/piconut/build
+      PREFIX: /home/piconut-user/piconut/install
     devices:
       - "/dev/dri:/dev/dri" # gui support
       - "/dev/snd:/dev/snd" # sound support

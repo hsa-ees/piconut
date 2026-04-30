@@ -36,7 +36,6 @@
 #include "dm_registers.h"
 #include "dm_reg_abstract.h"
 
-
 void m_dm::pn_trace(sc_trace_file* tf, int level)
 {
     // Ports...
@@ -49,17 +48,16 @@ void m_dm::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, dmi_re_i);
     PN_TRACE(tf, dmi_we_i);
 
-    PN_TRACE(tf, wb_ack_o);
-    PN_TRACE(tf, wb_adr_i);
-    PN_TRACE(tf, wb_cyc_i);
-    PN_TRACE(tf, wb_dat_i);
-    PN_TRACE(tf, wb_dat_o);
-    PN_TRACE(tf, wb_sel_i);
-    PN_TRACE(tf, wb_we_i);
-    PN_TRACE(tf, wb_err_o);
+    PN_TRACE(tf, wb_slave.ack_o);
+    PN_TRACE(tf, wb_slave.adr_i);
+    PN_TRACE(tf, wb_slave.cyc_i);
+    PN_TRACE(tf, wb_slave.dat_i);
+    PN_TRACE(tf, wb_slave.dat_o);
+    PN_TRACE(tf, wb_slave.sel_i);
+    PN_TRACE(tf, wb_slave.we_i);
+    PN_TRACE(tf, wb_slave.err_o);
 
-    PN_TRACE(tf, debug_haltrequest_o);
-    PN_TRACE(tf, debug_haltrequest_ack_i);
+    PN_TRACE_INTERFACE(tf, debug_master);
 
     // Internal
     PN_TRACE(tf, c_hart_halted);
@@ -94,7 +92,9 @@ void m_dm::init_submodules()
     dm_controller->clk(clk);
     dm_controller->reset(reset);
 
-    dm_controller->c_haltreq_o(debug_haltrequest_o);
+    dm_controller->haltrequest_o(debug_master.haltrequest_o);
+    dm_controller->haltrequest_ack_i(debug_master.haltrequest_ack_i);
+
     dm_controller->c_hart_halted_o(c_hart_halted);
     dm_controller->c_hart_running_o(c_hart_running);
     dm_controller->c_hart_run_acmds_o(c_hart_run_acmds);
@@ -106,7 +106,6 @@ void m_dm::init_submodules()
     dm_controller->c_acmds_error_not_supported_o(c_acmds_error_not_supported);
     dm_controller->c_acmds_increment_data1_o(c_acmds_increment_data1);
 
-    dm_controller->s_haltreq_ack_i(debug_haltrequest_ack_i);
     dm_controller->s_new_acmds_i(s_new_acmds);
     dm_controller->s_abstractcs_cmderr_i(s_abstractcs_cmderr);
     dm_controller->s_dmcontrol_haltreq_i(s_dmcontrol_haltreq);
@@ -132,18 +131,16 @@ void m_dm::init_submodules()
     dm_registers->dmi_we_i(dmi_we_i);
 
     // Wishbone
-    dm_registers->wb_stb_i(wb_stb_i);
-    dm_registers->wb_cyc_i(wb_cyc_i);
-    dm_registers->wb_we_i(wb_we_i);
-    dm_registers->wb_cti_i(wb_cti_i);
-    dm_registers->wb_bte_i(wb_bte_i);
-    dm_registers->wb_sel_i(wb_sel_i);
-    dm_registers->wb_ack_o(wb_ack_o);
-    dm_registers->wb_err_o(wb_err_o);
-    dm_registers->wb_rty_o(wb_rty_o);
-    dm_registers->wb_adr_i(wb_adr_i);
-    dm_registers->wb_dat_i(wb_dat_i);
-    dm_registers->wb_dat_o(wb_dat_o);
+    dm_registers->wb_slave.stb_i(wb_slave.stb_i);
+    dm_registers->wb_slave.cyc_i(wb_slave.cyc_i);
+    dm_registers->wb_slave.we_i(wb_slave.we_i);
+    dm_registers->wb_slave.sel_i(wb_slave.sel_i);
+    dm_registers->wb_slave.ack_o(wb_slave.ack_o);
+    dm_registers->wb_slave.err_o(wb_slave.err_o);
+    dm_registers->wb_slave.rty_o(wb_slave.rty_o);
+    dm_registers->wb_slave.adr_i(wb_slave.adr_i);
+    dm_registers->wb_slave.dat_i(wb_slave.dat_i);
+    dm_registers->wb_slave.dat_o(wb_slave.dat_o);
 
     // Data flow signals
     dm_registers->abstract_regs_i(abstract_regs);

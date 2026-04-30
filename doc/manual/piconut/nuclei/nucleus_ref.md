@@ -1,5 +1,5 @@
 # The Reference Nucleus
-**Authors: Lorenz Sommer 2024, Johannes Hofmann 2025, Niklas Sirch 2025**
+**Authors: Lorenz Sommer 2024, Johannes Hofmann 2025, Niklas Sirch 2025, Tristan Kundrat 2026**
 
 ```{contents} nucleus submodules
     :local:
@@ -21,10 +21,11 @@ The reference nucleus largely supports running of programs compiled by the RISC-
 The nucleus is capable of running programs that utilize external peripherals and interrupt-driven
 programming models.
 
-It implement the following extensions of the RISC-V ISA:
+It implements the following extensions of the RISC-V ISA:
 
 - I (Base integer instruction set)
 - A (Atomic instructions)
+- M (Multiplication, division and remainder instructions)
 - Zicsr (Control and Status Register instructions)
 - Zifencei (Instruction-fetch fence instructions) - only implemented as a NOP operation as the
   reference nucleus is single core and does not reorder memory operations.
@@ -90,9 +91,9 @@ The ALU can handle R- and I-Type instructions. In order to correctly implement t
 types have, a few distinctions have to be made. This concerns the fact, that there is no I-Type `subi` instruction.
 As seen in the operation table, `funct7` decides whether subtraction is performed instead of
 addition and whether to shift logically or arithmetically. According to the RISC-V
-specification the only relevant values of the `funct7` block are `0x0` and `0x20`. Additionally,
-even though I-Type instructions get decoded into their internal immediate value, the position of the `funct7` block
-remains the same.
+specification the only relevant values of the `funct7` block are `0x0` and `0x20` for the base RV32I instruction set
+and `0x01` for the M extension. Additionally, even though I-Type instructions get decoded into their internal immediate value,
+the position of the `funct7` block remains the same.
 
 
 ### Address calculation
@@ -111,6 +112,262 @@ the `funct5` (contained inside `funct7`) block of the current instruction.
 
 The 4 A-Extension specific operations `swap`, `min`, `minu`, `max` and `maxu` are implemented in
 the ALU as well.
+
+### M-/Zmmul-Extension
+The M-Extension (multiplication, division and remainder instructions) are
+handled by two modules: one for multiplication and one for division/remainder.
+
+#### Multiplication and division module
+Currently, multiplication is implemented as a simple shift-and-add multiplier
+and division using a shift-and-subtract divider.
+Calculation modules for the M-Extension can be found under `alu/m_extension/mul`
+and `alu/m_extension/div` under the `nucleus_ref` folder.
+
+Every division and multiplication module has the following structure:
+```{figure} figures/nucleus_ref/mul-div-module.drawio.svg
+:align: center
+Multiplication/Division Module Block Diagram
+```
+
+Also, reset and clock signals are connected, if the calculation is not purely
+combinatorial.
+
+The signals have the following meaning:
+| Signal name | Explanation |
+| --- | --- |
+| a_in | Value for calculation |
+| b_in | Value for calculation |
+| funct3_in | Funct3 from instruction. Contains which calculation should be made<br>(`mul`, `mulh`, `mulhu`, `mulhsu`, `div`, `divu`, `rem`, `remu`). |
+| start_in | Must be set to High, when the inputs a_in and b_in are valid numbers and calculation should start.<br>Keep in mind to cache a_in and b_in in this cycle inside the multiplication/division module,<br>where start_in goes high, as after that cycle the program counter gets<br>incremented, thus the inputs can change. |
+| y_out | Multiplication: {math}`a_{in} * b_{in} = y_{out}`<br>Division: {math}`a_{in} / b_{in} = y_{out}` or {math}`a_{in}\mod b_{in} = y_{out}` |
+| valid_out | High, when calculation is done and the y_out signal is valid. |
+
+##### Edge cases (for division)
+Division should always round towards zero.
+The following edge cases should be handled like so:
+| Condition | Dividend (a) | Divisor (b) | `divu` | `remu` | `div` | `rem` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Division by zero | {math}`x` | {math}`0` |{math}`2^{32} - 1` | {math}`x` | {math}`-1` | {math}`x` |
+| Overflow (signed only) | {math}`-2^{31}` | {math}`-1` | - | - | {math}`-2^{31}` | {math}`0` |
+
+##### Changing out the calculation modules
+Signals to the multiplication and division module are connected in the `alu.cpp`
+file. To change out the multiplication and/or division module with a different
+version, multiple steps have to be taken. In this example, the new multiplication
+module is called `mult_new` and the new division module `divi_new`.
+
+First change the sources in the `nucleus_ref/Makefile`:
+```make
+# ...
+
+# Module sources that are used for simulation and for synthesis ...
+# Change the sources for the multiplication and division modules here.
+MODULE_SRC := $(MODULE).cpp \
+			  alu/alu.cpp \
+			  alu/m_extension/mul/mult_new.cpp \
+			  alu/m_extension/div/divi_new.cpp \
+
+# ...
+
+TESTBENCH_ALU_SRC := alu/alu.cpp \
+					 alu/m_extension/mul/mult_new.cpp \
+					 alu/m_extension/div/divi_new.cpp \
+					 alu/alu_tb/alu_tb.cpp
+
+# ...
+```
+
+Next, the submodules in the `nucleus_ref/alu/alu.h` header file:
+```c
+// ...
+
+    /* Submodules */
+#if PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION == 1
+    // Change class here, if you want to use a different multiplication module.
+    // Also change imports accordingly.
+    class m_mult_new* multiplication_module;
+#endif
+#if PN_CFG_ALU_ENABLE_M_EXTENSION == 1
+    // Change class here, if you want to use a different division module.
+    // Also change imports accordingly.
+    class m_divi_new* division_module;
+#endif
+
+// ...
+```
+
+And finally, the imports and definitions in the `nucleus_ref/alu/alu.cpp` file:
+```c
+// ...
+
+// change the following import to change out the multiplication module
+#include "m_extension/mul/mult_new.h"
+// change the following import to change out the division module
+#include "m_extension/div/divi_new.h"
+
+// ...
+
+void m_alu::init_submodules()
+{
+#if PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION == 1
+    // change this assign according to the manual, if you want to replace
+    // the multiplication module.
+    multiplication_module = sc_new<m_mult_new>("mult_new");
+    // ...
+#endif
+#if PN_CFG_ALU_ENABLE_M_EXTENSION == 1
+    // change this assign according to the manual, if you want to replace
+    // the division module.
+    division_module = sc_new<m_divi_new>("divi_new");
+    // ...
+#endif
+}
+```
+
+#### Enabling and disabling the M-/Zmmul-Extension
+Enabling and disabling the M-/Zmmul-Extension is possible.
+
+For enabling the entire M-Extension the variable `PN_MARCH` in the `piconut-config.mk`
+has to be updated to `rv32im_zicsr` in the system using this nucleus.
+
+Also the `PN_CFG_ALU_ENABLE_M_EXTENSION` variable in the same file has to be changed.
+As an example, look at the file `piconut/systems/refdesign/piconut-config.mk`:
+```make
+## RISC-V ISA and extensions ...
+## Changed -march argument for gcc. Comment following lines, if M and Zmmul
+## extensions are not used.
+# Uncomment following line, if only using Zmmul extension
+# PN_MARCH ?= rv32i_zicsr_zmmul
+# Uncomment following line, if using M extension
+PN_MARCH ?= rv32im_zicsr
+
+# ...
+
+# M-Extension ...
+#   Enable (1) or Disable (0) M-Extension
+PN_CFG_ALU_ENABLE_M_EXTENSION ?= 1
+#   Enable (1) or Disable (0) Zmmul-Extension
+PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION ?= 1
+```
+
+Enabling only the Zmmul-Extension, we need the following in the systems `piconut-config.mk`:
+```make
+## RISC-V ISA and extensions ...
+## Changed -march argument for gcc. Comment following lines, if M and Zmmul
+## extensions are not used.
+# Uncomment following line, if only using Zmmul extension
+PN_MARCH ?= rv32i_zicsr_zmmul
+# Uncomment following line, if using M extension
+# PN_MARCH ?= rv32im_zicsr
+
+# ...
+
+# M-Extension ...
+#   Enable (1) or Disable (0) M-Extension
+PN_CFG_ALU_ENABLE_M_EXTENSION ?= 0
+#   Enable (1) or Disable (0) Zmmul-Extension
+PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION ?= 1
+```
+
+Disabling everything is possible via commenting the line in `piconut-config.mk` of the system
+and setting both config enables to zero:
+```make
+## RISC-V ISA and extensions ...
+## Changed -march argument for gcc. Comment following lines, if M and Zmmul
+## extensions are not used.
+# Uncomment following line, if only using Zmmul extension
+# PN_MARCH ?= rv32i_zicsr_zmmul
+# Uncomment following line, if using M extension
+# PN_MARCH ?= rv32im_zicsr
+
+# ...
+
+# M-Extension ...
+#   Enable (1) or Disable (0) M-Extension
+PN_CFG_ALU_ENABLE_M_EXTENSION ?= 0
+#   Enable (1) or Disable (0) Zmmul-Extension
+PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION ?= 0
+```
+Keep in mind, that the `PN_CFG_...` variables may be set by the `piconut-config.mk` in the root
+directory of this project, so comment those lines out or change them accordingly.
+
+(sec:nucleus:scalar_crypto)=
+## Scalar Cryptography
+
+The reference nucleus includes a scalar cryptography module that implements parts of the
+[RISC-V Scalar Cryptography Extension](https://docs.riscv.org/reference/isa/unpriv/scalar-crypto.html).
+
+The module currently supports the following extensions:
+
+- Zkne for RV32 (NIST Encryption = AES)
+- Zknd for RV32 (NIST Decryption = AES)
+
+This module is integrated into the ALU and started when a crypto instruction is executed. Like
+multiplication this module operates over multiple cycles. 
+
+```{doxygenfunction} SC_MODULE(m_scalar_crypto)
+:project: nucleus_ref
+```
+
+### AES Instructions (Zkne, Zknd)
+
+#### Algorithm 
+
+The Advanced Encryption Standard (AES) is the Standard for symmetric encryption specified by the
+National Institute of Standards and Technology (NIST). 
+
+AES is a round-based cipher. The number of rounds depends on the key size, and the algorithm
+includes a special final round. These operations implement the core principles of symmetric-key
+cryptography: confusion (making the output significantly different from the input) and diffusion
+(spreading input bits across the output), combined with the addition of the round key. Decryption
+applies the inverse operations in reverse order.
+The basic operations displayed in the [figure below](#fig:aes_overview) of AES encryption are:
+
+- SubBytes
+  Substitution of bytes via a lookup table (S-box)
+- ShiftRows
+  Shifting of rows in the state matrix
+- MixColumns
+  Mixing of columns in the state matrix via matrix multiplication
+- AddRoundKey
+  XORing the state matrix with a round key
+
+
+```{figure} figures/nucleus_ref/aes.png
+:scale: 40
+:align: center
+:name: fig:aes_overview
+
+AES algorithm overview (original by John Savard, CC0)
+```
+
+For the exact math please refer to
+[FIPS 197](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf) or
+[Wikipedia](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard).
+
+#### Instructions
+
+The Zkne and Zknd extensions implement AES encryption and decryption instructions, respectively.
+They are split because some cryptographic modes do not require decryption support.
+
+There are four instructions implemented for AES encryption and decryption:
+
+- `aes32esmi` – Middle-round AES encryption
+- `aes32dsmi` – Middle-round AES decryption
+- `aes32esi` – Final-round AES encryption
+- `aes32dsi` – Final-round AES decryption
+
+The instructions can be used to construct AES in software and also assist with key schedule generation.
+More details can be found in the [Software Chapter](sec:sw:crypto).
+
+The implementation of Zkne and Zknd in the reference nucleus is simple but performant for 40MHz
+clock speed.
+
+Better implementations focus on side-channel resistance, less footprint and support for faster clock
+speeds but for the purpose of this reference nucleus, this implementation is sufficient.
+
+For the exact implementation please refer to the commented source code.
+
 
 (sec:nucleus:regfile)=
 ## Regfile
@@ -754,8 +1011,10 @@ Controller state machine diagram
     - Await the instruction port acknowledge signal.
 *   - `DECODE`
     - Instruction fetched. Decode the current instruction.
-*   - `ALU`
-    - Execute ALU instructions.
+*   - `ALU1`
+    - Execute ALU instructions, PC advances by `0x4`.
+*   - `ALU2`
+    - Execute ALU instructions, PC does not change.
 *   - `ALU_IMM`
     - Execute immediate ALU operations (I-Type).
 *   - `ALU_IMM_SHIFT`

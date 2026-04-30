@@ -33,51 +33,48 @@
 
 void m_vga_sync_generator::pn_trace(sc_trace_file* tf, int level)
 {
-    PN_TRACE(tf, vga_hsync);
-    PN_TRACE(tf, vga_vsync);
+    PN_TRACE(tf, clk);
+    PN_TRACE(tf, reset);
+    PN_TRACE(tf, enable);
+    PN_TRACE(tf, line);
+    PN_TRACE(tf, column);
+    PN_TRACE(tf, vga_hsync_begin_in);
+    PN_TRACE(tf, vga_hsync_end_in);
+    PN_TRACE(tf, vga_vsync_begin_in);
+    PN_TRACE(tf, vga_vsync_end_in);
+
+    PN_TRACE(tf, vga_hsync_out);
+    PN_TRACE(tf, vga_vsync_out);
 }
 
 void m_vga_sync_generator::proc_comb_sync()
 {
+    vga_hsync_next = 1;
+    vga_vsync_next = 1;
+
     if(enable.read())
     {
-        vga_hsync_next = vga_hsync.read();
-        vga_vsync_next = vga_vsync.read();
-
-        if(column.read() == vga_hsync_begin.read())
+        if((column.read() >= vga_hsync_begin_in.read()) && (column.read() < vga_hsync_end_in.read()))
         {
             vga_hsync_next = 0;
         }
-        else if(column.read() == vga_hsync_end.read())
-        {
-            vga_hsync_next = 1;
-        }
 
-        if(line.read() == vga_vsync_begin.read())
+        if((line.read() >= vga_vsync_begin_in.read()) && (line.read() < vga_vsync_end_in.read()))
         {
             vga_vsync_next = 0;
         }
-        else if(line.read() == vga_vsync_end.read())
-        {
-            vga_vsync_next = 1;
-        }
-    }
-    else
-    {
-        vga_hsync_next = 1;
-        vga_vsync_next = 1;
     }
 }
 
 void m_vga_sync_generator::proc_clk()
 {
-    vga_hsync = 1;
-    vga_vsync = 1;
+    vga_hsync_out = 0;
+    vga_vsync_out = 0;
 
     while(true)
     {
         wait();
-        vga_hsync = vga_hsync_next.read();
-        vga_vsync = vga_vsync_next.read();
+        vga_hsync_out = vga_hsync_next.read();
+        vga_vsync_out = vga_vsync_next.read();
     }
 }

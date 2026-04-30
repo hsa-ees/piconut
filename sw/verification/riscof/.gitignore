@@ -1,2 +1,3 @@
-riscof_work
+# repo for arch tests
+# too big to put in PN_BUILD_DIR as cloning takes too long
 riscv-arch-test

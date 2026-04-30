@@ -36,7 +36,6 @@
 #include "dtm.h"
 #include "dm.h"
 
-
 void m_debugger::pn_trace(sc_trace_file* tf, int level)
 {
     // Ports...
@@ -47,6 +46,8 @@ void m_debugger::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, tms_i);
     PN_TRACE(tf, tdi_i);
     PN_TRACE(tf, tdo_o);
+
+    PN_TRACE_INTERFACE(tf, debug_master);
 
     // Submodules
     dtm->pn_trace(tf, level);
@@ -78,19 +79,16 @@ void m_debugger::init_submodules()
     dm->dmi_re_i(dmi_re);
     dm->dmi_we_i(dmi_we);
 
-    dm->wb_stb_i(wb_stb_i);
-    dm->wb_cyc_i(wb_cyc_i);
-    dm->wb_we_i(wb_we_i);
-    dm->wb_cti_i(wb_cti_i);
-    dm->wb_bte_i(wb_bte_i);
-    dm->wb_sel_i(wb_sel_i);
-    dm->wb_ack_o(wb_ack_o);
-    dm->wb_err_o(wb_err_o);
-    dm->wb_rty_o(wb_rty_o);
-    dm->wb_adr_i(wb_adr_i);
-    dm->wb_dat_i(wb_dat_i);
-    dm->wb_dat_o(wb_dat_o);
+    dm->wb_slave.stb_i(wb_slave.stb_i);
+    dm->wb_slave.cyc_i(wb_slave.cyc_i);
+    dm->wb_slave.we_i(wb_slave.we_i);
+    dm->wb_slave.sel_i(wb_slave.sel_i);
+    dm->wb_slave.ack_o(wb_slave.ack_o);
+    dm->wb_slave.err_o(wb_slave.err_o);
+    dm->wb_slave.rty_o(wb_slave.rty_o);
+    dm->wb_slave.adr_i(wb_slave.adr_i);
+    dm->wb_slave.dat_i(wb_slave.dat_i);
+    dm->wb_slave.dat_o(wb_slave.dat_o);
 
-    dm->debug_haltrequest_o(debug_haltrequest_o);
-    dm->debug_haltrequest_ack_i(debug_haltrequest_ack_i);
+    dm->debug_master(debug_master);
 }

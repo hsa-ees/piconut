@@ -36,7 +36,6 @@
 
 #include <piconut.h>
 
-
 // PicoNut modules used ...
 #include <pn_interconnect.h>
 #include <cpu.h>
@@ -46,7 +45,6 @@
 #include <uart_soft.h>
 #endif
 
-
 SC_MODULE(m_refdesign)
 {
 public:
@@ -55,13 +53,14 @@ public:
     sc_in<bool> PN_NAME(reset);
 
 #ifdef __SYNTHESIS__
-    sc_in<bool> PN_NAME(rx_i);
-    sc_out<bool> PN_NAME(tx_o);
+    sc_in<bool> PN_NAME(uart_rx);
+    sc_out<bool> PN_NAME(uart_tx);
 #endif
 
     // Constructor/Destructors
     SC_CTOR(m_refdesign)
     {
+        SC_CTHREAD(proc_clk, clk.pos());
         SC_METHOD(proc_cmb);
 
         init_submodules();
@@ -72,6 +71,7 @@ public:
 
     // Processes
     void proc_cmb();
+    void proc_clk();
 
     // Submodules
     m_pn_interconnect* pn_interconnect;
@@ -83,6 +83,7 @@ public:
 protected:
     // Internal Signals
     sc_signal<bool> PN_NAME(dummy_low);
+    sc_signal<bool> PN_NAME(clk_half);
 
     // Methods
     void init_submodules();

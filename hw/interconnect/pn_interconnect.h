@@ -52,6 +52,7 @@ public:
 
 protected:
     class m_pn_interconnect_backend* pn_interconnect_backend;
+    class m_pn_interconnect_backend_debug* pn_interconnect_backend_debug;
 
     std::vector<pn_module_if*> modules;
 };

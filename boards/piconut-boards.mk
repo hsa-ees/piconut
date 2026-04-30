@@ -221,8 +221,7 @@ PN_LAYOUT_OUTPUT := $(PN_LAYOUT_OUTPUT_BASE).dfu
 PN_LAYOUT_CMD := \
   nextpnr-ecp5 \
     --json $(PN_LAYOUT_SRC) --textcfg $(PN_PNR_OUTPUT) \
-    --85k --package CSFBGA285 --lpf $(PN_BOARD_CONSTRAINTS) \
-    --freq 38.8 && \
+    --85k --package CSFBGA285 --lpf $(PN_BOARD_CONSTRAINTS) && \
   ecppack \
     --compress --freq 38.8 --input $(PN_PNR_OUTPUT) \
     --bit $(PN_LAYOUT_OUTPUT) && \
@@ -237,7 +236,7 @@ PN_LAYOUT_REPORT := \
 
 
 # Program ...
-PN_PROGRAM_CMD = -dfu-util -a 0 -D $(PN_LAYOUT_OUTPUT)
+PN_PROGRAM_CMD = dfu-util -a 0 -D $(PN_LAYOUT_OUTPUT)
 
 
 endif

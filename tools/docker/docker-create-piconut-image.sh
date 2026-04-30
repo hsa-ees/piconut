@@ -37,8 +37,8 @@ set -e
 
 TOOL="${0##*/}"
 
-IMAGE_VERSION="1.0.4"
-CLOUD_URL="https://cloud.hs-augsburg.de/public.php/dav/files/GizTAYQHmdLgmq6"
+IMAGE_VERSION="1.0.5"
+CLOUD_URL="https://cloud.hs-augsburg.de/public.php/dav/files/yEDELzHfHPDD2J3"
 
 # image to start from
 START_IMAGE="debian:trixie"

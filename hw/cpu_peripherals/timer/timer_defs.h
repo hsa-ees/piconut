@@ -37,7 +37,7 @@
 /** @brief Sets the base address of the TIMER module in address space
  *  This is the base address where the module is located and can be accessed.
  */
-#define PN_CFG_TIMER_BASE_ADDRESS 0x60000000U
+#define PN_CFG_TIMER_BASE_ADDRESS 0x80000000U
 #endif
 
 /**

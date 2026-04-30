@@ -4,8 +4,8 @@
 #
 #  Copyright (C)      2024 Lukas Bauer <lukas.bauer1@tha.de>
 #                          Lorenz Sommer <lorenz.sommer@tha.de>
-#                     2025 Tristan Kundrat <tristan.kundrat@tha.de>
 #                     2025 Martin Erichsen <martin.erichsen@tha.de>
+#                     2026 Tristan Kundrat <tristan.kundrat@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #
@@ -185,13 +185,23 @@ raw_breathe_projects_source = {
         "hw/cpu/membrana/membrana_hw",
         ["membrana_hw.h", "membrana_hw_emem.h"],
     ),
+    "membrana_ref": (
+        "hw/cpu/membrana/membrana_ref",
+        ["membrana_ref.h", "membrana_ref_emem.h"],
+    ),
     "wishbone_template": (
         "hw/peripherals/template",
         ["wishbone_template.h"],
     ),
     "nucleus_ref": (
         "hw/cpu/nucleus/nucleus_ref",
-        ["csr_master.h", "csr.h", "alu.h", "controller.h"],
+        [
+            "csr_master/csr_master.h",
+            "csr/csr.h",
+            "alu/alu.h",
+            "controller/controller.h",
+            "alu/scalar_crypto/scalar_crypto.h",
+        ],
     ),
     "remote_bitbang": (
         "hw/cpu_peripherals/debugger_soft/remote_bitbang",
@@ -207,7 +217,7 @@ raw_breathe_projects_source = {
             "dm_soft/c_debug_reg_abstractcs.h",
         ],
     ),
-    "wb_audio": (
+    "audio": (
         "hw/peripherals/audio",
         [
             "audio.h",
@@ -224,7 +234,7 @@ raw_breathe_projects_source = {
         ["clint_soft.h"],
     ),
     "m_clint": ("hw/cpu_peripherals/clint", ["clint.h"]),
-    "m_graphics": (
+    "m_video": (
         "hw/peripherals/video",
         [
             "color_translator.h",
@@ -233,16 +243,42 @@ raw_breathe_projects_source = {
             "vga_color_generator.h",
             "vga_sync_generator.h",
             "vga_timings.h",
-            "wb_graphics_config.h",
-            "demo_image_source.h",
-            "wb_graphics.h",
-            "wb_slave.h",
+            "line_column_counter.h",
+            "color_palettes.h",
+            "video_defs.h",
+            "video.h",
+            "video_wb.h",
+            "video_driver.h",
         ],
     ),
     "audio_soft": (
         "hw/peripherals/audio_soft",
         ["c_soft_audio.h", "audiooutput.h"],
     ),
+    "crypto_lib": (
+        "sw/libs/rv_crypto",
+        ["rv_crypto.h"],
+    ),
+    "m_i2c": (
+        "hw/peripherals/i2c",
+        [
+            "i2c.h",
+            "i2c_defs.h",
+            "i2c_controller/i2c_controller.h",
+            "i2c_wishbone/i2c_wishbone.h",
+            "i2c_data_control/i2c_data_control.h",
+            "i2c_clk_control/i2c_clk_control.h",
+            "i2c_driver/i2c_driver.h",
+        ],
+    ),
+    "m_gpio": (
+        "hw/peripherals/gpio",
+        [
+            "gpio.h",
+            "gpio_defs.h",
+            "gpio_driver/gpio_driver.h"
+        ]
+    )
 }
 
 breathe_projects_source = {
@@ -272,4 +308,3 @@ breathe_doxygen_config_options = {
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_favicon = "_static/favicon.png"
-

@@ -65,26 +65,14 @@ public:
     sc_in_clk PN_NAME(clk);
     sc_in<bool> PN_NAME(reset);
 
+    pn_wishbone_slave_t wb_slave;
+
     // --------------- Dmi ---------------
     sc_in<sc_uint<PN_CFG_DEBUG_DMI_BUS_ADR_WIDTH>> PN_NAME(dmi_adr_i);
     sc_in<sc_uint<32>> PN_NAME(dmi_dat_i);
     sc_out<sc_uint<32>> PN_NAME(dmi_dat_o);
     sc_in<bool> PN_NAME(dmi_re_i);
     sc_in<bool> PN_NAME(dmi_we_i);
-
-    // --------------- Wishbone ---------------
-    sc_in<bool> PN_NAME(wb_stb_i);                      // strobe input
-    sc_in<bool> PN_NAME(wb_cyc_i);                      // cycle valid input
-    sc_in<bool> PN_NAME(wb_we_i);                       // indicates write transfer
-    sc_in<sc_uint<3>> PN_NAME(wb_cti_i);                // cycle type identifier (optional, for registered feedback)
-    sc_in<sc_uint<2>> PN_NAME(wb_bte_i);                // burst type extension (optional, for registered feedback)
-    sc_in<sc_uint<WB_DAT_WIDTH / 8>> PN_NAME(wb_sel_i); // byte select inputs
-    sc_out<bool> PN_NAME(wb_ack_o);                     // normal termination
-    sc_out<bool> PN_NAME(wb_err_o);                     // termination w/ error (optional)
-    sc_out<bool> PN_NAME(wb_rty_o);                     // termination w/ retry (optional)
-    sc_in<sc_uint<WB_ADR_WIDTH>> PN_NAME(wb_adr_i);     // address
-    sc_in<sc_uint<WB_DAT_WIDTH>> PN_NAME(wb_dat_i);     // data in
-    sc_out<sc_uint<WB_DAT_WIDTH>> PN_NAME(wb_dat_o);    // data out
 
     // --------------- Data flow signals ---------------
     sc_vector<sc_in<sc_uint<32>>> PN_NAME_VEC(abstract_regs_i, NUM_ABSTRACT_REGS);
@@ -113,7 +101,15 @@ public:
     sc_out<bool> PN_NAME(s_hartstatus_acmds_running_o);
 
     // Constructor...
-    SC_CTOR(m_dm_registers)
+    SC_HAS_PROCESS(m_dm_registers);
+    m_dm_registers(
+        sc_module_name name)
+        : sc_module(name)
+        , wb_slave{
+              .alen = 32,
+              .dlen = 32,
+              .base_address = 0,
+              .size = 0x3C}
     {
         SC_METHOD(proc_cmb_read_dmi);
         sensitive << dmi_re_i
@@ -133,12 +129,12 @@ public:
         }
 
         SC_METHOD(proc_cmb_wb);
-        sensitive << wb_stb_i
-                  << wb_cyc_i
-                  << wb_we_i
-                  << wb_adr_i
-                  << wb_dat_i
-                  << wb_sel_i
+        sensitive << wb_slave.stb_i
+                  << wb_slave.cyc_i
+                  << wb_slave.we_i
+                  << wb_slave.adr_i
+                  << wb_slave.dat_i
+                  << wb_slave.sel_i
                   << wb_current_state
                   << hartcontrol_reg
                   << hartstatus_reg;

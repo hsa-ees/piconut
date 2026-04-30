@@ -30,19 +30,18 @@
  *************************************************************************/
 
 #include "nucleus_ref.h"
-
-#include "alu.h"
-#include "pc.h"
-#include "ir.h"
-#include "regfile.h"
-#include "byteselector.h"
-#include "extender.h"
-#include "immgen.h"
-#include "controller.h"
-#include "datahandler.h"
-#include "csr_master.h"
-#include "csr.h"
-
+// Include all submodules of the Nucleus
+#include "alu/alu.h"
+#include "pc/pc.h"
+#include "ir/ir.h"
+#include "regfile/regfile.h"
+#include "byteselector/byteselector.h"
+#include "extender/extender.h"
+#include "immgen/immgen.h"
+#include "controller/controller.h"
+#include "datahandler/datahandler.h"
+#include "csr_master/csr_master.h"
+#include "csr/csr.h"
 
 void m_nucleus_ref::pn_trace(sc_trace_file* tf, int level)
 {
@@ -81,8 +80,7 @@ void m_nucleus_ref::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, signal_alu_in_b);
     PN_TRACE(tf, signal_dport_wdata);
 
-    PN_TRACE(tf, debug_haltrequest_in);
-    PN_TRACE(tf, debug_haltrequest_ack_out);
+    PN_TRACE_INTERFACE(tf, debug_slave);
 
     if(level >= 2)
     {
@@ -122,11 +120,14 @@ void m_nucleus_ref::init_submodules()
     alu->force_add_in(signal_c_force_add);
     alu->force_amo_in(signal_c_force_amo);
     alu->funct7_in(signal_funct7);
+    alu->clk(clk);
+    alu->reset(reset);
 
     alu->y_out(signal_alu_out);
     alu->less_out(signal_s_alu_less);
     alu->lessu_out(signal_s_alu_lessu);
     alu->equal_out(signal_s_alu_equal);
+    alu->valid_out(signal_s_alu_valid);
     alu->alu_mode_in(signal_alu_mode);
 
     /* Program counter */
@@ -187,11 +188,12 @@ void m_nucleus_ref::init_submodules()
     controller->s_alu_less_in(signal_s_alu_less);
     controller->s_alu_lessu_in(signal_s_alu_lessu);
     controller->s_alu_equal_in(signal_s_alu_equal);
+    controller->s_alu_valid_in(signal_s_alu_valid);
     controller->s_dport_ack_in(dport_ack_in);
     controller->s_iport_ack_in(iport_ack_in);
 
     /* Debug */
-    controller->s_debug_haltrequest_in(debug_haltrequest_in);
+    controller->debug_slave(debug_slave);
     controller->s_debug_step_in(signal_s_debug_step);
 
     /* --------------- Control signals --------------- */
@@ -228,7 +230,6 @@ void m_nucleus_ref::init_submodules()
     controller->c_reg_ldcsr_out(signal_c_reg_ldcsr);
 
     /* Debug */
-    controller->c_debug_haltrequest_ack_out(debug_haltrequest_ack_out);
     controller->c_debug_level_enter_ebreak_out(signal_c_debug_level_enter_ebreak);
     controller->c_debug_level_enter_haltrequest_out(signal_c_debug_level_enter_haltrequest);
     controller->c_debug_level_enter_step_out(signal_c_debug_level_enter_step);
@@ -484,7 +485,7 @@ void m_nucleus_ref::proc_cmb_csr_bus_wdata_mux()
     }
 }
 
-
-bool m_nucleus_ref::state_is_not_halt () {
+bool m_nucleus_ref::state_is_not_halt()
+{
     return nucleus_get_controller_state() != STATE_HALT;
 }

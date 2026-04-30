@@ -52,6 +52,9 @@ include ../../../piconut.mk
 
 
 
+# Prebuild all required PicoNut modules ...
+build-prepare:
+	$(PN_PREBUILD) MODULES=hw/peripherals/gpio
 
 
 ################################################################################
@@ -70,7 +73,7 @@ SRC := $(APP).c
 #   Adding additional compilation flags:
 #     PN_SW_CFLAGS += -I/some/extra/include
 #   Adding additional linker flags:
-#     PN_SW_LDFLAGS += -lsome_extra_library
+PN_SW_LDFLAGS += -lgpio_driver
 
 
 # Define set of object files and output binary ...

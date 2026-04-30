@@ -42,21 +42,22 @@
  * Color map modes are currently not supported and output black (0x000000).
  *
  * @par Ports:
- * @param[in] clk        clock of the module
- * @param[in] reset      reset of the module
- * @param[in] color_mode color mode of the input color
- * @param[in] color_in   input color
- * @param[out] color_out output color as 24-bit RGB
+ * @param[in] clk           clock of the module
+ * @param[in] reset         reset of the module
+ * @param[in] color_mode_in color mode of the input color
+ * @param[in] color_in      input color
+ * @param[out] color_out    output color as 24-bit RGB
  *
  */
 
 #ifndef __COLOR_TRANSLATOR_H__
 #define __COLOR_TRANSLATOR_H__
 
-#include "wb_graphics_config.h"
-
 #include <systemc.h>
 #include <piconut.h>
+
+#include "video_defs.h"
+#include "video_defs_hw.h"
 
 SC_MODULE(m_color_translator)
 {
@@ -65,7 +66,7 @@ public:
     sc_in_clk PN_NAME(clk);     // Clock signal of the module
     sc_in<bool> PN_NAME(reset); // Reset signal of the module
 
-    sc_in<sc_uint<5>> PN_NAME(color_mode);
+    sc_in<sc_uint<5>> PN_NAME(color_mode_in);
     sc_in<sc_uint<32>> PN_NAME(color_in);
     sc_out<sc_uint<24>> PN_NAME(color_out);
 
@@ -73,7 +74,7 @@ public:
     SC_CTOR(m_color_translator)
     {
         SC_METHOD(proc_comb_translate);
-        sensitive << color_mode << color_in << color_out;
+        sensitive << color_mode_in << color_in << color_out;
 
         SC_CTHREAD(proc_clk_update, clk.pos());
         reset_signal_is(reset, true);

@@ -47,15 +47,13 @@ sc_signal<bool> PN_NAME(tdo);
 sc_signal<bool> PN_NAME(wb_stb);
 sc_signal<bool> PN_NAME(wb_cyc);
 sc_signal<bool> PN_NAME(wb_we);
-sc_signal<sc_uint<3>> PN_NAME(wb_cti);
-sc_signal<sc_uint<2>> PN_NAME(wb_bte);
-sc_signal<sc_uint<32 / 8>> PN_NAME(wb_sel);
+sc_signal<pn_wb_sel_t> PN_NAME(wb_sel);
 sc_signal<bool> PN_NAME(wb_ack);
 sc_signal<bool> PN_NAME(wb_err);
 sc_signal<bool> PN_NAME(wb_rty);
-sc_signal<sc_uint<32>> PN_NAME(wb_adr);
-sc_signal<sc_uint<32>> PN_NAME(wb_dat_i);
-sc_signal<sc_uint<32>> PN_NAME(wb_dat_o);
+sc_signal<pn_wb_adr_t> PN_NAME(wb_adr);
+sc_signal<pn_wb_dat_t> PN_NAME(wb_dat_i);
+sc_signal<pn_wb_dat_t> PN_NAME(wb_dat_o);
 
 sc_signal<bool> PN_NAME(debug_haltrequest);
 sc_signal<bool> PN_NAME(debug_haltrequest_ack);
@@ -88,21 +86,19 @@ int sc_main(int argc, char** argv)
     i_dut.trst_n_i(trst_n);
     i_dut.tdo_o(tdo);
 
-    i_dut.wb_stb_i(wb_stb);
-    i_dut.wb_cyc_i(wb_cyc);
-    i_dut.wb_we_i(wb_we);
-    i_dut.wb_cti_i(wb_cti);
-    i_dut.wb_bte_i(wb_bte);
-    i_dut.wb_sel_i(wb_sel);
-    i_dut.wb_ack_o(wb_ack);
-    i_dut.wb_err_o(wb_err);
-    i_dut.wb_rty_o(wb_rty);
-    i_dut.wb_adr_i(wb_adr);
-    i_dut.wb_dat_i(wb_dat_i);
-    i_dut.wb_dat_o(wb_dat_o);
+    i_dut.wb_slave.stb_i(wb_stb);
+    i_dut.wb_slave.cyc_i(wb_cyc);
+    i_dut.wb_slave.we_i(wb_we);
+    i_dut.wb_slave.sel_i(wb_sel);
+    i_dut.wb_slave.ack_o(wb_ack);
+    i_dut.wb_slave.err_o(wb_err);
+    i_dut.wb_slave.rty_o(wb_rty);
+    i_dut.wb_slave.adr_i(wb_adr);
+    i_dut.wb_slave.dat_i(wb_dat_i);
+    i_dut.wb_slave.dat_o(wb_dat_o);
 
-    i_dut.debug_haltrequest_o(debug_haltrequest);
-    i_dut.debug_haltrequest_ack_i(debug_haltrequest_ack);
+    i_dut.debug_master.haltrequest_o(debug_haltrequest);
+    i_dut.debug_master.haltrequest_ack_i(debug_haltrequest_ack);
 
     i_dut.pn_trace(tf, pn_cfg_vcd_level);
 

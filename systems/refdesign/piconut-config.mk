@@ -3,6 +3,7 @@
 #  This file is part of the PicoNut project.
 #
 #  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#                     Tristan Kundrat <tristan.kundrat@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
@@ -34,7 +35,7 @@
 
 # TBD+: Make demo in simulation work with 'membrana_hw'
 PN_CFG_MEMBRANA := membrana_soft
-#~ PN_CFG_MEMBRANA := membrana_hw
+# PN_CFG_MEMBRANA := membrana_hw
 
 
 
@@ -47,8 +48,14 @@ PN_CFG_MEMBRANA := membrana_soft
 ################################################################################
 
 
-# RISC-V ISA and extensions ...
-#~ PN_MARCH ?= rv32i
+## RISC-V ISA and extensions ...
+## Changed -march argument for gcc. Comment following lines, if M and Zmmul
+## extensions are not used.
+# Uncomment following line, if only using Zmmul extension
+# PN_MARCH ?= rv32i_zicsr_zmmul
+# Uncomment following line, if using M extension
+PN_MARCH ?= rv32im_zicsr
+
 
 
 # Operating system ...
@@ -70,6 +77,20 @@ PN_CFG_MEMBRANA := membrana_soft
 #
 PN_CFG_NUCLEUS := nucleus_ref
 
+
+# M-Extension ...
+#   Enable (1) or Disable (0) M-Extension
+PN_CFG_ALU_ENABLE_M_EXTENSION ?= 1
+#   Enable (1) or Disable (0) Zmmul-Extension
+PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION ?= 1
+
+
+# CPU/CSR ...
+PN_CFG_CSR_ADR_WIDTH ?= 12
+	# width of the address in the CSR bus.
+PN_CFG_CSR_BUS_DATA_WIDTH ?= 32
+  # width of the data in the CSR bus.
+  # Note: Also the width of the CSR registers.
 
 
 

@@ -31,8 +31,7 @@
  *************************************************************************/
 
 #include <piconut.h>
-#include <gui.h>
-#include <systemc.h>
+#include "../gui.h"
 
 int sc_main(int argc, char** argv)
 {

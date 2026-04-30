@@ -128,41 +128,6 @@
 
 #include "uart_defs.h"
 
-// TBD+: The following enums are not used here: Move them to their .cpp file or some internal header
-
-typedef enum
-{
-    WB_UART_WB_IDLE = 0,
-    WB_UART_WB_READ,
-    WB_UART_WB_READ_WAIT,
-    WB_UART_WB_WRITE,
-    WB_UART_WB_WRITE_WAIT,
-} e_uart_wb_states;
-
-typedef enum
-{
-    WB_UART_TOP_FIFO_IDLE = 0,
-    WB_UART_TOP_FIFO_RX_ACK,
-    WB_UART_TOP_FIFO_RX_READ,
-    WB_UART_TOP_FIFO_TX_WRITE,
-    WB_UART_TOP_FIFO_TX_ACK,
-} e_uart_wb_fifo_states;
-
-typedef enum
-{
-    WB_UART_TOP_TX_IDLE = 0,
-    WB_UART_TOP_TX_START,
-    WB_UART_TOP_TX_WAIT,
-    WB_UART_TOP_TX_RUN,
-} e_uart_tx_states;
-
-typedef enum
-{
-    WB_UART_TOP_RX_IDLE = 0,
-    WB_UART_TOP_RX_WAIT1,
-    WB_UART_TOP_RX_SAVE,
-    WB_UART_TOP_RX_WAIT2
-} e_uart_rx_states;
 
 SC_MODULE(m_uart), pn_module_if
 {

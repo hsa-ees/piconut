@@ -43,7 +43,7 @@
 
 
 # RISC-V ISA and extensions ...
-PN_MARCH ?= rv32i_zicsr
+PN_MARCH ?= rv32im_zicsr
 
 
 # Compiler and Linker toolchain ...
@@ -118,6 +118,19 @@ PN_CFG_CPU_RESET_ADR ?= 0x10000000
   # Reset vector
 
 
+# M-Extension ...
+#   Enable (1) or Disable (0) M-Extension
+PN_CFG_ALU_ENABLE_M_EXTENSION ?= 1
+#   Enable (1) or Disable (0) Zmmul-Extension
+PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION ?= 1
+
+
+# CPU/CSR ...
+PN_CFG_CSR_ADR_WIDTH ?= 12
+	# width of the address in the CSR bus.
+PN_CFG_CSR_BUS_DATA_WIDTH ?= 32
+  # width of the data in the CSR bus.
+  # Note: Also the width of the CSR registers.
 
 
 
@@ -190,9 +203,8 @@ PN_CFG_DEBUG_OPENOCD_PORT ?= 9824
 # one or multiple Debug Modules (DM).
 PN_CFG_DEBUG_DMI_BUS_ADR_WIDTH ?= 6
 
-
-
-
+# Size of the framebuffer for video output in Bytes.
+PN_CFG_VIDEO_FB_SIZE ?= 2048
 
 ################################################################################
 #                                                                              #

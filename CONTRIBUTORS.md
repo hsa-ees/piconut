@@ -7,10 +7,13 @@ We are grateful for your support and contributions!
 - Lukas Bauer <lukas.nassenhausen@googlemail.com> <lukas.bauer1@tha.de>
 - Alexander Beck <alexander.beck1@tha.de>
 - Daniel Dakhno <daniel.dakhno1@tha.de>
+- Sebastian Ebenhöh <sebastian.moritz.ebenhoeh@tha.de>
 - Martin Erichsen <martin.erichsen@tha.de>
+- Johannes Fleiner <johannes.fleiner1@tha.de>
 - Johannes Hofmann <johannes.hofmann1@tha.de>
 - Claus Janicher <claus.janicher@tha.de>
 - Tristan Kundrat <tristan.kundrat@tha.de>
+- Eikya Lagisetti <eikya.lagisetti1@tha.de>
 - Marco Milenkovic <marco.milenkovic@tha.de>
 - Beaurel Ingride Ngaleu <beaurel.ingride.ngaleu@tha.de>
 - Niklas Sirch <niklas.sirch1@tha.de>

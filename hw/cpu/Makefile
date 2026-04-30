@@ -57,7 +57,7 @@
 #   set here.
 #   Only PN_HW_LDFLAGS must be extended to load the submodules when linking.
 #
-PN_SUBMODULES := nucleus/nucleus_ref membrana/membrana_soft membrana/membrana_hw
+PN_SUBMODULES := nucleus/nucleus_ref membrana/membrana_soft membrana/membrana_hw membrana/membrana_ref
 
 
 # Include PicoNut setup ...
@@ -137,7 +137,8 @@ TESTBENCH_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH)
 SUBMOD_OBJ := \
 	$(PN_MODULE_BUILD_DIR)/nucleus/nucleus_ref/sim/libnucleus_ref.a \
 	$(PN_MODULE_BUILD_DIR)/membrana/membrana_soft/sim/libmembrana_soft.a \
-	$(PN_MODULE_BUILD_DIR)/membrana/membrana_hw/sim/libmembrana_hw.a
+	$(PN_MODULE_BUILD_DIR)/membrana/membrana_hw/sim/libmembrana_hw.a \
+	$(PN_MODULE_BUILD_DIR)/membrana/membrana_ref/sim/libmembrana_ref.a
 
 
 #   dependencies of the library ...
@@ -209,7 +210,7 @@ PN_SYSTEMC_SRC := $(MODULE_SRC) $(TESTBENCH_SRC)
 
 # Submodules for ICSC ...
 #   Define the submodules that ICSC must process together with this one.
-PN_SYSTEMC_SUBMODULES := nucleus/nucleus_ref membrana/membrana_hw
+PN_SYSTEMC_SUBMODULES := nucleus/nucleus_ref membrana/membrana_hw membrana/membrana_ref
 
 
 

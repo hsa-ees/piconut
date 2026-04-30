@@ -7,13 +7,6 @@
                 2025    Martin Erichsen <martin.erichsen@tha.de>
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
-  Description:
-    This file contains a block ram implementation based on the block ram
-    template. As synthesising these for different verndors may necessitate
-    different implementations, these implementations will be held in seperate
-    files and included here.
-
-
   Redistribution and use in source and binary forms, with or without modification,
   are permitted provided that the following conditions are met:
 
@@ -62,16 +55,29 @@ void m_framebuffer_ram::pn_trace(sc_trace_file* tf, int level)
 }
 
 /**
- * This module implements a dual port block ram. It is a read first block ram.
- * With a write enable signal.
- * This module is implemented  for SystemC simulation only.
- *
- * The implementation is a conversion from the verilog templates that are used
- * by the synthesis tools to generate the block ram.
- *
- * For the ICSC synthesis the implementation is replaced by a verilog template
- * this is done by setting the __SC_TOOL_VERILOG_MOD__ in the header file
+ * @brief debugging print function
  */
+[[maybe_unused]] static void _print_framebuffer(sc_uint<8>* ram, int width= 40, int height= 30)
+{
+    printf("\n");
+    for(int y = 0; y < height; y++)
+    {
+        for(int x = 0; x < width; x++)
+        {
+            int index = (y * width) + x;
+
+            if(ram[index] > 0)
+            {
+                printf("█");
+            }
+            else
+            {
+                printf("░");
+            }
+        }
+        printf("\n");
+    }
+}
 
 void m_framebuffer_ram::proc_clk_ram_port_a()
 {
@@ -81,7 +87,10 @@ void m_framebuffer_ram::proc_clk_ram_port_a()
 
         if(ena == 1)
         {
-            PN_ASSERTF(addra.read() < CFG_WB_GRAPHICS_FB_SIZE, ("addra exceeds the available address range: valid: 0..%d, got: %d", CFG_WB_GRAPHICS_FB_SIZE, (unsigned int)addra.read()));
+            PN_ASSERTF(addra.read() < PN_CFG_VIDEO_FB_SIZE,
+                ("addra exceeds the available address range: valid: 0..%d, got: %d",
+                    PN_CFG_VIDEO_FB_SIZE,
+                    (unsigned int)addra.read()));
 
             // Write the data at dia to the ram at address addra when wea and ena are high
             if(wea == 1)
@@ -103,7 +112,10 @@ void m_framebuffer_ram::proc_clk_ram_port_b()
 
         if(enb == 1)
         {
-            PN_ASSERTF(addrb.read() < CFG_WB_GRAPHICS_FB_SIZE, ("addrb exceeds the available address range: valid: 0..%d, got: %d", CFG_WB_GRAPHICS_FB_SIZE, (unsigned int)addrb.read()));
+            PN_ASSERTF(addrb.read() < PN_CFG_VIDEO_FB_SIZE,
+                ("addrb exceeds the available address range: valid: 0..%d, got: %d",
+                    PN_CFG_VIDEO_FB_SIZE,
+                    (unsigned int)addrb.read()));
 
             // Write the data at dib to the ram at address addrb when web and enb are high
             if(web == 1)

@@ -42,13 +42,13 @@
  * Requires one clock cycle to output.
  *
  * @par Ports:
- * @param[in] clk          clock of the module
- * @param[in] reset        reset of the module
- * @param[in] blank_enable enable output blanking
- * @param[in] video_in     input color
- * @param[out] vga_red     4-bit red channel intensity
- * @param[out] vga_green   4-bit green channel intensity
- * @param[out] vga_blue    4-bit blue channel intensity
+ * @param[in] clk             clock of the module
+ * @param[in] reset           reset of the module
+ * @param[in] blank_enable_in enable output blanking
+ * @param[in] video_in        input color
+ * @param[out] vga_red_out    4-bit red channel intensity
+ * @param[out] vga_green_out  4-bit green channel intensity
+ * @param[out] vga_blue_out   4-bit blue channel intensity
  */
 
 #ifndef __VGA_COLOR_GENERATOR_H__
@@ -65,23 +65,23 @@ public:
     sc_in<bool> PN_NAME(reset);
 
     // Blanking Control Signal
-    sc_in<bool> PN_NAME(blank_enable);
+    sc_in<bool> PN_NAME(blank_enable_in);
 
     // Input Color Signal
     sc_in<sc_uint<24>> PN_NAME(video_in);
 
     // Output Color Signals
-    sc_out<sc_uint<4>> PN_NAME(vga_red);
-    sc_out<sc_uint<4>> PN_NAME(vga_green);
-    sc_out<sc_uint<4>> PN_NAME(vga_blue);
+    sc_out<sc_uint<4>> PN_NAME(vga_red_out);
+    sc_out<sc_uint<4>> PN_NAME(vga_green_out);
+    sc_out<sc_uint<4>> PN_NAME(vga_blue_out);
 
     // Constructor
     SC_CTOR(m_vga_color_generator)
     {
         SC_METHOD(proc_comb_convert);
-        sensitive << video_in << blank_enable;
+        sensitive << video_in << blank_enable_in;
 
-        SC_CTHREAD(proc_clk_update, clk.pos())
+        SC_CTHREAD(proc_clk_update, clk.pos());
         reset_signal_is(reset, true);
     }
 

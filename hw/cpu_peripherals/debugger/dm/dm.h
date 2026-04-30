@@ -58,6 +58,9 @@ public:
     sc_in_clk PN_NAME(clk);
     sc_in<bool> PN_NAME(reset);
 
+    pn_wishbone_slave_t wb_slave;
+    pn_debug_master_t debug_master;
+
     // --------------- Dmi ---------------
     sc_in<sc_uint<PN_CFG_DEBUG_DMI_BUS_ADR_WIDTH>> PN_NAME(dmi_adr_i);
     sc_in<sc_uint<32>> PN_NAME(dmi_dat_i);
@@ -65,29 +68,20 @@ public:
     sc_in<bool> PN_NAME(dmi_re_i);
     sc_in<bool> PN_NAME(dmi_we_i);
 
-    // --------------- Wishbone ---------------
-    sc_in<bool> PN_NAME(wb_stb_i);            // strobe input
-    sc_in<bool> PN_NAME(wb_cyc_i);            // cycle valid input
-    sc_in<bool> PN_NAME(wb_we_i);             // indicates write transfer
-    sc_in<sc_uint<3>> PN_NAME(wb_cti_i);      // cycle type identifier (optional, for registered feedback)
-    sc_in<sc_uint<2>> PN_NAME(wb_bte_i);      // burst type extension (optional, for registered feedback)
-    sc_in<sc_uint<32 / 8>> PN_NAME(wb_sel_i); // byte select inputs
-    sc_out<bool> PN_NAME(wb_ack_o);           // normal termination
-    sc_out<bool> PN_NAME(wb_err_o);           // termination w/ error (optional)
-    sc_out<bool> PN_NAME(wb_rty_o);           // termination w/ retry (optional)
-    sc_in<sc_uint<32>> PN_NAME(wb_adr_i);     // address
-    sc_in<sc_uint<32>> PN_NAME(wb_dat_i);     // data in
-    sc_out<sc_uint<32>> PN_NAME(wb_dat_o);    // data out
-
-    // --------------- Debug Interrupt ---------------
-    sc_out<bool> PN_NAME(debug_haltrequest_o);
-    sc_in<bool> PN_NAME(debug_haltrequest_ack_i);
+    // Constructor...
+    SC_HAS_PROCESS(m_dm);
+    m_dm(
+        sc_module_name name)
+        : sc_module(name)
+        , wb_slave{
+              .alen = 32,
+              .dlen = 32,
+              .base_address = 0,
+              .size = 0x3C}
+    {
 
 #if !PN_PRESYNTHESIZED_H_ONLY(DM)
 
-    // Constructor...
-    SC_CTOR(m_dm)
-    {
         init_submodules();
     }
 
@@ -99,12 +93,12 @@ public:
 
     // Processes...
 
-#else // !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
+#else // !PN_PRESYNTHESIZED_H_ONLY(DM)
+    }
 
-    SC_CTOR(m_dm) {}
     void pn_trace(sc_trace_file * tf, int level = 1) {}
 
-#endif
+#endif // !PN_PRESYNTHESIZED_H_ONLY(DM)
 
 protected:
 #if !PN_PRESYNTHESIZED_H_ONLY(DM)
@@ -143,9 +137,12 @@ protected:
     class m_dm_registers* dm_registers;
     class m_dm_reg_abstract* dm_reg_abstract;
 
-#else
+#else // !PN_PRESYNTHESIZED_H_ONLY(DM)
+
+    // Declare the module to be pre-synthesized ...
     PN_PRESYNTHESIZED;
-#endif
+
+#endif // !PN_PRESYNTHESIZED_H_ONLY(DM)
 };
 
 #endif

@@ -1,4 +1,4 @@
-# Building the GNU Toolchain
+# Building the RISC-V GNU Toolchain
 **Author: Lukas Bauer 2024**
 
 ## General Information

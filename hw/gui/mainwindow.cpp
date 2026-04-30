@@ -51,14 +51,15 @@ MainWindow::MainWindow(QWidget* parent)
 {
     ui->setupUi(this);
 
-    QMenu *settingsMenu = menuBar()->addMenu(tr("&Settings"));
-    QAction *audioAction = settingsMenu->addAction("&Audio");
+    QMenu* settingsMenu = menuBar()->addMenu(tr("&Settings"));
+    QAction* audioAction = settingsMenu->addAction("&Audio");
 
-    connect(audioAction, &QAction::triggered, [this](){
-        if(!this->triggerCallback) {
+    connect(audioAction, &QAction::triggered, [this]() {
+        if(!this->triggerCallback)
+        {
             return;
         }
-        this->triggerCallback(SETTINGS_AUDIO); 
+        this->triggerCallback(GUI_ACTION::SETTINGS_AUDIO);
     });
 }
 
@@ -80,7 +81,7 @@ void MainWindow::image_to_gui(uint32_t* framebuffer, uint32_t framebuffer_size)
     // Convert framebuffer to output image
     framebuffer_to_image fb_to_image(framebuffer, framebuffer_size);
     output_image = fb_to_image.output_image();
-    
+
     ui->image_label->setMinimumSize(output_image.width(), output_image.height());
 
     if(output_image.isNull())
@@ -92,21 +93,21 @@ void MainWindow::image_to_gui(uint32_t* framebuffer, uint32_t framebuffer_size)
     // Convert image to pixmap in order to display image
     ui->image_label->setPixmap(QPixmap::fromImage(output_image));
 
-    //adapt MainWindow size to 800 x 573 as "default" size
+    // adapt MainWindow size to 800 x 573 as "default" size
     if(!initial_resized)
     {
         ui->image_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
         ui->image_label->resize(900, 500);
-        //resize(ui->image_label->sizeHint());
+        // resize(ui->image_label->sizeHint());
         initial_resized = true;
     }
 
     setWindowTitle(QString("Image resolution: %1x%2 px | Label size: %3x%4 px")
-                       .arg(output_image.width())
-                       .arg(output_image.height())
-                       .arg(ui->image_label->width())
-                       .arg(ui->image_label->height()));
+            .arg(output_image.width())
+            .arg(output_image.height())
+            .arg(ui->image_label->width())
+            .arg(ui->image_label->height()));
 }
 
 // Override resize event handler to maintain the aspect ratio of the window and its contents
@@ -130,12 +131,11 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     //                    .arg(ui->image_label->height()));
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::closeEvent(QCloseEvent* event)
 {
     mainwindow_open = false;
     event->accept();
 }
-
 
 bool MainWindow::is_mainwindow_open() const
 {

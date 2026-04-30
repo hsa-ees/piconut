@@ -20,7 +20,8 @@ For synthesizing:
 
 Alternativly, you can use a docker image with all the necessary software preinstalled.
 
-Navigate to the base directory of the source tree.
+
+Clone the PicoNut repository and navigate to the base directory of the source tree.
 
 ```console
 $ cd tools/docker
@@ -57,10 +58,10 @@ $ make hello
 
 If everything works, you should see in the console `PicoNut/RISC-V` in ascii art style.
 
-## Running the "Hello World" Example on ULX3S FPGA Board
+## Running the "Hello World" Example on the ULX3S FPGA Board
 
 ```{note}
-Currently the ULX3S FPGA development board is supported only.
+To run the PicoNut on other FPGA boards take a look at [Supported Boards](chp:supported_boards) chapter.
 ```
 
 1. Setup ULX3S udev rules. They are found [here](sec:apx:udev:ulx3s).
@@ -91,3 +92,38 @@ If everything works, you should see in the console `PicoNut/RISC-V` in ascii art
 ```{note}
 To reset the system press the button F1 on the board.
 ```
+
+
+## Further Examples
+
+A summary of common targets and command-line variables can be viewed by running
+
+```console
+$ make help
+
+```
+
+To build a module navigate to the module directory:
+
+```console
+$ make TECHS=sim build      # Build simulation variant of the module
+$ make TECHS=syn build      # Synthesize the module
+```
+
+To verify a module navigate to the module directory:
+
+```console
+$ make TECHS=sim verify                     # Verify module (e.g run the testbench)
+$ SIM_TRACE_LEVEL=3 make TECHS=sim verify   # Enable trace file (.vcd) generation
+```
+
+Additional targets for systems:
+
+```console
+$ make TECHS=sim sim            # Run system simulation
+$ make TECHS=syn program        # Program system to a FPGA
+```
+
+
+More information about the build system can be found in the chapter `Project Structure and Build System`.
+

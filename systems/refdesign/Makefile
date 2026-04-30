@@ -56,6 +56,11 @@ PN_SYSTEM := .
 #   Only PN_HW_LDFLAGS must be extended to load the submodules when linking.
 PN_SUBMODULES := hw
 
+ifeq ($(PICONUT_BOARD),orangecrab)
+PN_BOARD_CONSTRAINTS := boards/orangecrab/orangecrab.lpf
+else
+PN_BOARD_CONSTRAINTS := boards/ulx3s/ulx3s.lpf
+endif
 
 # Include PicoNut setup ...
 include ../../piconut.mk
@@ -152,7 +157,11 @@ PN_TOPLEVEL := m_refdesign
 
 
 # Board constraints ...
+ifeq ($(PICONUT_BOARD),orangecrab)
+PN_BOARD_CONSTRAINTS := boards/orangecrab/orangecrab.lpf
+else
 PN_BOARD_CONSTRAINTS := boards/ulx3s/ulx3s.lpf
+endif
 
 
 # Declare dependencies ...

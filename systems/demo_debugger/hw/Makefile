@@ -133,7 +133,7 @@ $(SIMULATOR_BIN): $(SIMULATOR_OBJ) $(MODULE_LIB)
 
 
 # Add libraries used ...
-PN_HW_LDFLAGS += -lcpu -ldebugger -lremote_bitbang -luart -luart_soft
+PN_HW_LDFLAGS += -lcpu -ldebugger -lremote_bitbang -luart -luart_soft -lpn_interconnect
 
 
 # Add dependencies for libraries used (optional) ...
@@ -143,6 +143,7 @@ PN_HW_LDFLAGS += -lcpu -ldebugger -lremote_bitbang -luart -luart_soft
 $(SIMULATOR_BIN): $(PN_STAGE_DIR)/hw/lib/libcpu.a
 $(SIMULATOR_BIN): $(PN_STAGE_DIR)/hw/lib/libdebugger.a
 $(SIMULATOR_BIN): $(PN_STAGE_DIR)/hw/lib/libuart_soft.a
+$(SIMULATOR_BIN): $(PN_STAGE_DIR)/hw/lib/libpn_interconnect.a
 
 
 
@@ -196,7 +197,7 @@ PN_SYSTEMC_SRC := $(MODULE_SRC) $(TESTBENCH_SRC)
 
 # Submodules for ICSC ...
 #   Define the submodules that ICSC must process together with this one.
-#PN_SYSTEMC_SUBMODULES :=
+PN_SYSTEMC_SUBMODULES := $(PN_SOURCE_DIR)/hw/interconnect
 
 
 

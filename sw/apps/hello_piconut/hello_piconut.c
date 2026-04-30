@@ -31,8 +31,10 @@
 *************************************************************************/
 
 #include <stdio.h>
+#include <gpio_driver.h>
 
 #define DO_LOOP 0
+// #define ENABLE_GPIO
 
 #define KNRM "\x1B[0m"
 #define KRED "\x1B[31m"
@@ -46,6 +48,9 @@
 int main()
 {
 
+    //
+    // UART
+    //
     do
     {
         printf("%s______ _           _   _       _       %s__%s_____ _____ _____ _____       %s_   _ \n", KMAG, KNRM, KBLU, KYEL);
@@ -56,5 +61,34 @@ int main()
         printf("%s\\_|   |_|\\___\\___/\\_| \\_/\\__,_|\\__%s/_/%s   \\_| \\_|\\___/\\____/ \\____/      %s\\___/%s \n\n\n", KMAG, KNRM, KBLU, KYEL, KNRM);
     } while(DO_LOOP);
 
-    return DO_LOOP;
+#ifdef ENABLE_GPIO
+    //
+    // GPIO
+    //
+    gpio_t gpio;
+    gpio_init(&gpio, 0x40000000U);
+
+    for(uint32_t counter = 0; counter < 0x100; counter++)
+    {
+        bool input = 0;
+        if(gpio_read_input_pin(&gpio, 0, &input) != GPIO_OK)
+        {
+            printf("Error while reading gpio input!\n");
+            return 1;
+        }
+
+        if(!input)
+        {
+            gpio_write_output(&gpio, counter);
+        }
+
+        // Wait
+        for(uint32_t i = 0; i < 100000; i++)
+        {
+            asm volatile("nop");
+        }
+    }
+#endif
+
+    return 0;
 }

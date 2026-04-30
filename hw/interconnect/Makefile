@@ -72,7 +72,7 @@ MODULE := pn_$(PN_MODULE_NAME)
 
 
 # Module sources that are used for simulation and for synthesis ...
-MODULE_SRC := $(MODULE).cpp $(MODULE)_backend.cpp
+MODULE_SRC := $(MODULE).cpp $(MODULE)_backend.cpp $(MODULE)_backend_debug.cpp
 
 
 # Testbench and its source(s), containing `sc_main` ...

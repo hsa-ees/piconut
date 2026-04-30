@@ -166,53 +166,88 @@ The `c_soft_peripheral` interface is forwarded to the `c_soft_dm`.
 
 Note: The module is not synthesizable and is only used for simulation purposes.
 
-### Usage
 
-An example refdesign can be found at `systems/demo_debugger_soft`.
+## Debug Handler
+
+The debug handler is a routine executed by the processor when entering debug mode.
+Its purpose is to process commands received from the host system and resume
+the main program if requested. Written in RISC-V assembly, it operates in
+four stages: `_entry`, `_loop`, `_run_cmd`, and `_resume`. Execution begins
+at `_entry`, then moves to `_loop,` where it waits for a `resume request` or a
+`run command request`. If either is set, the handler jumps to the corresponding
+stage. The `_run_cmd` stage concludes by setting the program counter to the
+first `abstract command` register of the `DM`.
+According to the External Debug Support standard, the last command from the
+host, whether an `abstract command` or `progbuf` is an `EBREAK` instruction.
+As a result, the debug handler is executed again after the last command.
+
+```{note}
+Currently there is no exception handling implemented. The debug handler
+needs to be extended when the piconut supports exception handling.
+```
+
+The `Debug Handler` program behaves like described in the diagram below.
+
+
+```{figure} ./figures/debugger/debug_handler_flow_diagram.drawio.svg
+:name: debug_handler_flow_diagram
+:width: 30%
+:align: center
+Debug Handler program flow.
+```
+
+## Hardware Debugger
+
+**Under construction**
+
+
+## Usage
+
+For the soft debugger an example system can be found at `systems/demo_debugger_soft`.
+For the synthesizeable debugger an example system can be found at `systems/demo_debugger`.
 
 1. Execute a system that instantiates a debugger. For example the demo_debugger_soft
 
 ```console
 $ cd systems/demo_debugger_soft
-$ make TECHS=sim run-hello
+$ DEBUG=1 make TECHS=sim sim
+```
+
+Or program a FPGA with the hardware debugger example system
+
+```console
+$ cd systems/demo_debugger
+$ DEBUG=1 make TECHS=syn program
 ```
 
 To start a debug session you can either use `GDB` in terminal mode or use the
 VSCode interface.
 
-#### Terminal
+### Terminal
 
-To attach GDB to the current runing application type in to same application folder:
+To attach GDB to the current running simulation type:
 ```console
-$ make attach-gdb
+$ ./tools/bin/pn-gdb --sim <path-to-target-app>
 ```
 
-Alternatively, you can start OpenOCD and GDB seperate in two terminals.
-
-1. Start OpenOCD with simulation configuration file.
-The configuration for OpenOCD is found at `tools/etc/openocd-sim.cfg`.
-From the animation directory invoke:
-
+Or attach GDB to the current system running on a FPGA type:
 ```console
-$ make start-openocd-sim
+$ ./tools/bin/pn-gdb --board <path-to-target-app>
 ```
 
-2. Start GDB with configuration file.
-The configuration for GDB is found at `tools/etc/gdb_start`.
-From the animation directory invoke:
-
-```console
-$ make start-gdb
+```{note}
+The target application must be build with DEBUG=1 option to ensure debug symbols are included.
 ```
 
-This attaches `GDB` to the running program. If you want to debug the program from the first assembler command you need to restart the application. In the `GDB` console type:
+This attaches `GDB` to the running program. If you want to debug the program from
+the first assembler command you need to restart the application. In the `GDB` console type:
 
 ```bash
 b _start
 j _start
 ```
 
-#### VSCode
+### VSCode
 
 Add the necessary configurations to the VSCodes configuration files.
 
@@ -299,36 +334,3 @@ in the `tasks.json`:
 To start the debug session go to the `Run and Debug` menu an select the
 `(GDB) PicoNut Software Debugger`. After clicking run ignore the warning popup
 saying that OpenOCD hasn't terminated yet and click `Debug Anyway`.
-
-## Debug Handler
-
-The debug handler is a routine executed by the processor when entering debug mode.
-Its purpose is to process commands received from the host system and resume
-the main program if requested. Written in RISC-V assembly, it operates in
-four stages: `_entry`, `_loop`, `_run_cmd`, and `_resume`. Execution begins
-at `_entry`, then moves to `_loop,` where it waits for a `resume request` or a
-`run command request`. If either is set, the handler jumps to the corresponding
-stage. The `_run_cmd` stage concludes by setting the program counter to the
-first `abstract command` register of the `DM`.
-According to the External Debug Support standard, the last command from the
-host, whether an `abstract command` or `progbuf` is an `EBREAK` instruction.
-As a result, the debug handler is executed again after the last command.
-
-```{note}
-Currently there is no exception handling implemented. The debug handler
-needs to be extended when the piconut supports exception handling.
-```
-
-The `Debug Handler` program behaves like described in the diagram below.
-
-
-```{figure} ./figures/debugger/debug_handler_flow_diagram.drawio.svg
-:name: debug_handler_flow_diagram
-:width: 30%
-:align: center
-Debug Handler program flow.
-```
-
-## Hardware Debugger
-
-TODO

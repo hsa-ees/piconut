@@ -29,18 +29,9 @@
 #  -----------------------------------------------------------------------------
 
 import os
-import re
-import shutil
-import subprocess
-import shlex
 import logging
-import random
-import string
-from string import Template
-import sys
 
 import riscof.utils as utils
-import riscof.constants as constants
 from riscof.pluginTemplate import pluginTemplate
 
 logger = logging.getLogger()
@@ -74,12 +65,7 @@ class piconut(pluginTemplate):
         # test-bench produced by a simulator (like verilator, vcs, incisive, etc). In case of an iss or
         # emulator, this variable could point to where the iss binary is located. If 'PATH variable
         # is missing in the config.ini we can hardcode the alternate here.
-        self.dut_exe = os.path.abspath(
-            os.path.join(
-                config["PATH"] if "PATH" in config else "",
-                "systems/refdesign/hw/pn-sim",
-            )
-        )
+        self.dut_exe = os.getenv("DUT_EXE")
 
         # Number of parallel jobs that can be spawned off by RISCOF
         # for various actions performed in later functions, specifically to run the tests in
@@ -89,7 +75,7 @@ class piconut(pluginTemplate):
         # Path to the directory where this python file is located. Collect it from the config.ini
         self.pluginpath = os.path.abspath(config["pluginpath"])
 
-        # Collect the paths to the  riscv-config absed ISA and platform yaml files. One can choose
+        # Collect the paths to the riscv-config absolute ISA and platform yaml files. One can choose
         # to hardcode these here itself instead of picking it from the config.ini file.
         self.isa_spec = os.path.abspath(config["ispec"])
         self.platform_spec = os.path.abspath(config["pspec"])
@@ -102,11 +88,11 @@ class piconut(pluginTemplate):
         else:
             self.target_run = True
 
-    def initialise(self, suite, work_dir, archtest_env):
+    def initialise(self, suite, workdir, env):
         # capture the working directory. Any artifacts that the DUT creates should be placed in this
         # directory. Other artifacts from the framework and the Reference plugin will also be placed
         # here itself.
-        self.work_dir = work_dir
+        self.work_dir = workdir
 
         # capture the architectural test-suite directory.
         self.suite_dir = suite
@@ -123,7 +109,7 @@ class piconut(pluginTemplate):
             + self.pluginpath
             + "/env/\
          -I "
-            + archtest_env
+            + env
             + " {1} -o {2} {3}"
         )
 
@@ -164,7 +150,7 @@ class piconut(pluginTemplate):
             + ("lp64 " if 64 in ispec["supported_xlen"] else "ilp32 ")
         )
 
-    def runTests(self, testList):
+    def runTests(self, testlist):
         # Delete Makefile if it already exists.
         if os.path.exists(self.work_dir + "/Makefile." + self.name[:-1]):
             os.remove(self.work_dir + "/Makefile." + self.name[:-1])
@@ -177,8 +163,8 @@ class piconut(pluginTemplate):
         # function earlier
         make.makeCommand = "make -k -j" + self.num_jobs
 
-        for testname in testList:
-            testentry = testList[testname]
+        for testname in testlist:
+            testentry = testlist[testname]
             test = testentry["test_path"]
             test_dir = testentry["work_dir"]
 
@@ -186,7 +172,8 @@ class piconut(pluginTemplate):
 
             execute.append("@cd " + testentry["work_dir"])
 
-            elf = "my.rv32"
+            elf_name = "DUT-piconut.rv32"
+            elf_path = os.path.join(test_dir, elf_name)
 
             # for each test there are specific compile macros that need to be enabled. The macros in
             # the testList node only contain the macros/values. For the gcc toolchain we need to
@@ -194,15 +181,17 @@ class piconut(pluginTemplate):
             compile_macros = " -D" + " -D".join(testentry["macros"])
 
             cc_cmd = self.compile_cmd.format(
-                testentry["isa"].lower(), test, elf, compile_macros
+                testentry["isa"].lower(), test, elf_name, compile_macros
             )
 
             execute.append(cc_cmd)
 
-            execute.append(self.objdump_cmd.format(elf, elf + ".dump.S"))
-            signature_start_cmd = self.get_sig_addrs_cmd.format(elf, "begin")
-            signature_end_cmd = self.get_sig_addrs_cmd.format(elf, "end")
-            execute.append(self.dump_sig_addrs_cmd.format(elf, elf + ".sigaddrs"))
+            execute.append(self.objdump_cmd.format(elf_path, elf_path + ".dump.S"))
+            signature_start_cmd = self.get_sig_addrs_cmd.format(elf_path, "begin")
+            signature_end_cmd = self.get_sig_addrs_cmd.format(elf_path, "end")
+            execute.append(
+                self.dump_sig_addrs_cmd.format(elf_path, elf_name + ".sigaddrs")
+            )
 
             # name of the signature file as per requirement of RISCOF. RISCOF expects the signature to
             # be named as DUT-<dut-name>.signature. The below variable creates an absolute path of
@@ -211,13 +200,12 @@ class piconut(pluginTemplate):
 
             # if the user wants to disable running the tests and only compile the tests
             if self.target_run:
-                trace_level = os.getenv("TRACE_LVL", "0")
                 simcmd = (
                     f"{self.dut_exe} \\\n"
                     f"\t--signature-path={sig_file} "
                     f"--signature-begin=`{signature_start_cmd}` "
                     f"--signature-end=`{signature_end_cmd}` \\\n"
-                    f"\t-t{trace_level} {elf}"
+                    f"\t{elf_path}"
                 )
             else:
                 simcmd = 'echo "NO RUN"'

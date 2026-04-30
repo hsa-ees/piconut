@@ -35,37 +35,37 @@
  * @brief Video source module with internal framebuffer
  *
  * The framebuffer source generates a video signal from an internal framebuffer.
- * It offers two seperate interfaces for interaction with the system and video
+ * It offers two separate interfaces for interaction with the system and video
  * output, each driven by their own clocks.
  *
  * The system-side port offers a read/write interface to the internal
  * framebuffer.
  *
- * From the video-side port, `vid_column` and `vid_line` are used to address
+ * From the video-side port, `vid_column_in` and `vid_line` are used to address
  * pixels inside the buffer. Calculation of the buffer address is given by
  * following equation:
  * ```
- * address = (column / 16) + (line / 16) * 40
+ * address = (column / PN_CFG_VIDEO_FB_SCALING_DIVISOR) + (line / PN_CFG_VIDEO_FB_SCALING_DIVISOR) * (RESOLUTION_X / PN_CFG_VIDEO_FB_SCALING_DIVISOR)
  * ```
  * This results in a fixed upscaling factor of 16 and a maximum column address
  * of 639. Column addresses greater than 639 wrap over to the next line.
- * While `vid_enable` is disabled, zero will be output over `vid_output`.
+ * While `vid_enable_in` is disabled, zero will be output over `vid_output`.
  *
  * Generation of the video signal requires one clock cycle.
  *
  * @par Ports:
- * @param[in] ctl_clk       system-side clock input
- * @param[in] ctl_reset     system-side reset
- * @param[in] ctl_addr      system-side buffer address
- * @param[in] ctl_data_in   system-side buffer write data
- * @param[out] ctl_data_out system-side buffer read data
- * @param[in] ctl_write_en  system-side buffer write enable
+ * @param[in] sys_clk       system-side clock input
+ * @param[in] reset         system-side reset
  *
- * @param[in] vid_clk     video-side clock input
- * @param[in] vid_enable  video-side output enable
- * @param[in] vid_column  video-side horizontal address
- * @param[in] vid_line    video-side vertical address
- * @param[out] vid_output video-side video output
+ * @param[in] ctl_addr_in      system-side buffer address
+ * @param[in] ctl_data_in      system-side buffer write data
+ * @param[in] ctl_write_en_in  system-side buffer write enable
+ *
+ * @param[in] vid_clk        video-side clock input
+ * @param[in] vid_enable_in  video-side output enable
+ * @param[in] vid_column_in  video-side horizontal address
+ * @param[in] vid_line_in    video-side vertical address
+ * @param[out] vid_data_out  video-side video output
  */
 
 #ifndef __FRAMEBUFFER_SOURCE_H__
@@ -79,47 +79,35 @@
 SC_MODULE(m_framebuffer_source)
 {
 public:
+    sc_in<bool> PN_NAME(reset);
+
     // System Control Interface
-    sc_in_clk PN_NAME(ctl_clk);
-    sc_in<bool> PN_NAME(ctl_reset);
-    sc_in<sc_uint<FB_RAM_ADDR_WIDTH>> PN_NAME(ctl_addr);
+    sc_in_clk PN_NAME(sys_clk);
+    sc_in<sc_uint<FB_RAM_ADDR_WIDTH>> PN_NAME(ctl_addr_in);
     sc_in<sc_uint<FB_RAM_DATA_WIDTH>> PN_NAME(ctl_data_in);
+    sc_in<bool> PN_NAME(ctl_write_en_in);
+
+    // Ctl Output
     sc_out<sc_uint<FB_RAM_DATA_WIDTH>> PN_NAME(ctl_data_out);
-    sc_in<bool> PN_NAME(ctl_write_en);
 
     // Video Output Interface
     sc_in_clk PN_NAME(vid_clk);
-    sc_in<bool> PN_NAME(vid_enable);
-    sc_in<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vid_column);
-    sc_in<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vid_line);
-    sc_out<sc_uint<32>> PN_NAME(vid_output);
+    sc_in<bool> PN_NAME(vid_enable_in);
+    sc_in<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vid_column_in);
+    sc_in<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vid_line_in);
+    sc_out<sc_uint<32>> PN_NAME(vid_data_out);
 
     // Constructor
     SC_CTOR(m_framebuffer_source)
     {
+        init_submodules();
+
         SC_METHOD(proc_comb_ctl);
-        sensitive << ctl_reset;
+        sensitive << reset;
 
         SC_METHOD(proc_comb_vid);
-        sensitive << vid_enable << ram_dob
-                  << vid_column << vid_line;
-
-        // RAM Port A for system control
-        fb_ram = sc_new<m_framebuffer_ram>("framebuffer_ram");
-        fb_ram->clka(ctl_clk);
-        fb_ram->wea(ctl_write_en);
-        fb_ram->ena(ram_ena);
-        fb_ram->addra(ctl_addr);
-        fb_ram->dia(ctl_data_in);
-        fb_ram->doa(ctl_data_out);
-
-        // RAM Port B for video output
-        fb_ram->clkb(vid_clk);
-        fb_ram->web(ram_web);
-        fb_ram->enb(vid_enable);
-        fb_ram->addrb(ram_addrb);
-        fb_ram->dib(ram_dib);
-        fb_ram->dob(ram_dob);
+        sensitive << vid_enable_in << ram_dob
+                  << vid_column_in << vid_line_in;
     }
 
     // Functions
@@ -133,6 +121,7 @@ public:
     m_framebuffer_ram* fb_ram;
 
 protected:
+    void init_submodules();
     // RAM Port A for system control
     sc_signal<bool> PN_NAME(ram_ena); // enable bram for port A
 
@@ -143,4 +132,4 @@ protected:
     sc_signal<sc_uint<FB_RAM_DATA_WIDTH>> PN_NAME(ram_dob);   // data out for video port
 };
 
-#endif // __FRAMEBUFFER_SORUCE_H__
+#endif // __FRAMEBUFFER_SOURCE_H__

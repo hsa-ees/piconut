@@ -36,6 +36,8 @@
 #include "uart_tx.h"
 #include "uart_fifo.h"
 
+#include "uart_states.h"
+
 /**
  * @brief this function is used to generate a tracefile
  * you may use this function to add Signals and Ports or even Members of Structs to your .vcd tracefile

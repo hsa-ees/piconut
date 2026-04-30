@@ -1,11 +1,11 @@
 hart_ids: [0]
 hart0:
-  ISA: RV32IA # also adapt badge in /README.md
+  ISA: RV32IMAZknd_Zkne # also adapt badge in /README.md
   physical_addr_sz: 32
   User_Spec_Version: '2.3'
   supported_xlen: [32]
   misa:
-    reset-val: 0x00000101  # Only 'I' and 'A' extension enabled
+    reset-val: 0x00001101  # Only 'I', 'A' and 'M' extension enabled
     rv32:
       accessible: true
       mxl:

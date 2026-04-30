@@ -74,7 +74,7 @@ sc_signal<bool> msip_signal; // Software interrupt signal
 sc_signal<bool> meip_signal; // External interrupt signal
 
 // ------------ Wishbone Interface ------------
-#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW
+#if defined(PN_CFG_MEMBRANA_IS_MEMBRANA_HW) || defined(PN_CFG_MEMBRANA_IS_MEMBRANA_REF)
 sc_signal<bool> PN_NAME(wb_ack_i);
 sc_signal<pn_wb_dat_t> PN_NAME(wb_dat_i);
 
@@ -112,8 +112,8 @@ int sc_main(int argc, char** argv)
     // connects signals from TOP to TB
     i_dut.clk(clk);
     i_dut.reset(reset);
-    i_dut.debug_haltrequest_in(debug_haltrequest);
-    i_dut.debug_haltrequest_ack_out(debug_haltrequest_ack);
+    i_dut.debug_slave.haltrequest_i(debug_haltrequest);
+    i_dut.debug_slave.haltrequest_ack_o(debug_haltrequest_ack);
     i_dut.mtip_in(mtip_signal);
     i_dut.msip_in(msip_signal);
     i_dut.meip_in(meip_signal);
@@ -123,7 +123,7 @@ int sc_main(int argc, char** argv)
     sc_start(SC_ZERO_TIME); // start simulation
 #endif
 
-#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW
+#if defined(PN_CFG_MEMBRANA_IS_MEMBRANA_HW) || defined(PN_CFG_MEMBRANA_IS_MEMBRANA_REF)
 
     pn_parse_enable_trace_core = 1; // enable core trace dump
 
@@ -137,8 +137,8 @@ int sc_main(int argc, char** argv)
     i_dut.clk(clk);
     i_dut.reset(reset);
 
-    i_dut.debug_haltrequest_in(debug_haltrequest);
-    i_dut.debug_haltrequest_ack_out(debug_haltrequest_ack);
+    i_dut.debug_slave.haltrequest_i(debug_haltrequest);
+    i_dut.debug_slave.haltrequest_ack_o(debug_haltrequest_ack);
     i_dut.mtip_in(mtip_signal);
     i_dut.msip_in(msip_signal);
     i_dut.meip_in(meip_signal);
@@ -172,8 +172,8 @@ int sc_main(int argc, char** argv)
     // connects signals from TOP to TB
     i_dut.clk(clk);
     i_dut.reset(reset);
-    i_dut.debug_haltrequest_in(debug_haltrequest);
-    i_dut.debug_haltrequest_ack_out(debug_haltrequest_ack);
+    i_dut.debug_slave.haltrequest_i(debug_haltrequest);
+    i_dut.debug_slave.haltrequest_ack_o(debug_haltrequest_ack);
     i_dut.mtip_in(mtip_signal);
     i_dut.msip_in(msip_signal);
     i_dut.meip_in(meip_signal);

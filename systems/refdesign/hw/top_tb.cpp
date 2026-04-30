@@ -38,37 +38,37 @@
 #define PERIOD_NS 10.0
 
 // initialize TB signals
-sc_signal<bool> PN_NAME(clk_25);
+sc_signal<bool> PN_NAME(clk);
 sc_signal<bool> PN_NAME(reset);
 
-sc_signal<bool> PN_NAME(rx_i);
-sc_signal<bool> PN_NAME(tx_o);
+sc_signal<bool> PN_NAME(uart_rx);
+sc_signal<bool> PN_NAME(uart_tx);
 
 void run_cycle(int cycles = 1)
 {
-    for (int i = 0; i < cycles; i++)
+    for(int i = 0; i < cycles; i++)
     {
-        clk_25 = 0;
+        clk = 0;
         sc_start(PERIOD_NS / 2, SC_NS);
-        clk_25 = 1;
+        clk = 1;
         sc_start(PERIOD_NS / 2, SC_NS);
     }
 }
 
-int sc_main(int argc, char **argv)
+int sc_main(int argc, char** argv)
 {
     pn_cfg_enable_application_path = 1;               // enable application path in program args
     PN_PARSE_CMD_ARGS(argc, argv);                    // parse command line arguments
-    sc_trace_file *tf = PN_BEGIN_TRACE("piconut_tb"); // create trace file
+    sc_trace_file* tf = PN_BEGIN_TRACE("piconut_tb"); // create trace file
 
     // Initialliaze the Design under Testing (DUT)
     m_refdesign i_dut{"i_dut"}; // this is the Design name needed by the svc_tool
 
     // connects signals from TOP to TB
-    i_dut.clk(clk_25);
+    i_dut.clk(clk);
     i_dut.reset(reset);
-    i_dut.rx_i(rx_i);
-    i_dut.tx_o(tx_o);
+    i_dut.uart_rx(uart_rx);
+    i_dut.uart_tx(uart_tx);
 
     i_dut.pn_trace(tf, pn_cfg_vcd_level); // trace signals of DUT
 
@@ -84,7 +84,8 @@ int sc_main(int argc, char **argv)
     run_cycle(2);
     reset = 0;
 
-    while (i_dut.cpu->state_is_not_halt()) {
+    while(i_dut.cpu->state_is_not_halt())
+    {
         run_cycle();
     }
 
@@ -97,7 +98,8 @@ int sc_main(int argc, char **argv)
 
     cout << "\n\t\t*****Simulation waiting reset and repeat*****" << endl;
 
-    while (i_dut.cpu->state_is_not_halt()) {
+    while(i_dut.cpu->state_is_not_halt())
+    {
         run_cycle();
     }
 

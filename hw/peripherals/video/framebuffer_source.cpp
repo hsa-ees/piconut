@@ -33,10 +33,37 @@
 
 void m_framebuffer_source::pn_trace(sc_trace_file* tf, int level)
 {
+    PN_TRACE(tf, vid_enable_in);
+    PN_TRACE(tf, ram_ena);
+    PN_TRACE(tf, ctl_data_out);
+    PN_TRACE(tf, ram_web);
+    PN_TRACE(tf, ram_addrb);
+    PN_TRACE(tf, ram_dib);
+    PN_TRACE(tf, ram_dob);
     if(level >= 2)
     {
         fb_ram->pn_trace(tf, level);
     }
+}
+
+void m_framebuffer_source::init_submodules()
+{
+    // RAM Port A for system control
+    fb_ram = sc_new<m_framebuffer_ram>("framebuffer_ram");
+    fb_ram->clka(sys_clk);
+    fb_ram->wea(ctl_write_en_in);
+    fb_ram->ena(ram_ena);
+    fb_ram->addra(ctl_addr_in);
+    fb_ram->dia(ctl_data_in);
+    fb_ram->doa(ctl_data_out);
+
+    // RAM Port B for video output
+    fb_ram->clkb(vid_clk);
+    fb_ram->web(ram_web);
+    fb_ram->enb(vid_enable_in);
+    fb_ram->addrb(ram_addrb);
+    fb_ram->dib(ram_dib);
+    fb_ram->dob(ram_dob);
 }
 
 void m_framebuffer_source::proc_comb_ctl()
@@ -46,25 +73,23 @@ void m_framebuffer_source::proc_comb_ctl()
 
 void m_framebuffer_source::proc_comb_vid()
 {
-    auto column = vid_column.read() >> 4;
-    auto line = vid_line.read() >> 4;
 
     ram_web = 0;
     ram_dib = 0;
     ram_addrb = 0;
 
-    if(vid_enable.read())
+    if(vid_enable_in.read())
     {
-        vid_output = ram_dob.read();
+        vid_data_out = ram_dob.read();
 
-        // Effectively calculates addr = column + line * 40
-        // This hardcodes the horizontal resolution of the framebuffer to 40
-        // pixels
-        ram_addrb = column + (line << 5) + (line << 3);
+        sc_uint<16> column = vid_column_in.read() / ((uint32_t)PN_CFG_VIDEO_FB_SCALING_DIVISOR);
+        sc_uint<16> line = vid_line_in.read() / ((uint32_t)PN_CFG_VIDEO_FB_SCALING_DIVISOR);
+        ram_addrb = column + line * (640 / ((uint32_t)PN_CFG_VIDEO_FB_SCALING_DIVISOR));
+        // with divide and multiply actually 10 LUTs less than with shift and add :)
     }
     else
     {
         // Disable output while video is disabled
-        vid_output = 0;
+        vid_data_out = 0;
     }
 }

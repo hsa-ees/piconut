@@ -29,8 +29,7 @@
 
  *************************************************************************/
 
-#include "color_translator.h"
-#include <systemc.h>
+#include "../color_translator.h"
 
 #define PERIOD_NS 10.0
 
@@ -64,14 +63,14 @@ int sc_main(int argc, char** argv)
     PN_PARSE_CMD_ARGS(argc, argv);
     sc_trace_file* tf = PN_BEGIN_TRACE("color_translator");
 
-    m_color_translator dut_inst{"dut_inst"};
-    dut_inst.clk(clk);
-    dut_inst.reset(reset);
-    dut_inst.color_mode(color_mode);
-    dut_inst.color_in(color_in);
-    dut_inst.color_out(color_out);
+    m_color_translator i_dut{"i_dut"};
+    i_dut.clk(clk);
+    i_dut.reset(reset);
+    i_dut.color_mode_in(color_mode);
+    i_dut.color_in(color_in);
+    i_dut.color_out(color_out);
 
-    dut_inst.pn_trace(tf, pn_cfg_vcd_level);
+    i_dut.pn_trace(tf, pn_cfg_vcd_level);
 
     sc_start(SC_ZERO_TIME); // start simulation
     cout << "\n\t\t*****Simulation started*****" << endl;
@@ -157,22 +156,30 @@ int sc_main(int argc, char** argv)
     run_test(0x42, 0x424242);
     run_test(0xFF00, 0x000000);
 
-    // COLOR_MODE_16_RGB565
-    PN_INFO("Testing COLOR_MODE_16_RGB565");
-    color_mode = COLOR_MODE_16_RGB565;
-    run_test(0x0000, 0x000000);
-    run_test(0x0800, 0x080000);
-    run_test(0x0020, 0x000400);
-    run_test(0x0001, 0x000008);
-    run_test(0xFFFF, 0xFFFFFF);
-    run_test(0xFFFF0000, 0x000000);
+    PN_INFO("Testing COLOR_MODE_2_MAP");
+    color_mode = COLOR_MODE_2_MAP;
+    run_test(0x00, 0x3A0041);
+    run_test(0x01, 0xC477A2);
+    run_test(0x03, 0xFFFFFF);
 
-    // COLOR_MODE_32_RGB
-    PN_INFO("Testing COLOR_MODE_32_RGB");
-    color_mode = COLOR_MODE_32_RGB;
-    run_test(0x000000, 0x000000);
-    run_test(0x123456, 0x123456);
-    run_test(0xFF000000, 0x000000);
+    PN_INFO("Testing COLOR_MODE_3_MAP");
+    color_mode = COLOR_MODE_3_MAP;
+    run_test(0x00, 0x73464c);
+    run_test(0x01, 0xab5675);
+    run_test(0x07, 0x34acba);
+
+    PN_INFO("Testing COLOR_MODE_4_MAP");
+    color_mode = COLOR_MODE_4_MAP;
+    run_test(0x00, 0x430067);
+    run_test(0x05, 0x50E112);
+    run_test(0x0F, 0x5F574F);
+
+    PN_INFO("Testing COLOR_MODE_8_MAP");
+    color_mode = COLOR_MODE_8_MAP;
+    run_test(0x00, 0xffffff);
+    run_test(0x01, 0xf6f6f6);
+    run_test(0x20, 0xff7f7f);
+    run_test(0xFF, 0x00ffff);
 
     // ---------------
     // Not implemented
@@ -180,25 +187,13 @@ int sc_main(int argc, char** argv)
 
     // COLOR_MODE_2_MAP
     PN_INFO("Testing COLOR_MODE_2_MAP");
-    color_mode = COLOR_MODE_2_MAP;
+    color_mode = COLOR_MODE_16_RGB565;
     run_test(0x00, 0x000000);
     run_test(0xFF, 0x000000);
 
     // COLOR_MODE_3_MAP
     PN_INFO("Testing COLOR_MODE_3_MAP");
-    color_mode = COLOR_MODE_3_MAP;
-    run_test(0x00, 0x000000);
-    run_test(0xFF, 0x000000);
-
-    // COLOR_MODE_4_MAP
-    PN_INFO("Testing COLOR_MODE_4_MAP");
-    color_mode = COLOR_MODE_4_MAP;
-    run_test(0x00, 0x000000);
-    run_test(0xFF, 0x000000);
-
-    // COLOR_MODE_8_MAP
-    PN_INFO("Testing COLOR_MODE_8_MAP");
-    color_mode = COLOR_MODE_8_MAP;
+    color_mode = COLOR_MODE_32_RGB;
     run_test(0x00, 0x000000);
     run_test(0xFF, 0x000000);
 

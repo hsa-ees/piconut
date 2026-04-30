@@ -47,8 +47,7 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include "mainwindow.h"
-#include <QApplication>
+enum class GUI_ACTION : int;
 
 class gui
 {
@@ -58,7 +57,6 @@ public:
      * @brief Constructor. Initializes the GUI and creates a MainWindow instance.
      */
     gui(int& argc, char** argv);
-
 
     /**
      * @brief Destructor.
@@ -90,8 +88,8 @@ public:
 private:
     int argc = 0;
     char** argv = nullptr;
-    QApplication* app;
-    MainWindow* mwindow; ///< Pointer to the main window instance.
-    void *callbackContext = nullptr;
+    class QApplication* app;
+    class MainWindow* mwindow; ///< Pointer to the main window instance.
+    void* callbackContext = nullptr;
 };
 #endif // GUI_H

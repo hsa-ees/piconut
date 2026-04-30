@@ -37,9 +37,6 @@
 #include <iomanip>
 
 
-// TBD+: Change all status outputs to use the PN_ marcors (PN_INFO, PN_ERROR, ...)
-
-
 /***
  * Initialize the ELF file and sets the size and start address of the PT_LOAD content.
  * @return True if initialization is successful, false otherwise.
@@ -52,14 +49,14 @@ bool pn_c_elf_reader::read_file(const char *_filename)
     FILE *file = fopen(filename.c_str(), "rb");
     if (!file)
     {
-        std::cerr << "Failed to open ELF file: " << filename << std::endl;
+        PN_ERRORF(("Failed to open ELF file: %s", filename.c_str()));
         return false;
     }
 
     Elf32_Ehdr header;
     if (fread(&header, sizeof(header), 1, file) != 1)
     {
-        std::cerr << "Failed to read ELF header from file." << std::endl;
+        PN_ERROR("Failed to read ELF header from file.");
         fclose(file);
         return false;
     }
@@ -69,7 +66,7 @@ bool pn_c_elf_reader::read_file(const char *_filename)
         header.e_ident[EI_MAG2] != ELFMAG2 || header.e_ident[EI_MAG3] != ELFMAG3 ||
         header.e_ident[EI_CLASS] != ELFCLASS32)
     {
-        std::cerr << "Invalid ELF file." << std::endl;
+        PN_ERROR("Invalid ELF file.");
         fclose(file);
         return false;
     }
@@ -87,7 +84,7 @@ bool pn_c_elf_reader::read_file(const char *_filename)
         Elf32_Phdr phdr;
         if (fread(&phdr, sizeof(phdr), 1, file) != 1)
         {
-            std::cerr << "Failed to read program header in section." << std::endl;
+            PN_ERROR("Failed to read program header in section.");
             fclose(file);
             return false;
         }
@@ -124,8 +121,7 @@ bool pn_c_elf_reader::read_file(const char *_filename)
             {
                 uint32_t gap_size = segment_start - prev_segment_end;
 #ifdef debug
-                std::cout << "Found gap of size: " << gap_size << " between segments at 0x"
-                          << std::hex << prev_segment_end << " and 0x" << segment_start << std::endl;
+                PN_INFO("Found gap of size: %u between segments at 0x%x and 0x%x", gap_size, prev_segment_end, segment_start));
 #endif
                 max_segment_end += gap_size; // Add the gap to the total memory size
             }
@@ -150,13 +146,13 @@ bool pn_c_elf_reader::read_file(const char *_filename)
     // Calculate the total size needed for memory
     size = max_segment_end - start_adr;
 #ifdef debug
-    std::cout << "Calculated total memory size (aligned): " << size << " bytes" << std::endl;
+    PN_INFOF(("Calculated total memory size (aligned): %u bytes", size));
 #endif
     // Allocate memory based on the calculated size
     memory_to_load = new uint8_t[size];
     if (!memory_to_load)
     {
-        std::cerr << "Failed to allocate memory." << std::endl;
+        PN_ERROR("Failed to allocate memory.");
         delete[] memory_to_load;
         fclose(file);
         return false;
@@ -168,14 +164,14 @@ bool pn_c_elf_reader::read_file(const char *_filename)
     // Parse and load headers
     if (!parse_headers(file, data_encoding))
     {
-        std::cerr << "Failed to parse ELF headers." << std::endl;
+        PN_ERROR("Failed to parse ELF headers.");
         delete[] memory_to_load;
         fclose(file);
         return false;
     }
     if (!parse_sections(file, data_encoding))
     {
-        std::cerr << "Failed to parse ELF sections." << std::endl;
+        PN_ERROR("Failed to parse ELF sections.");
         fclose(file);
         return false;
     }
@@ -207,7 +203,7 @@ bool pn_c_elf_reader::parse_headers(FILE *file, unsigned char data_encoding)
 
     if (phnum == 0)
     {
-        std::cerr << "No program headers to process." << std::endl;
+        PN_ERROR("No program headers to process.");
         return false;
     }
 
@@ -216,7 +212,7 @@ bool pn_c_elf_reader::parse_headers(FILE *file, unsigned char data_encoding)
     fseek(file, phoff, SEEK_SET);
     if (fread(program_headers, phentsize, phnum, file) != phnum)
     {
-        std::cerr << "Error reading program headers." << std::endl;
+        PN_ERROR("Error reading program headers.");
         delete[] program_headers;
         return false;
     }
@@ -235,9 +231,7 @@ bool pn_c_elf_reader::parse_headers(FILE *file, unsigned char data_encoding)
             uint32_t p_offset = convert32(phdr.p_offset, data_encoding);
 
 #ifdef debug
-            std::cout << "Processing PT_LOAD segment: Addr " << std::hex << p_paddr
-                      << ", Offset " << p_offset << ", File size " << p_filesz
-                      << ", Mem size " << p_memsz << std::dec << std::endl;
+            PN_INFOF(("Processing PT_LOAD segment: Addr 0x%x , Offset %u, File size %u, Mem size %u", p_paddr, p_offset, p_filesz, p_memsz));
 #endif
 
             // Read segment into a buffer
@@ -245,7 +239,7 @@ bool pn_c_elf_reader::parse_headers(FILE *file, unsigned char data_encoding)
             uint8_t *buffer = new uint8_t[p_filesz];
             if (fread(buffer, 1, p_filesz, file) != p_filesz)
             {
-                std::cerr << "Failed to read segment data from file.\n";
+                PN_ERROR("Failed to read segment data from file.");
                 delete[] buffer;
                 continue;
             }
@@ -275,7 +269,7 @@ bool pn_c_elf_reader::parse_headers(FILE *file, unsigned char data_encoding)
     }
 
 #ifdef debug
-    std::cout << "Determined size: " << size << " B , start address: 0x" << std::hex << start_adr << std::endl;
+    PN_INFOF(("Determined size: %u  B , start address: 0x%x", size, start_adr));
 #endif
 
     delete[] program_headers;
@@ -290,7 +284,7 @@ bool pn_c_elf_reader::parse_sections(FILE *file, unsigned char data_encoding)
     fseek(file, 0, SEEK_SET);
     if (fread(&header, sizeof(header), 1, file) != 1)
     {
-        std::cerr << "Failed to read ELF header." << std::endl;
+        PN_ERROR("Failed to read ELF header.");
         return false;
     }
 
@@ -300,7 +294,7 @@ bool pn_c_elf_reader::parse_sections(FILE *file, unsigned char data_encoding)
 
     if (shnum == 0)
     {
-        std::cerr << "No section headers to process." << std::endl;
+        PN_WARNING("No section headers to process.");
         return true; // No sections is not an error in some cases
     }
 
@@ -309,7 +303,7 @@ bool pn_c_elf_reader::parse_sections(FILE *file, unsigned char data_encoding)
     fseek(file, shoff, SEEK_SET);
     if (fread(section_headers, shentsize, shnum, file) != shnum)
     {
-        std::cerr << "Failed to read section headers." << std::endl;
+        PN_ERROR("Failed to read section headers.");
         delete[] section_headers;
         return false;
     }
@@ -328,7 +322,7 @@ bool pn_c_elf_reader::parse_sections(FILE *file, unsigned char data_encoding)
             fseek(file, str_offset, SEEK_SET);
             if (fread(str_tab, 1, str_size, file) != str_size)
             {
-                std::cerr << "Failed to read string table." << std::endl;
+                PN_ERROR("Failed to read string table.");
                 delete[] section_headers;
                 delete[] str_tab;
                 return false;
@@ -354,7 +348,7 @@ bool pn_c_elf_reader::parse_sections(FILE *file, unsigned char data_encoding)
             fseek(file, sym_offset, SEEK_SET);
             if (fread(symbols, sym_entry_size, num_symbols, file) != num_symbols)
             {
-                std::cerr << "Failed to read symbols." << std::endl;
+                PN_ERROR("Failed to read symbols.");
                 delete[] section_headers;
                 delete[] str_tab;
                 delete[] symbols;
@@ -417,14 +411,14 @@ void pn_c_elf_reader::dump_memory_with_symbols(const std::string &filename) cons
 {
     if (!memory_to_load || size == 0)
     {
-        std::cerr << "Memory not loaded or size is zero." << std::endl;
+        PN_ERROR("Memory not loaded or size is zero.");
         return;
     }
 
     std::ofstream file(filename);
     if (!file.is_open())
     {
-        std::cerr << "Failed to open file for memory dump." << std::endl;
+        PN_ERROR("Failed to open file for memory dump.");
         return;
     }
 
@@ -439,7 +433,7 @@ void pn_c_elf_reader::dump_memory_with_symbols(const std::string &filename) cons
         // Check if the address is within valid bounds
         if (address < start_adr || address >= start_adr + size)
         {
-            std::cerr << "Address out of bounds: 0x" << std::hex << address << std::endl;
+            PN_ERRORF(("Address out of bounds: 0x%x", address));
             continue;
         }
 
@@ -489,14 +483,14 @@ void pn_c_elf_reader::dump_memory(const std::string &filename) const
 {
     if (!memory_to_load || size == 0)
     {
-        std::cerr << "Memory not loaded or size is zero." << std::endl;
+        PN_ERROR("Memory not loaded or size is zero.");
         return;
     }
 
     std::ofstream file(filename);
     if (!file.is_open())
     {
-        std::cerr << "Failed to open file for memory dump." << std::endl;
+        PN_ERROR("Failed to open file for memory dump.");
         return;
     }
 

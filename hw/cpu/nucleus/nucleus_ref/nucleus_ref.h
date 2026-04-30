@@ -3,6 +3,7 @@
   This file is part of the PicoNut project.
 
   Copyright (C)      2024 Lorenz Sommer <lorenz.sommer@tha.de>
+                     2025 Tristan Kundrat <tristan.kundrat@tha.de>
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
 
@@ -83,13 +84,7 @@
 
 #include <stdint.h>
 
-
-// TBD: When pn_csr.h is available in hw/common: Eliminate the following two lines and include <cpu/pn_csr.h> instead.
-#define PN_CSR_BUS_ADR_WIDTH 12
-#define PN_CSR_BUS_DATA_WIDTH 32
-
-
-SC_MODULE(m_nucleus_ref)
+SC_MODULE(m_nucleus_ref), pn_module_if
 {
 public:
     sc_in_clk PN_NAME(clk);
@@ -103,9 +98,6 @@ public:
     /* DPort */
     sc_in<sc_uint<32>> PN_NAME(dport_rdata_in);
     sc_in<bool> PN_NAME(dport_ack_in);
-
-    /* Debug */
-    sc_in<bool> PN_NAME(debug_haltrequest_in);
 
     /* CLINT Interrupt inputs */
     sc_in<bool> PN_NAME(msip_in);
@@ -128,14 +120,15 @@ public:
     sc_out<bool> PN_NAME(dport_lrsc_out);
     sc_out<bool> PN_NAME(dport_amo_out);
 
-    /* Debug */
-    sc_out<bool> PN_NAME(debug_haltrequest_ack_out);
-
-#if !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
+    /* ----------------- Debug signals -----------------  */
+    pn_debug_slave_t debug_slave;
 
     /* Constructor... */
     SC_CTOR(m_nucleus_ref)
     {
+        pn_add_debug_slave(&debug_slave);
+
+#if !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
         init_submodules();
         SC_CTHREAD(proc_clk_nucleus, clk.pos());
         reset_signal_is(reset, true);
@@ -182,24 +175,26 @@ public:
     class m_csr* csr;
 
     // Software interface methods
-    bool state_is_not_halt ();
+    bool state_is_not_halt();
 
 #else // !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
+    }
 
-    SC_CTOR(m_nucleus_ref) {}
     void pn_trace(sc_trace_file * tf, int level = 1) {}
-    bool state_is_not_halt () { return false; }
+    bool state_is_not_halt()
+    {
+        return false;
+    }
 
 #endif // !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
 
 protected:
-
 #if !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
 
     void init_submodules();
 
     /* signals for CSR bus multiplexing */
-    sc_signal<sc_uint<PN_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_csr_master_wdata);
+    sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_csr_master_wdata);
 
     // Signal for MRET handling
     sc_signal<sc_uint<32>> PN_NAME(signal_mepc);
@@ -217,6 +212,7 @@ protected:
     sc_signal<bool> PN_NAME(signal_c_force_add);
     sc_signal<bool> PN_NAME(signal_c_force_amo);
     sc_signal<bool> PN_NAME(signal_s_alu_equal);
+    sc_signal<bool> PN_NAME(signal_s_alu_valid);
     sc_signal<bool> PN_NAME(signal_s_alu_less);
     sc_signal<bool> PN_NAME(signal_s_alu_lessu);
     sc_signal<bool> PN_NAME(signal_c_alu_imm);
@@ -297,9 +293,9 @@ protected:
     /* Csr-bus */
     sc_signal<bool> PN_NAME(signal_csr_bus_read_en);
     sc_signal<bool> PN_NAME(signal_csr_bus_write_en);
-    sc_signal<sc_uint<PN_CSR_BUS_ADR_WIDTH>> PN_NAME(signal_csr_bus_adr);
-    sc_signal<sc_uint<PN_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_csr_bus_wdata);
-    sc_signal<sc_uint<PN_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_csr_bus_rdata);
+    sc_signal<sc_uint<PN_CFG_CSR_ADR_WIDTH>> PN_NAME(signal_csr_bus_adr);
+    sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_csr_bus_wdata);
+    sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_csr_bus_rdata);
 
     /* Csr */
     sc_signal<bool> PN_NAME(signal_c_debug_level_enter_ebreak);
@@ -307,7 +303,7 @@ protected:
     sc_signal<bool> PN_NAME(signal_c_debug_level_enter_step);
     sc_signal<bool> PN_NAME(signal_c_debug_level_leave);
     sc_signal<bool> PN_NAME(signal_s_debug_level_enter);
-    sc_signal<sc_uint<PN_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_dpc);
+    sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_dpc);
     sc_signal<bool> PN_NAME(signal_s_debug_step);
     sc_signal<bool> signal_msip;
     sc_signal<bool> signal_mtip;
@@ -335,7 +331,7 @@ protected:
     sc_signal<sc_uint<4>> PN_NAME(reg_iport_bsel);
     sc_signal<sc_uint<4>> PN_NAME(reg_dport_bsel);
 
-    sc_signal<sc_uint<PN_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_controller_csr_bus_wdata);
+    sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(signal_controller_csr_bus_wdata);
 
 #else  // !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
     PN_PRESYNTHESIZED;

@@ -30,10 +30,11 @@
  *************************************************************************/
 
 #include "color_translator.h"
+#include "color_palettes.h"
 
 void m_color_translator::pn_trace(sc_trace_file* tf, int level)
 {
-    PN_TRACE(tf, color_mode);
+    PN_TRACE(tf, color_mode_in);
     PN_TRACE(tf, color_in);
     PN_TRACE(tf, color_out);
 }
@@ -45,7 +46,7 @@ void m_color_translator::proc_comb_translate()
 
     color_out_next = 0;
 
-    switch(color_mode.read())
+    switch(color_mode_in.read())
     {
         case COLOR_MODE_1_MONO:
             color_out_next = (in.bit(0) == 1) ? 0xFFFFFF : 0x000000;
@@ -120,18 +121,22 @@ void m_color_translator::proc_comb_translate()
                 (in.range(1, 0) << 0));
             break;
 
-        case COLOR_MODE_16_RGB565:
-            color_out_next = ((in.range(15, 11) << 19) |
-                              (in.range(15, 13) << 16) |
-                              (in.range(10, 5) << 10) |
-                              (in.range(10, 9) << 8) |
-                              (in.range(4, 0) << 3) |
-                              (in.range(4, 2) << 0));
+        case COLOR_MODE_2_MAP:
+            color_out_next = palette_2_bit[in.range(1, 0)];
+            break;
+        case COLOR_MODE_3_MAP:
+            color_out_next = palette_3_bit[in.range(2, 0)];
+            break;
+        case COLOR_MODE_4_MAP:
+            color_out_next = palette_4_bit[in.range(3, 0)];
+            break;
+        case COLOR_MODE_8_MAP:
+            color_out_next = palette_8_bit[in.range(7, 0)];
             break;
 
-        case COLOR_MODE_32_RGB:
-            color_out_next = in.range(23, 0);
-            break;
+            // Unsupported as framebuffer only stores bytes:
+            // COLOR_MODE_16_RGB565
+            // COLOR_MODE_32_RGB
     }
 }
 

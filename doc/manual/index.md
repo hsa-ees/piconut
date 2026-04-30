@@ -25,11 +25,12 @@ chapter, or with "Editors Gundolf Kiefer, Michael Schäferling, Johannes Hofmann
 
 ## Document History
 
-| Version | Date       | Description                                                                                                     |
-| ------- | ---------- | --------------------------------------------------------------------------------------------------------------- |
-| 0.0.1   | 2024-04-03 | Initial version (how to document, welcome page)                                                                 |
-| 1.0.0   | 2025-04-23 | Initial GitHub Release (Minimal Nucleus, Soft-MemU, Wishbone-MemU, Soft-Debugger, Soft-Uart, Wishbone-Uart)     |
-| 1.1.0   | 2026-01-13 | GitHub Release v1.1.0 (New build system, Debugger, Clint, Timer, Soft-Video (Qt-Gui), Soft-Audio, RISCOF-Tests) |
+| Version | Date       | Description                                                                                                                  |
+| ------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 0.0.1   | 2024-04-03 | Initial version (how to document, welcome page)                                                                              |
+| 1.0.0   | 2025-04-23 | Initial GitHub Release (Minimal Nucleus, Soft-MemU, Wishbone-MemU, Soft-Debugger, Soft-Uart, Wishbone-Uart)                  |
+| 1.1.0   | 2026-01-13 | GitHub Release v1.1.0 (New build system, Debugger, Clint, Timer, Soft-Video (Qt-Gui), Soft-Audio, RISCOF-Tests, A-Extension) |
+| 1.1.1   | 2026-04-30 | GitHub Release v1.1.1 (I2C, Video and GPIO peripheral; PlayNut; OrangeCrab board support)                                    |
 
 % Add files that should be added ot the document here
 
@@ -39,14 +40,15 @@ chapter, or with "Editors Gundolf Kiefer, Michael Schäferling, Johannes Hofmann
 
 introduction.md
 getting-started.md
-piconut/interface_def.md
 piconut/nuclei.md
 piconut/membrana.md
-piconut/debugging.md
-piconut/simulator.md
-piconut/interrupt.md
-piconut/software_library.md
 piconut/peripherals.md
+piconut/interface_def.md
+piconut/software.md
+piconut/debugging.md
+piconut/interrupt.md
+piconut/simulator.md
+piconut/supported_boards.md
 
 ```
 
@@ -68,7 +70,8 @@ contributing/embedded_ram.md
 :caption: "Appendix"
 
 
-appendix/appendix.md
+appendix/toolchain.md
+appendix/udev.md
 
 
 

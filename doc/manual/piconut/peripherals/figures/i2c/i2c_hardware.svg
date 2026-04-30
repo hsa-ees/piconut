@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 600 620"
+   width="600"
+   height="620"
+   version="1.1"
+   id="svg23"
+   sodipodi:docname="i2c_hardware.svg"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   inkscape:export-filename="i2c_hardware.png"
+   inkscape:export-xdpi="400"
+   inkscape:export-ydpi="400"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview23"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showguides="true"
+     showgrid="false"
+     inkscape:zoom="1.3435484"
+     inkscape:cx="197.2389"
+     inkscape:cy="345.72629"
+     inkscape:window-width="1920"
+     inkscape:window-height="1171"
+     inkscape:window-x="1911"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg23"
+     inkscape:export-bgcolor="#fffffff7">
+    <inkscape:grid
+       id="grid23"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       enabled="true"
+       visible="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <marker
+       id="arrowhead"
+       markerWidth="10"
+       markerHeight="7"
+       refX="9"
+       refY="3.5"
+       orient="auto-start-reverse"
+       viewBox="0 0 10 7"
+       preserveAspectRatio="xMidYMid">
+      <polygon
+         points="0 0, 10 3.5, 0 7"
+         fill="#000"
+         id="polygon1" />
+    </marker>
+  </defs>
+  <rect
+     x="35.634819"
+     y="88.908432"
+     width="528.96149"
+     height="375.36862"
+     fill="#ffffff"
+     stroke="#000000"
+     stroke-width="1.73392"
+     id="rect1" />
+  <text
+     x="58.601025"
+     y="137.42313"
+     font-family="Arial, sans-serif"
+     font-size="24px"
+     font-weight="bold"
+     fill="#000000"
+     id="text1">I2C-Modul</text>
+  <rect
+     x="240.46234"
+     y="280.06729"
+     width="118.94376"
+     height="79.865456"
+     fill="#ffffff"
+     stroke="#000000"
+     stroke-width="2"
+     id="rect2"
+     style="stroke-width:1.63454;stroke-dasharray:none" />
+  <text
+     x="299.50302"
+     y="315.43683"
+     font-family="Arial, sans-serif"
+     font-size="14px"
+     text-anchor="middle"
+     id="text6-9"><tspan
+       sodipodi:role="line"
+       id="tspan23"
+       x="299.50302"
+       y="315.43683">I²C-</tspan><tspan
+       sodipodi:role="line"
+       id="tspan24"
+       x="299.50302"
+       y="332.93683">Toplevel-Modul</tspan></text>
+  <rect
+     x="60"
+     y="200"
+     width="120"
+     height="80"
+     fill="#ffffff"
+     stroke="#000"
+     stroke-width="2"
+     id="rect3"
+     style="stroke-width:1.5;stroke-dasharray:none" />
+  <text
+     x="120"
+     y="235"
+     font-family="Arial, sans-serif"
+     font-size="16px"
+     text-anchor="middle"
+     id="text3" />
+  <text
+     x="118.68426"
+     y="243.6846"
+     font-family="Arial, sans-serif"
+     font-size="14px"
+     text-anchor="middle"
+     id="text4">Data-Control</text>
+  <rect
+     x="420"
+     y="200"
+     width="120"
+     height="80"
+     fill="#ffffff"
+     stroke="#000"
+     stroke-width="2"
+     id="rect4"
+     style="stroke-width:1.5;stroke-dasharray:none" />
+  <text
+     x="480.52631"
+     y="243.42145"
+     font-family="Arial, sans-serif"
+     font-size="14px"
+     text-anchor="middle"
+     id="text6">Clock-Control</text>
+  <rect
+     x="59.441776"
+     y="359.99399"
+     width="120"
+     height="80"
+     fill="#ffffff"
+     stroke="#000000"
+     stroke-width="2"
+     id="rect6"
+     style="stroke-width:1.5;stroke-dasharray:none" />
+  <text
+     x="119.44178"
+     y="394.99399"
+     font-family="Arial, sans-serif"
+     font-size="16px"
+     text-anchor="middle"
+     id="text7" />
+  <text
+     x="117.59974"
+     y="405.25748"
+     font-family="Arial, sans-serif"
+     font-size="14px"
+     text-anchor="middle"
+     id="text8">Wishbone</text>
+  <rect
+     x="420"
+     y="360.13293"
+     width="120"
+     height="80"
+     fill="#ffffff"
+     stroke="#000000"
+     stroke-width="2"
+     id="rect8"
+     style="stroke-width:1.5;stroke-dasharray:none" />
+  <text
+     x="480"
+     y="395.13293"
+     font-family="Arial, sans-serif"
+     font-size="16px"
+     text-anchor="middle"
+     id="text9" />
+  <text
+     x="481.84204"
+     y="402.50177"
+     font-family="Arial, sans-serif"
+     font-size="14px"
+     text-anchor="middle"
+     id="text10">Controller</text>
+  <path
+     d="M 238.44081,300.21601 H 209.21072 V 239.78399 H 179.98063"
+     fill="none"
+     stroke="#000000"
+     stroke-width="1.38447"
+     marker-end="url(#arrowhead)"
+     id="path10"
+     style="marker-start:url(#arrowhead)" />
+  <path
+     d="m 361.16869,300.2085 h 29.42322 v -60.417 h 29.42323"
+     fill="none"
+     stroke="#000000"
+     stroke-width="1.3876"
+     marker-end="url(#arrowhead)"
+     id="path11"
+     style="marker-start:url(#arrowhead)" />
+  <path
+     d="m 238.54862,339.755 h -29.60105 v 60.7545 h -29.60104"
+     fill="none"
+     stroke="#000000"
+     stroke-width="1.35694"
+     marker-end="url(#arrowhead)"
+     id="path12"
+     style="marker-start:url(#arrowhead)" />
+  <path
+     d="m 360.67357,339.82832 h 29.98414 v 60.60787 h 29.98412"
+     fill="none"
+     stroke="#000000"
+     stroke-width="1.08085"
+     marker-end="url(#arrowhead)"
+     id="path13"
+     style="marker-start:url(#arrowhead)" />
+  <g
+     stroke="#000000"
+     stroke-width="1.5"
+     id="g18"
+     transform="matrix(1.1997055,0,0,0.75948157,-62.918237,67.345161)"
+     style="stroke-width:1.53762;stroke-dasharray:none">
+    <line
+       x1="265"
+       y1="280"
+       x2="265"
+       y2="10"
+       id="line13"
+       style="stroke-width:1.53762;stroke-dasharray:none" />
+    <line
+       x1="280"
+       y1="280"
+       x2="280"
+       y2="10"
+       id="line14"
+       style="stroke-width:1.53762;stroke-dasharray:none" />
+    <line
+       x1="295"
+       y1="280"
+       x2="295"
+       y2="10"
+       id="line15"
+       style="stroke-width:1.53762;stroke-dasharray:none" />
+    <line
+       x1="310"
+       y1="280"
+       x2="310"
+       y2="10"
+       id="line16"
+       style="stroke-width:1.53762;stroke-dasharray:none" />
+    <line
+       x1="325"
+       y1="280"
+       x2="325"
+       y2="10"
+       id="line17"
+       style="stroke-width:1.53762;stroke-dasharray:none" />
+    <line
+       x1="340"
+       y1="280"
+       x2="340"
+       y2="10"
+       id="line18"
+       style="stroke-width:1.53762;stroke-dasharray:none" />
+  </g>
+  <g
+     font-family="Arial, sans-serif"
+     font-size="12px"
+     font-weight="normal"
+     fill="#000000"
+     stroke="none"
+     id="g23"
+     transform="matrix(1.1953381,0,0,1,-62.759361,0)">
+    <text
+       x="262"
+       y="140"
+       transform="rotate(-90,262,140)"
+       id="text18">sda_i</text>
+    <text
+       x="277"
+       y="140"
+       transform="rotate(-90,277,140)"
+       id="text19">sda_oe</text>
+    <text
+       x="292"
+       y="140"
+       transform="rotate(-90,292,140)"
+       id="text20">sda_o</text>
+    <text
+       x="307"
+       y="140"
+       transform="rotate(-90,307,140)"
+       id="text21">scl_i</text>
+    <text
+       x="322"
+       y="140"
+       transform="rotate(-90,322,140)"
+       id="text22">scl_oe</text>
+    <text
+       x="337"
+       y="140"
+       transform="rotate(-90,337,140)"
+       id="text23">scl_o</text>
+  </g>
+</svg>

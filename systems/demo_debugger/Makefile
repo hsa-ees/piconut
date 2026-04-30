@@ -70,7 +70,8 @@ SW ?= sw/apps/hello_piconut
 
 # Prebuild all required PicoNut modules ...
 build-prepare:
-	$(PN_PREBUILD) MODULES=hw/cpu:hw/cpu_peripherals/debugger:hw/cpu_peripherals/debugger_soft/remote_bitbang:hw/peripherals/uart:hw/peripherals/uart_soft:$(SW)
+	$(PN_PREBUILD) MODULES=hw/cpu:hw/cpu_peripherals/debugger:hw/cpu_peripherals/debugger_soft/remote_bitbang:hw/peripherals/uart:hw/peripherals/uart_soft:hw/interconnect:$(SW)
+	
 
 
 

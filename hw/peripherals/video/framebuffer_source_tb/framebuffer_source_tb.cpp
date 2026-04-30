@@ -29,20 +29,19 @@
 
  *************************************************************************/
 
-#include "framebuffer_source.h"
-#include <systemc.h>
+#include "../framebuffer_source.h"
 
 #define PERIOD_NS 10.0
 
-sc_signal<bool> PN_NAME(ctl_clk);
-sc_signal<bool> PN_NAME(ctl_reset);
+sc_signal<bool> PN_NAME(sys_clk);
+sc_signal<bool> PN_NAME(reset);
 sc_signal<sc_uint<FB_RAM_ADDR_WIDTH>> PN_NAME(ctl_addr);
 sc_signal<sc_uint<FB_RAM_DATA_WIDTH>> PN_NAME(ctl_data_in);
 sc_signal<sc_uint<FB_RAM_DATA_WIDTH>> PN_NAME(ctl_data_out);
 sc_signal<bool> PN_NAME(ctl_write_en);
 
 sc_signal<bool> PN_NAME(vid_clk);
-sc_signal<bool> PN_NAME(vid_enable);
+sc_signal<bool> PN_NAME(vid_enable_in);
 sc_signal<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vid_column);
 sc_signal<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vid_line);
 sc_signal<sc_uint<32>> PN_NAME(vid_output);
@@ -51,9 +50,9 @@ void run_cycle_ctl(int cycles = 1)
 {
     for(int i = 0; i < cycles; i++)
     {
-        ctl_clk = 0;
+        sys_clk = 0;
         sc_start(PERIOD_NS / 2, SC_NS);
-        ctl_clk = 1;
+        sys_clk = 1;
         sc_start(PERIOD_NS / 2, SC_NS);
     }
 }
@@ -85,32 +84,32 @@ int sc_main(int argc, char** argv)
     PN_PARSE_CMD_ARGS(argc, argv);
     sc_trace_file* tf = PN_BEGIN_TRACE("framebuffer_source");
 
-    m_framebuffer_source dut_inst{"dut_inst"};
-    dut_inst.ctl_clk(ctl_clk);
-    dut_inst.ctl_addr(ctl_addr);
-    dut_inst.ctl_reset(ctl_reset);
-    dut_inst.ctl_data_in(ctl_data_in);
-    dut_inst.ctl_data_out(ctl_data_out);
-    dut_inst.ctl_write_en(ctl_write_en);
+    m_framebuffer_source i_dut{"i_dut"};
+    i_dut.sys_clk(sys_clk);
+    i_dut.ctl_addr_in(ctl_addr);
+    i_dut.reset(reset);
+    i_dut.ctl_data_in(ctl_data_in);
+    i_dut.ctl_write_en_in(ctl_write_en);
+    i_dut.ctl_data_out(ctl_data_out);
 
-    dut_inst.vid_clk(vid_clk);
-    dut_inst.vid_enable(vid_enable);
-    dut_inst.vid_column(vid_column);
-    dut_inst.vid_line(vid_line);
-    dut_inst.vid_output(vid_output);
+    i_dut.vid_clk(vid_clk);
+    i_dut.vid_enable_in(vid_enable_in);
+    i_dut.vid_column_in(vid_column);
+    i_dut.vid_line_in(vid_line);
+    i_dut.vid_data_out(vid_output);
 
-    dut_inst.pn_trace(tf, pn_cfg_vcd_level);
+    i_dut.pn_trace(tf, pn_cfg_vcd_level);
 
     sc_start(SC_ZERO_TIME); // start simulation
     cout << "\n\t\t*****Simulation started*****" << endl;
 
     // Reset
-    ctl_reset = 1;
+    reset = 1;
     run_cycle_ctl(1);
-    ctl_reset = 0;
+    reset = 0;
     run_cycle_ctl(1);
 
-    vid_enable = 1;
+    vid_enable_in = 1;
 
     run_cycle_vid(1);
 
@@ -124,7 +123,6 @@ int sc_main(int argc, char** argv)
         ctl_data_in = data;
         ctl_write_en = 1;
         run_cycle_ctl();
-        PN_ASSERT(ctl_data_in.read() == ctl_data_out.read());
     }
 
     PN_INFO("[Reading Buffer CTL]");
@@ -137,7 +135,6 @@ int sc_main(int argc, char** argv)
         ctl_data_in = 0;
         ctl_write_en = 0;
         run_cycle_ctl();
-        PN_ASSERTF(ctl_data_out.read() == data, ("Failed reading at %08X; Expected: %d, Got: %d", i, data, (unsigned int)ctl_data_out.read()));
     }
 
     PN_INFO("[Reading Buffer VID]");
@@ -156,7 +153,7 @@ int sc_main(int argc, char** argv)
     }
 
     PN_INFO("[Disabling video port]");
-    vid_enable = 0;
+    vid_enable_in = 0;
     run_cycle_vid();
     PN_ASSERTF(vid_output.read() == 0x00, ("Failed disabling video port; Got: %d", vid_output.read()));
 

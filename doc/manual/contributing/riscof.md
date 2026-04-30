@@ -23,17 +23,24 @@ specific parts of the ISA.
 ## Running RISCOF
 
 RISCOF needs the riscof binary and sailc which are inside the provided docker
-image with the script. You can run the tests on a simulated piconut with
+image with the script. You can run the tests for the reference design system like
+this:
 
 ```console
-$ cd sw/verification/riscof
-$ make run
+$ make -C systems/refdesign verify TECHS=sim
+```
+
+For arbitrary other systems you can run RISCOF directly from the `sw/riscof` folder
+like this:
+
+```console
+$ make -C sw/riscof run SIMULATOR_BIN=path/to/your/piconut_simulator
 ```
 
 ```{note}
 To list all make options use:
 ```console
-$ make
+$ make help
 ```
 
 ## Configuration
@@ -42,9 +49,9 @@ $ make
 
 The `piconut_isa.yaml` file controls which tests are executed by configuring
 the ISA and MISA fields. To enable or disable specific extensions, edit this
-file accordingly. Refer to the table in section
-"3.1.1. Machine ISA Register misa" of the privileged RISC-V specification for
-the appropriate bit settings.
+file accordingly. Refer to the table for the MISA encoding in the
+[Privileged Architecture](https://docs.riscv.org/reference/isa/priv/machine.html)
+for the appropriate bit settings.
 
 After making changes, update the badge in the project root `README.md`
 to reflect the newly tested extensions.
@@ -52,7 +59,7 @@ to reflect the newly tested extensions.
 ### Updating Tests
 
 To update the tests update the `RISCV_ARCH_TEST_VERSION` variable in the
-`run-riscof.sh` script. This variable specifies the version git tag of the
+`sw/riscof/Makefile`. This variable specifies the version git tag of the
 riscv-arch-test repository to be used.
 
 ### Custom Tests
@@ -62,7 +69,7 @@ tests. RISCOF does not natively support custom tests, as it only sources tests
 from the riscv-arch-test repository.
 
 However, within the Piconut project, you can create custom tests by adding them
-to the `sw/verification/riscof/custom-tests` directory. These tests are
+to the `sw/riscof/custom-tests` directory. These tests are
 temporarily copied and committed to the riscv-arch-test repository during the
 RISCOF run, and are removed after the run completes.
 

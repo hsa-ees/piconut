@@ -34,7 +34,6 @@
 #include "dm_controller.h"
 #include "dm_defs.h"
 
-
 void m_dm_controller::pn_trace(sc_trace_file* tf, int level)
 {
     // Ports...
@@ -42,7 +41,7 @@ void m_dm_controller::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, reset);
 
     // Control signals
-    PN_TRACE(tf, c_haltreq_o);
+    PN_TRACE(tf, haltrequest_o);
     PN_TRACE(tf, c_hart_halted_o);
     PN_TRACE(tf, c_hart_running_o);
     PN_TRACE(tf, c_hart_run_acmds_o);
@@ -55,7 +54,7 @@ void m_dm_controller::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, c_acmds_increment_data1_o);
 
     // Status signals
-    PN_TRACE(tf, s_haltreq_ack_i);
+    PN_TRACE(tf, haltrequest_ack_i);
     PN_TRACE(tf, s_new_acmds_i);
     PN_TRACE(tf, s_abstractcs_cmderr_i);
     PN_TRACE(tf, s_dmcontrol_haltreq_i);
@@ -71,7 +70,7 @@ void m_dm_controller::pn_trace(sc_trace_file* tf, int level)
 
 void m_dm_controller::proc_cmb()
 {
-    c_haltreq_o = 0;
+    haltrequest_o = 0;
     c_hart_halted_o = 0;
     c_hart_running_o = 0;
     c_hart_run_acmds_o = 0;
@@ -108,9 +107,9 @@ void m_dm_controller::proc_cmb()
 
         case e_dm_state::DM_HALTREQ:
             c_hart_running_o = 1;
-            c_haltreq_o = 1;
+            haltrequest_o = 1;
 
-            if(s_haltreq_ack_i.read() == 1 ||
+            if(haltrequest_ack_i.read() == 1 ||
                 s_hartstatus_halted_i.read() == 1)
             {
                 dm_next_state = e_dm_state::DM_HALTED;

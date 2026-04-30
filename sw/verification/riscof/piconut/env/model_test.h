@@ -15,7 +15,14 @@
 #define RVMODEL_HALT                                              \
   ecall 
 
+// WORKAROUND for GCC > 13
+// This disables optimization for a block.
+// gcc produced c.nops without this option
+// https://github.com/riscv-non-isa/riscv-arch-test/issues/659
+// The github is marked as closed but the issue is still present.
+// Maybe it is fixed in riscv-arch-test v3
 #define RVMODEL_BOOT
+  .option norelax
 
 //RV_COMPLIANCE_DATA_BEGIN
 #define RVMODEL_DATA_BEGIN                                              \

@@ -30,6 +30,8 @@
  *************************************************************************/
 
 #include <QApplication>
+
+#include "mainwindow.h"
 #include "gui.h"
 #include "framebuffer_to_image.h"
 
@@ -57,7 +59,8 @@ void gui::set_image(uint32_t* framebuffer, uint32_t framebuffer_size)
     mwindow->image_to_gui(framebuffer, framebuffer_size);
 }
 
-void gui::setActionCallback(const std::function<void(GUI_ACTION)> triggerCallback) {
+void gui::setActionCallback(const std::function<void(GUI_ACTION)> triggerCallback)
+{
     mwindow->triggerCallback = triggerCallback;
 }
 

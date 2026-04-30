@@ -64,23 +64,23 @@
 #define PN_DPORT_ALEN_MAX 64  ///< maximum number of address bits for a data port (*DPort*).
 #define PN_DPORT_DLEN_MAX 512 ///< maximum number of data bits for a data port (*DPort*).
 
-#define PN_IPORT_BSEL_MAX (PN_IPORT_ALEN_MAX / 8)   ///< maximum number of byte selection bits (*IPort*)
-#define PN_DPORT_BSEL_MAX (PN_DPORT_ALEN_MAX / 8)   ///< maximum number of byte selection bits (*DPort*)
+#define PN_IPORT_BSEL_MAX (PN_IPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*IPort*)
+#define PN_DPORT_BSEL_MAX (PN_DPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*DPort*)
 
-#define PN_IPORT_BSEL_MAX (PN_IPORT_ALEN_MAX / 8)   ///< maximum number of byte selection bits (*IPort*)
-#define PN_DPORT_BSEL_MAX (PN_DPORT_ALEN_MAX / 8)   ///< maximum number of byte selection bits (*DPort*)
+#define PN_IPORT_BSEL_MAX (PN_IPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*IPort*)
+#define PN_DPORT_BSEL_MAX (PN_DPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*DPort*)
 
-typedef sc_uint<PN_IPORT_ALEN_MAX>    pn_iport_adr_t;   ///< *IPort* address
-typedef sc_uint<PN_IPORT_DLEN_MAX>    pn_iport_dat_t;   ///< *IPort* data
-typedef sc_uint<PN_IPORT_DLEN_MAX/8>  pn_iport_bsel_t;  ///< *IPort* byte selection
+typedef sc_uint<PN_IPORT_ALEN_MAX> pn_iport_adr_t;      ///< *IPort* address
+typedef sc_uint<PN_IPORT_DLEN_MAX> pn_iport_dat_t;      ///< *IPort* data
+typedef sc_uint<PN_IPORT_DLEN_MAX / 8> pn_iport_bsel_t; ///< *IPort* byte selection
 
-typedef sc_uint<PN_DPORT_ALEN_MAX>    pn_dport_adr_t;   ///< *DPort* address
-typedef sc_uint<PN_DPORT_DLEN_MAX>    pn_dport_dat_t;   ///< *DPort* data
-typedef sc_uint<PN_DPORT_DLEN_MAX/8>  pn_dport_bsel_t;  ///< *DPort* byte selection
+typedef sc_uint<PN_DPORT_ALEN_MAX> pn_dport_adr_t;      ///< *DPort* address
+typedef sc_uint<PN_DPORT_DLEN_MAX> pn_dport_dat_t;      ///< *DPort* data
+typedef sc_uint<PN_DPORT_DLEN_MAX / 8> pn_dport_bsel_t; ///< *DPort* byte selection
 
-typedef sc_uint<PN_DPORT_ALEN_MAX>    pn_dport_adr_t;   ///< *DPort* address
-typedef sc_uint<PN_DPORT_DLEN_MAX>    pn_dport_dat_t;   ///< *DPort* data
-typedef sc_uint<PN_DPORT_DLEN_MAX/8>  pn_dport_bsel_t;  ///< *DPort* byte selection
+typedef sc_uint<PN_DPORT_ALEN_MAX> pn_dport_adr_t;      ///< *DPort* address
+typedef sc_uint<PN_DPORT_DLEN_MAX> pn_dport_dat_t;      ///< *DPort* data
+typedef sc_uint<PN_DPORT_DLEN_MAX / 8> pn_dport_bsel_t; ///< *DPort* byte selection
 
 /**@}
  */
@@ -118,9 +118,9 @@ typedef sc_uint<PN_WISHBONE_DLEN_MAX / 8> pn_wb_sel_t; ///< *Wishbone* byte sele
 ///
 struct pn_wishbone_slave_t
 {
-    int alen, dlen;
-    pn_wb_adr_t base_address; ///< base address of the interface
-    pn_wb_adr_t size;         ///< size of the interface
+    const int alen, dlen;
+    const pn_wb_adr_t base_address; ///< base address of the interface
+    const pn_wb_adr_t size;         ///< size of the interface
 
     sc_in<pn_wb_adr_t> PN_NAME(adr_i);
     sc_in<pn_wb_dat_t> PN_NAME(dat_i);
@@ -133,13 +133,34 @@ struct pn_wishbone_slave_t
     sc_out<bool> PN_NAME(ack_o);
     sc_out<bool> PN_NAME(rty_o);
     sc_out<bool> PN_NAME(err_o);
+
+    /// @brief Trace signals of this interface.
+    ///
+    /// This funtion is intended to be used with the PN_TRACE_INTERFACE macro.
+    ///
+    /// @param tf Tracefile.
+    /// @param name Name of the object instantiating this interface.
+    ///
+    void pn_trace(sc_trace_file* tf, const std::string& name) const
+    {
+        PN_TRACE_INTERFACE_MEMBER(tf, adr_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, dat_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, dat_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, sel_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, stb_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, cyc_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, we_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, ack_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, rty_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, err_o, name);
+    }
 };
 
 /// @brief *Wishbone* master interface
 ///
 struct pn_wishbone_master_t
 {
-    int alen, dlen;
+    const int alen, dlen;
 
     sc_out<pn_wb_adr_t> PN_NAME(adr_o);
     sc_out<pn_wb_dat_t> PN_NAME(dat_o);
@@ -152,6 +173,27 @@ struct pn_wishbone_master_t
     sc_in<bool> PN_NAME(ack_i);
     sc_in<bool> PN_NAME(rty_i);
     sc_in<bool> PN_NAME(err_i);
+
+    /// @brief Trace signals of this interface.
+    ///
+    /// This funtion is intended to be used with the PN_TRACE_INTERFACE macro.
+    ///
+    /// @param tf Tracefile.
+    /// @param name Name of the object instantiating this interface.
+    ///
+    void pn_trace(sc_trace_file* tf, const std::string& name) const
+    {
+        PN_TRACE_INTERFACE_MEMBER(tf, adr_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, dat_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, dat_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, sel_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, stb_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, cyc_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, we_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, ack_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, rty_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, err_i, name);
+    }
 };
 
 // *****************************************************************************
@@ -192,6 +234,74 @@ struct pn_soft_master_t
 
 // *****************************************************************************
 // *                                                                           *
+// *         Debug                                                             *
+// *                                                                           *
+// *****************************************************************************
+
+/** @name *Debug* Interface Declarations ...
+ *
+ * @{
+ */
+
+/// @brief *Debug* slave interface
+///
+struct pn_debug_slave_t
+{
+    sc_in<bool> PN_NAME(haltrequest_i);
+    sc_out<bool> PN_NAME(haltrequest_ack_o);
+
+    /// @brief Trace signals of this interface.
+    ///
+    /// This funtion is intended to be used with the PN_TRACE_INTERFACE macro.
+    ///
+    /// @param tf Tracefile.
+    /// @param name Name of the object instantiating this interface.
+    ///
+    void pn_trace(sc_trace_file* tf, const std::string& name) const
+    {
+        PN_TRACE_INTERFACE_MEMBER(tf, haltrequest_i, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, haltrequest_ack_o, name);
+    }
+
+    void operator()(pn_debug_slave_t& other)
+    {
+        haltrequest_i(other.haltrequest_i);
+        haltrequest_ack_o(other.haltrequest_ack_o);
+    }
+};
+
+/// @brief *Debug* master interface
+///
+struct pn_debug_master_t
+{
+    sc_out<bool> PN_NAME(haltrequest_o);
+    sc_in<bool> PN_NAME(haltrequest_ack_i);
+
+    /// @brief Trace signals of this interface.
+    ///
+    /// This funtion is intended to be used with the PN_TRACE_INTERFACE macro.
+    ///
+    /// @param tf Tracefile.
+    /// @param name Name of the object instantiating this interface.
+    ///
+    void pn_trace(sc_trace_file* tf, const std::string& name) const
+    {
+        PN_TRACE_INTERFACE_MEMBER(tf, haltrequest_o, name);
+        PN_TRACE_INTERFACE_MEMBER(tf, haltrequest_ack_i, name);
+    }
+
+    void operator()(pn_debug_master_t& other)
+    {
+        haltrequest_o(other.haltrequest_o);
+        haltrequest_ack_i(other.haltrequest_ack_i);
+    }
+};
+
+/** @}
+ */
+
+// *****************************************************************************
+// *                                                                           *
 // *         PicoNut Module                                                    *
 // *                                                                           *
 // *****************************************************************************
@@ -215,10 +325,17 @@ public:
      * @{
      */
 
+    // Wishbone ...
     std::vector<pn_wishbone_slave_t*> wb_slaves{};
     std::vector<pn_wishbone_master_t*> wb_masters{};
+
+    // Soft ...
     //~ std::vector<pn_soft_slave_t*> soft_slaves;
     //~ std::vector<pn_soft_master_t*> soft_masters;
+
+    // Debug ...
+    std::vector<pn_debug_slave_t*> debug_slaves{};
+    std::vector<pn_debug_master_t*> debug_masters{};
 
     /// @}
 
@@ -273,6 +390,24 @@ public:
     //~     PN_ASSERT(!elaborated);
     //~     soft_masters.push_back(soft_master);
     //~ }
+
+    /// @brief Add debug slave interface.
+    ///
+    void pn_add_debug_slave(
+        pn_debug_slave_t* debug_slave)
+    {
+        PN_ASSERT(!elaborated);
+        debug_slaves.push_back(debug_slave);
+    }
+
+    /// @brief Add debug master interface.
+    ///
+    void pn_add_debug_master(
+        pn_debug_master_t* debug_master)
+    {
+        PN_ASSERT(!elaborated);
+        debug_masters.push_back(debug_master);
+    }
 
     /** @}
      */

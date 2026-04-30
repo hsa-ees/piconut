@@ -35,10 +35,10 @@
 
 #include <piconut.h>
 
+#include <pn_interconnect.h>
 #include <cpu.h>
 #include <uart.h>
 #include <debugger.h>
-
 
 SC_MODULE(m_demo_debugger)
 {
@@ -63,19 +63,6 @@ public:
     {
         SC_METHOD(proc_cmb);
 
-        SC_METHOD(proc_cmb_wb);
-        sensitive << wb_adr
-                  << wb_sel
-                  << wb_dat_o
-                  << wb_dat_i_uart
-                  << wb_ack_uart
-                  << wb_rty_uart
-                  << wb_err_uart
-                  << wb_dat_i_debugger
-                  << wb_ack_debugger
-                  << wb_rty_debugger
-                  << wb_err_debugger;
-
         init_submodules();
     }
 
@@ -84,9 +71,9 @@ public:
 
     // Processes
     void proc_cmb();
-    void proc_cmb_wb();
 
     // Submodules
+    m_pn_interconnect* pn_interconnect;
     m_cpu* cpu;
     m_uart* uart;
     m_debugger* debugger;
@@ -98,33 +85,6 @@ protected:
 
     sc_signal<bool> PN_NAME(debug_haltrequest);
     sc_signal<bool> PN_NAME(debug_haltrequest_ack);
-
-    // ---------- Wishbone intermediate signals ----------
-    sc_signal<bool> PN_NAME(wb_ack_master);
-    sc_signal<pn_wb_dat_t> PN_NAME(wb_dat_i_master);
-    sc_signal<bool> PN_NAME(wb_rty_master);
-    sc_signal<bool> PN_NAME(wb_err_master);
-    sc_signal<pn_wb_dat_t> PN_NAME(wb_dat_o);
-    sc_signal<pn_wb_adr_t> PN_NAME(wb_adr);
-    sc_signal<bool> PN_NAME(wb_we);
-    sc_signal<sc_uint<3>> PN_NAME(wb_cti);
-    sc_signal<sc_uint<2>> PN_NAME(wb_bte);
-    sc_signal<bool> PN_NAME(wb_stb);
-    sc_signal<bool> PN_NAME(wb_cyc);
-    sc_signal<pn_wb_sel_t> PN_NAME(wb_sel);
-
-    sc_signal<bool> PN_NAME(wb_rty_uart);
-    sc_signal<bool> PN_NAME(wb_err_uart);
-    sc_signal<bool> PN_NAME(wb_ack_uart);
-    sc_signal<pn_wb_dat_t> PN_NAME(wb_dat_i_uart);
-
-    sc_signal<bool> PN_NAME(wb_rty_debugger);
-    sc_signal<bool> PN_NAME(wb_err_debugger);
-    sc_signal<bool> PN_NAME(wb_ack_debugger);
-    sc_signal<sc_uint<32>> PN_NAME(wb_dat_i_debugger);
-    sc_signal<sc_uint<32>> PN_NAME(wb_dat_o_debugger);
-    sc_signal<sc_uint<32>> PN_NAME(wb_adr_debugger);
-    sc_signal<sc_uint<4>> PN_NAME(wb_sel_debugger);
 
     // Methods
     void init_submodules();

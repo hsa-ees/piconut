@@ -7,12 +7,6 @@
                 2025    Martin Erichsen <martin.erichsen@tha.de>
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
-  Description:
-    This file contains a block ram implementation based on the block ram
-    template. As synthesising these for different verndors may necessitate
-    different implementations, these implementations will be held in seperate
-    files and included here.
-
 
   Redistribution and use in source and binary forms, with or without modification,
   are permitted provided that the following conditions are met:
@@ -75,10 +69,9 @@
 #ifndef __FRAMEBUFFER_RAM_H__
 #define __FRAMEBUFFER_RAM_H__
 
-#include "wb_graphics_config.h"
-
 #include <piconut.h>
-#include "piconut-config.h"
+#include "video_defs.h"
+#include "video_defs_hw.h"
 
 SC_MODULE(m_framebuffer_ram)
 {
@@ -121,12 +114,12 @@ public:
     // used for the board
     std::string __SC_TOOL_VERILOG_MOD__ =
         R"(
-    `include "verilog/framebuffer_ram.v";
+    `include "framebuffer_ram.v";
     )";
 
 protected:
     // This is the ram use in the simulation of the bram
-    sc_uint<FB_RAM_DATA_WIDTH> ram[CFG_WB_GRAPHICS_FB_SIZE];
+    sc_uint<FB_RAM_DATA_WIDTH> ram[PN_CFG_VIDEO_FB_SIZE];
 };
 
 #endif // __FRAMEBUFFER_RAM_H__

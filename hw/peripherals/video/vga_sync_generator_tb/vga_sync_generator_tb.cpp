@@ -29,8 +29,7 @@
 
  *************************************************************************/
 
-#include "vga_sync_generator.h"
-#include <systemc.h>
+#include "../vga_sync_generator.h"
 
 #define PERIOD_NS 10.0
 
@@ -63,30 +62,20 @@ int sc_main(int argc, char** argv)
     PN_PARSE_CMD_ARGS(argc, argv);
     sc_trace_file* tf = PN_BEGIN_TRACE("vga_sync_generator");
 
-    PN_TRACE(tf, clk);
-    PN_TRACE(tf, reset);
-    PN_TRACE(tf, c_enable);
-    PN_TRACE(tf, c_line);
-    PN_TRACE(tf, c_column);
-    PN_TRACE(tf, vga_hsync_begin);
-    PN_TRACE(tf, vga_hsync_end);
-    PN_TRACE(tf, vga_vsync_begin);
-    PN_TRACE(tf, vga_vsync_end);
+    m_vga_sync_generator i_dut{"i_dut"};
+    i_dut.clk(clk);
+    i_dut.reset(reset);
+    i_dut.vga_hsync_begin_in(vga_hsync_begin);
+    i_dut.vga_hsync_end_in(vga_hsync_end);
+    i_dut.vga_vsync_begin_in(vga_vsync_begin);
+    i_dut.vga_vsync_end_in(vga_vsync_end);
+    i_dut.enable(c_enable);
+    i_dut.column(c_column);
+    i_dut.line(c_line);
+    i_dut.vga_hsync_out(vga_hsync);
+    i_dut.vga_vsync_out(vga_vsync);
 
-    m_vga_sync_generator dut_inst{"dut_inst"};
-    dut_inst.clk(clk);
-    dut_inst.reset(reset);
-    dut_inst.vga_hsync_begin(vga_hsync_begin);
-    dut_inst.vga_hsync_end(vga_hsync_end);
-    dut_inst.vga_vsync_begin(vga_vsync_begin);
-    dut_inst.vga_vsync_end(vga_vsync_end);
-    dut_inst.enable(c_enable);
-    dut_inst.column(c_column);
-    dut_inst.line(c_line);
-    dut_inst.vga_hsync(vga_hsync);
-    dut_inst.vga_vsync(vga_vsync);
-
-    dut_inst.pn_trace(tf, pn_cfg_vcd_level);
+    i_dut.pn_trace(tf, pn_cfg_vcd_level);
 
     sc_start(SC_ZERO_TIME); // start simulation
     cout << "\n\t\t*****Simulation started*****" << endl;
@@ -97,8 +86,8 @@ int sc_main(int argc, char** argv)
     reset = 1;
     run_cycle(1);
 
-    PN_ASSERTM(vga_hsync.read(), "HSYNC not deasserted");
-    PN_ASSERTM(vga_vsync.read(), "VSYNC not deasserted");
+    PN_ASSERTM(!vga_hsync.read(), "HSYNC not reset");
+    PN_ASSERTM(!vga_vsync.read(), "VSYNC not reset");
 
     reset = 0;
     run_cycle(1);

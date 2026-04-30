@@ -55,11 +55,11 @@ void m_demo_audio::init_submodules()
     cpu->clk(clk);
     cpu->reset(reset);
 
-    cpu->debug_haltrequest_in(dummy_low);
+    cpu->debug_slave.haltrequest_i(dummy_low);
     // Issue: vh_const not working right now. Uncomment the line below
     // after vh_const updated and remove dummy signal.
     // cpu->debug_haltrequest_in(vh_const<bool>(0));
-    cpu->debug_haltrequest_ack_out(vh_open);
+    cpu->debug_slave.haltrequest_ack_o(vh_open);
 
 #ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW // always defined just to make linter happy
     cpu->wb_master.ack_i(wb_ack_master);

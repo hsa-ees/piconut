@@ -34,15 +34,15 @@
 void m_vga_color_generator::pn_trace(sc_trace_file* tf, int level)
 {
     PN_TRACE(tf, video_in);
-    PN_TRACE(tf, blank_enable);
-    PN_TRACE(tf, vga_red);
-    PN_TRACE(tf, vga_green);
-    PN_TRACE(tf, vga_blue);
+    PN_TRACE(tf, blank_enable_in);
+    PN_TRACE(tf, vga_red_out);
+    PN_TRACE(tf, vga_green_out);
+    PN_TRACE(tf, vga_blue_out);
 }
 
 void m_vga_color_generator::proc_comb_convert()
 {
-    if(blank_enable.read())
+    if(blank_enable_in.read())
     {
         vga_red_next = 0;
         vga_green_next = 0;
@@ -50,6 +50,7 @@ void m_vga_color_generator::proc_comb_convert()
     }
     else
     {
+        // Extract the top 4 bits of each color component as PMod VGA uses 4 bits per color channel https://digilent.com/reference/pmod/pmodvga/start
         vga_red_next = video_in.read().range(23, 20);
         vga_green_next = video_in.read().range(15, 12);
         vga_blue_next = video_in.read().range(7, 4);
@@ -58,15 +59,15 @@ void m_vga_color_generator::proc_comb_convert()
 
 void m_vga_color_generator::proc_clk_update()
 {
-    vga_red = 0;
-    vga_green = 0;
-    vga_blue = 0;
+    vga_red_out = 0;
+    vga_green_out = 0;
+    vga_blue_out = 0;
 
     while(true)
     {
         wait();
-        vga_red = vga_red_next.read();
-        vga_green = vga_green_next.read();
-        vga_blue = vga_blue_next.read();
+        vga_red_out = vga_red_next.read();
+        vga_green_out = vga_green_next.read();
+        vga_blue_out = vga_blue_next.read();
     }
 }

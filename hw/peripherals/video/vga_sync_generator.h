@@ -46,26 +46,26 @@
  * on the next clock cycle.
  *
  * @par Ports:
- * @param[in] clk             clock of the module
- * @param[in] reset           reset of the module
- * @param[in] vga_hsync_begin horizontal address to assert hsync after
- * @param[in] vga_hsync_end   horizontal address to deassert hsync after
- * @param[in] vga_vsync_begin vertical address to assert vsync after
- * @param[in] vga_vsync_end   vertical address to deassert vsync after
- * @param[in] enable          synchronous enable
- * @param[in] column          current column coutner address
- * @param[in] line            current line counter address
- * @param[out] vga_hsync      horizontal synchronization signal
- * @param[out] vga_vsync      vertical synchronization signal
+ * @param[in] clk                 clock of the module
+ * @param[in] reset               reset of the module
+ * @param[in] vga_hsync_begin_out horizontal address to assert hsync after
+ * @param[in] vga_hsync_end_out   horizontal address to deassert hsync after
+ * @param[in] vga_vsync_begin_out vertical address to assert vsync after
+ * @param[in] vga_vsync_end_out   vertical address to deassert vsync after
+ * @param[in] enable_in           synchronous enable
+ * @param[in] column_in           current column counter address
+ * @param[in] line_in             current line counter address
+ * @param[out] vga_hsync_out      horizontal synchronization signal
+ * @param[out] vga_vsync_out      vertical synchronization signal
  */
 
 #ifndef __VGA_SYNC_GENERATOR_H__
 #define __VGA_SYNC_GENERATOR_H__
 
+#include <systemc.h>
 #include <piconut.h>
-
-#include "wb_graphics_config.h"
-
+#include "video_defs.h"
+#include "video_defs_hw.h"
 
 SC_MODULE(m_vga_sync_generator)
 {
@@ -76,27 +76,27 @@ public:
     sc_in<bool> PN_NAME(enable);
 
     // Horizontal and vertical synchronization pulse timings
-    sc_in<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_begin);
-    sc_in<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_end);
-    sc_in<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_begin);
-    sc_in<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_end);
+    sc_in<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_begin_in);
+    sc_in<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_end_in);
+    sc_in<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_begin_in);
+    sc_in<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_end_in);
 
     // Counters
     sc_in<sc_uint<H_COUNTER_WIDTH>> PN_NAME(column);
     sc_in<sc_uint<V_COUNTER_WIDTH>> PN_NAME(line);
 
     // Sync Signals
-    sc_out<bool> PN_NAME(vga_hsync);
-    sc_out<bool> PN_NAME(vga_vsync);
+    sc_out<bool> PN_NAME(vga_hsync_out);
+    sc_out<bool> PN_NAME(vga_vsync_out);
 
     // Constructor
     SC_CTOR(m_vga_sync_generator)
     {
         SC_METHOD(proc_comb_sync);
         sensitive << column << line << enable
-                  << vga_hsync << vga_vsync
-                  << vga_hsync_begin << vga_hsync_end
-                  << vga_vsync_begin << vga_vsync_end;
+                  << vga_hsync_out << vga_vsync_out
+                  << vga_hsync_begin_in << vga_hsync_end_in
+                  << vga_vsync_begin_in << vga_vsync_end_in;
 
         SC_CTHREAD(proc_clk, clk.pos());
         reset_signal_is(reset, true);

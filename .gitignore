@@ -1,9 +1,7 @@
-# local build folder
-build/
-
-# docs
-*.svg
-!doc/**/*.svg
+# build folder for docker-compose/devcontainer development
+/build/
+# install folder for docker-compose/devcontainer development
+/install/
 
 **/.vscode
 

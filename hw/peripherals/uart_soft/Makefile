@@ -142,7 +142,7 @@ verify-sim: $(TESTBENCH_BIN)
 # Install ...
 .PHONY: install-all
 install-all:
-	$(PN_INSTALL_HW_INCLUDE) $(MODULE).h
+	$(PN_INSTALL_HW_INCLUDE) $(MODULE).h $(MODULE)_defs.h
 
 .PHONY: install-sim^
 install-sim:

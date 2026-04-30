@@ -52,6 +52,7 @@ public:
     void proc_cmb();
 
 protected:
+    // Wishbone ...
     const uint64_t num_slaves_wishbone;
     const std::vector<pn_wb_adr_t> base_addresses_wishbone;
     const std::vector<pn_wb_adr_t> sizes_wishbone;
@@ -71,6 +72,10 @@ protected:
     sc_signal<pn_wb_dat_t> PN_NAME(wb_dat_i_master);
     sc_signal<bool> PN_NAME(wb_rty_master);
     sc_signal<bool> PN_NAME(wb_err_master);
+
+    // Debug ...
+    sc_signal<bool> PN_NAME(debug_haltrequest);
+    sc_signal<bool> PN_NAME(debug_haltrequest_ack);
 };
 
 #endif

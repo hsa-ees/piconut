@@ -4,14 +4,12 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2025 Johannes Hofmann <johannes.hofmann1@tha.de>
-#      Efficient Embedded Systems Group
+#  Copyright (C) 2025-2026 Johannes Hofmann <johannes.hofmann1@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
 #      This script tests starts an OpenOCD in background and a GDB in foreground.
-#      It requires an already running application to attach to. This script 
-#      requiers the envirnoment variable "PICONUT_HOME" set.
+#      It requires an already running application to attach to.
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -41,11 +39,10 @@ import time
 import sys
 import subprocess
 import signal
+import argparse
 
-PICONUT_HOME: str | None
-
-def start_openocd():
-    command = ["openocd", "-f", f"{PICONUT_HOME}/tools/etc/openocd-sim.cfg"]
+def start_openocd(openocd_config_path:str):
+    command = ["openocd", "-f", f"{openocd_config_path}"]
     oocd_process = subprocess.Popen(
         command, 
         process_group=0,
@@ -54,42 +51,67 @@ def start_openocd():
 
     return oocd_process
 
-def start_riscv_gdb(application_path:str):
-    working_directory = f"{PICONUT_HOME}/tools/etc"
+def start_riscv_gdb(gdb_config_path:str, application_path:str):
+    working_dir, gdb_config_name = os.path.split(gdb_config_path)
     command = [
         "riscv64-unknown-elf-gdb", 
-        f"--command=gdb_start", 
+        f"--command={gdb_config_name}", 
         application_path]
 
     process = subprocess.Popen(
-        command, 
-        cwd=working_directory)
-
+            command,
+            cwd=working_dir) 
     process.wait()
 
 if __name__ == "__main__":
 
-    PICONUT_HOME = os.getenv("PICONUT_HOME")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.normpath(os.path.join(script_dir, "../../"))
+    etc_dir = os.path.join(base_dir, "tools", "etc")
 
-    if PICONUT_HOME is None:
-        print("Enviroment variable PICONUT_HOME not set.")
-        exit(-1)
+    #
+    # Parse Argument
+    #
+    parser = argparse.ArgumentParser(description="Script with optional arguments --sim and --board.")
 
-    if len(sys.argv) < 1:
-        print("Debug application path must be provided.")
-        exit(-1)
+    parser.add_argument(
+        "--sim",
+        action="store_true",
+        default=True,
+        help="Enable simulation mode (default)."
+    )
+    parser.add_argument(
+        "--board",
+        action="store_true",
+        help="Enable board mode."
+    )
+    parser.add_argument(
+        "app_path",
+        type=str,
+        help="Path to application"
+    )
 
-    application_path = sys.argv[1]
+    args = parser.parse_args()
 
-    print("PICONUT_HOME: " + PICONUT_HOME)
-    print("Application path: " + application_path)
+    
+    openocd_config_path = ""
+    if args.board:
+        openocd_config_path = os.path.join(etc_dir, "openocd-board.cfg")
+    else:
+        openocd_config_path = os.path.join(etc_dir, "openocd-sim.cfg")
 
+    gdb_config_path = os.path.join(etc_dir, "gdb_start") 
+    app_path = os.path.abspath(args.app_path)
+
+    #
+    # Start Tools
+    #
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     
-    oocd_process = start_openocd()
+    oocd_process = start_openocd(openocd_config_path)
     time.sleep(1)
 
-    process = start_riscv_gdb(application_path)
+    process = start_riscv_gdb(gdb_config_path, app_path)
 
     oocd_process.kill()
 

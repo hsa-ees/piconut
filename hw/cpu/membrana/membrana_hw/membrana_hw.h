@@ -78,7 +78,6 @@
 
 #include <piconut.h>
 
-
 #define NUM_NUCLEI_WIDTH 6
 
 class c_membrana_a_ext
@@ -90,17 +89,6 @@ public:
     sc_uint<1> res_valid[PN_CFG_CPU_CORES]; // reserve validity indicator bits
     sc_uint<32> amo_pending_adr[PN_CFG_CPU_CORES];
     sc_uint<1> amo_pending[PN_CFG_CPU_CORES];
-
-    c_membrana_a_ext()
-    {
-        for(uint i = 0; i < PN_CFG_CPU_CORES; ++i)
-        {
-            res_adr[i] = 0;
-            res_valid[i] = 0;
-            amo_pending_adr[i] = 0;
-            amo_pending[i] = 0;
-        }
-    }
 
     bool operator==(const c_membrana_a_ext& t) const
     {

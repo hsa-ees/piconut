@@ -7,7 +7,7 @@
 [![License-BSD-2-Clause](https://img.shields.io/badge/License-BSD--2--Clause-804228?style=flat-square&labelColor=162F38)](https://github.com/hsa-ees/piconut/blob/master/LICENCE)
 [![manual](https://img.shields.io/badge/manual-HTML-804228?style=flat-square&logo=sphinx&labelColor=162F38)](https://ees.tha.de/piconut/manual/index.html)
 [![SystemC](https://img.shields.io/badge/HDL-SystemC-804228?style=flat-square&logo=cplusplus&labelColor=162F38)](https://systemc.org/)
-[![riscof-passing](https://img.shields.io/badge/riscof_(RV32IA)-passing-804228?style=flat-square&logo=Github%20Actions&labelColor=162F38)](https://ees.tha.de/piconut/manual/contributor_resources/riscof.html)
+[![riscof-passing](https://img.shields.io/badge/riscof_(RV32IMA)-passing-804228?style=flat-square&logo=Github%20Actions&labelColor=162F38)](https://ees.tha.de/piconut/manual/contributor_resources/riscof.html)
 </div>
 
 The PicoNut project at the Technical University of Applied Sciences Augsburg

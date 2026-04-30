@@ -56,9 +56,10 @@ public:
     sc_in_clk PN_NAME(clk);
     sc_in<bool> PN_NAME(reset);
 
-    // --------------- Control signals ---------------
-    sc_out<bool> PN_NAME(c_haltreq_o);
+    sc_in<bool> PN_NAME(haltrequest_ack_i);
+    sc_out<bool> PN_NAME(haltrequest_o);
 
+    // --------------- Control signals ---------------
     sc_out<bool> PN_NAME(c_hart_halted_o);
     sc_out<bool> PN_NAME(c_hart_running_o);
     sc_out<bool> PN_NAME(c_hart_run_acmds_o);
@@ -72,7 +73,6 @@ public:
     sc_out<bool> PN_NAME(c_acmds_increment_data1_o);
 
     // --------------- Status signals ---------------
-    sc_in<bool> PN_NAME(s_haltreq_ack_i);
     sc_in<bool> PN_NAME(s_new_acmds_i);
     sc_in<sc_uint<3>> PN_NAME(s_abstractcs_cmderr_i);
     sc_in<bool> PN_NAME(s_dmcontrol_haltreq_i);
@@ -89,7 +89,7 @@ public:
     {
         SC_METHOD(proc_cmb);
         sensitive << dm_current_state
-                  << s_haltreq_ack_i
+                  << haltrequest_ack_i
                   << s_new_acmds_i
                   << s_abstractcs_cmderr_i
                   << s_dmcontrol_haltreq_i
@@ -130,12 +130,6 @@ protected:
 protected:
     sc_signal<sc_uint<4>> PN_NAME(dm_current_state);
     sc_signal<sc_uint<4>> PN_NAME(dm_next_state);
-
-    // Registers ...
-
-    // Control signals
-
-    // Status signals
 };
 
 #endif

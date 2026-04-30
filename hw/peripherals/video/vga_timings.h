@@ -41,10 +41,10 @@
  *
  * @par Ports:
  * @param[in] resolution_mode    active resolution mode
- * @param[out] vid_column_active number of active pixels on a video line
- * @param[out] vid_column_end    total number of pixels on a video line
- * @param[out] vid_line_active   number of active lines in a video frame
- * @param[out] vid_line_end      total number of pixels in a video frame
+ * @param[out] column_active number of active pixels on a video line
+ * @param[out] column_end    total number of pixels on a video line
+ * @param[out] line_active   number of active lines in a video frame
+ * @param[out] line_end      total number of pixels in a video frame
  * @param[out] vga_hsync_begin   horizontal address to assert hsync after
  * @param[out] vga_hsync_end     horizontal address to deassert hsync after
  * @param[out] vga_vsync_begin   vertical address to assert vsync after
@@ -55,32 +55,32 @@
 #ifndef __VGA_TIMINGS_H__
 #define __VGA_TIMINGS_H__
 
-#include "wb_graphics_config.h"
-
 #include <systemc.h>
 #include <piconut.h>
+#include "video_defs.h"
+#include "video_defs_hw.h"
 
 SC_MODULE(m_vga_timings)
 {
 public:
-    sc_in<sc_uint<5>> PN_NAME(resolution_mode);
+    sc_in<sc_uint<5>> PN_NAME(resolution_mode_in);
 
     // Video timing signals for the counter
-    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vid_column_active);
-    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vid_column_end);
-    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vid_line_active);
-    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vid_line_end);
+    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(column_active_out);
+    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(column_end_out);
+    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(line_active_out);
+    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(line_end_out);
 
     // Horizontal and vertical synchronization pulse timings
-    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_begin);
-    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_end);
-    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_begin);
-    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_end);
+    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_begin_out);
+    sc_out<sc_uint<H_COUNTER_WIDTH>> PN_NAME(vga_hsync_end_out);
+    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_begin_out);
+    sc_out<sc_uint<V_COUNTER_WIDTH>> PN_NAME(vga_vsync_end_out);
 
     SC_CTOR(m_vga_timings)
     {
         SC_METHOD(proc_comb_timings);
-        sensitive << resolution_mode;
+        sensitive << resolution_mode_in;
     }
 
     // Functions

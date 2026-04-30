@@ -57,6 +57,9 @@
 #include <membrana_ai.h>
 #endif
 
+#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_REF
+#include <membrana_ref.h>
+#endif
 
 SC_MODULE(m_cpu), pn_module_if
 {
@@ -65,9 +68,7 @@ public:
     sc_in_clk PN_NAME(clk);
     sc_in<bool> PN_NAME(reset);
 
-    // Debug ...
-    sc_in<bool> PN_NAME(debug_haltrequest_in);
-    sc_out<bool> PN_NAME(debug_haltrequest_ack_out);
+    pn_debug_slave_t debug_slave;
 
     // Interrupts ...
     sc_in<bool> PN_NAME(msip_in);
@@ -75,7 +76,7 @@ public:
     sc_in<bool> PN_NAME(meip_in);
 
     // Wishbone interface ...
-#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW
+#if defined(PN_CFG_MEMBRANA_IS_MEMBRANA_HW) || defined(PN_CFG_MEMBRANA_IS_MEMBRANA_REF)
     pn_wishbone_master_t wb_master;
 #endif
 
@@ -90,14 +91,16 @@ public:
 
     // Constructor/Destructors ...
     SC_CTOR(m_cpu)
-#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW
+#if defined(PN_CFG_MEMBRANA_IS_MEMBRANA_HW) || defined(PN_CFG_MEMBRANA_IS_MEMBRANA_REF)
         : wb_master{
               .alen = 32,
               .dlen = 32}
 #endif
 
     {
-#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW
+        pn_add_debug_slave(&debug_slave);
+
+#if defined(PN_CFG_MEMBRANA_IS_MEMBRANA_HW) || defined(PN_CFG_MEMBRANA_IS_MEMBRANA_REF)
         pn_add_wishbone_master(&wb_master);
 #endif
 
@@ -113,6 +116,10 @@ public:
 
 #ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW
         membrana = sc_new<m_membrana_hw>("membrana");
+#endif
+
+#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_REF
+        membrana = sc_new<m_membrana_ref>("membrana");
 #endif
 
 #ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_SOFT
@@ -139,7 +146,7 @@ public:
 #endif
 
 #ifdef PN_CFG_NUCLEUS_IS_NUCLEUS_AI
-    m_nucleus_ai *nucleus;
+    m_nucleus_ai* nucleus;
 #endif
 
 #ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_SOFT
@@ -151,7 +158,11 @@ public:
 #endif
 
 #ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_AI
-    m_membrana_ai *membrana;
+    m_membrana_ai* membrana;
+#endif
+
+#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_REF
+    m_membrana_ref* membrana;
 #endif
 
 #else // !PN_PRESYNTHESIZED_H_ONLY(CPU)

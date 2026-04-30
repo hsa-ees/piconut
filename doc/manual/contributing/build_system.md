@@ -401,7 +401,7 @@ In many cases, an existing Makefile can just be reused and adapted for a new mod
 ### General Structure of a Makefile
 
 Each Makefile has the following general structure:
-```raw
+```
 <PicoNut header>
 
 # Rules for tech A (e.g. simulation) ...

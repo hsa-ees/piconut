@@ -41,7 +41,7 @@ USER root
 
 # RISC-V GNU Compiler Toolchain
 ENV RISCV_TOOLCHAIN_HOME="/opt/riscv-gnu-toolchain"
-ENV RISCV_TOOLCHAIN_VERSION="2025.12.18"
+ENV RISCV_TOOLCHAIN_VERSION="2026.02.13"
 
 # RISC-V Compliance Test Framework
 ENV RISCOF_HOME="/opt/riscof"
@@ -89,7 +89,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN mkdir -p /build && \
     cd /build && \
     # clone repository
-    git clone https://github.com/riscv/riscv-gnu-toolchain && \
+    git clone https://github.com/riscv-collab/riscv-gnu-toolchain.git && \
     cd riscv-gnu-toolchain && \
     git checkout ${RISCV_TOOLCHAIN_VERSION} && git submodule update --init --recursive && \
     # build toolchain

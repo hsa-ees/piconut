@@ -48,8 +48,7 @@ void m_cpu::init_submodules()
 {
     nucleus->clk(clk);
     nucleus->reset(reset);
-    nucleus->debug_haltrequest_in(debug_haltrequest_in);
-    nucleus->debug_haltrequest_ack_out(debug_haltrequest_ack_out);
+    nucleus->debug_slave(debug_slave);
 
     nucleus->msip_in(msip_in);
     nucleus->mtip_in(mtip_in);
@@ -96,6 +95,43 @@ void m_cpu::init_submodules()
     // ------------ Wishbone Interface ------------
     membrana->wb_master.ack_i(wb_master.ack_i);
     membrana->wb_master.dat_i(wb_master.dat_i);
+    membrana->wb_master.adr_o(wb_master.adr_o);
+    membrana->wb_master.dat_o(wb_master.dat_o);
+    membrana->wb_master.we_o(wb_master.we_o);
+    membrana->wb_master.stb_o(wb_master.stb_o);
+    membrana->wb_master.cyc_o(wb_master.cyc_o);
+    membrana->wb_master.sel_o(wb_master.sel_o);
+    membrana->wb_master.rty_i(wb_master.rty_i);
+    membrana->wb_master.err_i(wb_master.err_i);
+
+#endif
+
+#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_REF
+
+    membrana->clk(clk);
+    membrana->reset(reset);
+    // ------------ IPort Signals ------------
+    membrana->ip_stb(stb_iport);
+    membrana->ip_adr(adr_iport);
+    membrana->ip_bsel(bsel_iport);
+    membrana->ip_rdata(rdata_iport);
+    membrana->ip_ack(ack_iport);
+
+    // ------------ DPort Signals ------------
+    membrana->dp_stb(stb_dport);
+    membrana->dp_we(we_dport);
+    membrana->dp_adr(adr_dport);
+    membrana->dp_wdata(wdata_dport);
+    membrana->dp_bsel(bsel_dport);
+    membrana->dp_rdata(rdata_dport);
+    membrana->dp_ack(ack_dport);
+    membrana->dp_lr_sc(lrsc_dport);
+    membrana->dp_amo(amo_dport);
+
+    // ------------ Wishbone Interface ------------
+    membrana->wb_master.ack_i(wb_master.ack_i);
+    membrana->wb_master.dat_i(wb_master.dat_i);
+
     membrana->wb_master.adr_o(wb_master.adr_o);
     membrana->wb_master.dat_o(wb_master.dat_o);
     membrana->wb_master.we_o(wb_master.we_o);

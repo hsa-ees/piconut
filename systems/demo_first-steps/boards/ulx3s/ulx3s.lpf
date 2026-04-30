@@ -1,0 +1,91 @@
+#  -----------------------------------------------------------------------------
+#
+#  This file is part of the PicoNut project.
+#
+#  Copyright (C)    2024 Lukas Bauer <lukas.bauer1@tha.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
+#
+#  Description:
+#    PicoNut software section Makefile.
+#
+#  --------------------- LICENSE -----------------------------------------------
+#  Redistribution and use in source and binary forms, with or without modification,
+#  are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation and/or
+#     other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  -----------------------------------------------------------------------------
+
+BLOCK RESETPATHS;
+BLOCK ASYNCPATHS;
+## ULX3S v3.1.6 and v3.1.7
+
+# JTAG and SPI FLASH voltage 3.3V and options to boot from SPI flash
+# write to FLASH possible any time from JTAG:
+SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62 SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=ENABLE SLAVE_PARALLEL_PORT=DISABLE;
+
+LOCATE COMP "clk" SITE "G2";
+IOBUF  PORT "clk" PULLMODE=NONE IO_TYPE=LVCMOS33;
+FREQUENCY PORT "clk" 25 MHZ;
+
+LOCATE COMP "reset" SITE "R1";  # FIRE1
+IOBUF  PORT "reset" PULLMODE=DOWN IO_TYPE=LVCMOS33 DRIVE=4;
+
+# UART over the FTDI/USB connector
+LOCATE COMP "uart_tx" SITE "L4"; # FPGA transmits to ftdi
+LOCATE COMP "uart_rx" SITE "M1"; # FPGA receives from ftdi
+IOBUF  PORT "uart_tx" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "uart_rx" PULLMODE=UP IO_TYPE=LVCMOS33;
+
+# GPIO: Buttons + LEDs
+LOCATE COMP "gpio_output[7]" SITE "H3"; # LED 0
+LOCATE COMP "gpio_output[6]" SITE "E1"; # LED 1
+LOCATE COMP "gpio_output[5]" SITE "E2"; # LED 2
+LOCATE COMP "gpio_output[4]" SITE "D1"; # LED 3
+LOCATE COMP "gpio_output[3]" SITE "D2"; # LED 4
+LOCATE COMP "gpio_output[2]" SITE "C1"; # LED 5
+LOCATE COMP "gpio_output[1]" SITE "C2"; # LED 6 
+LOCATE COMP "gpio_output[0]" SITE "B2"; # LED 7
+IOBUF  PORT "gpio_output[0]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "gpio_output[1]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "gpio_output[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "gpio_output[3]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "gpio_output[4]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "gpio_output[5]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "gpio_output[6]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "gpio_output[7]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+
+LOCATE COMP "gpio_input[0]" SITE "R18"; # UP
+LOCATE COMP "gpio_input[1]" SITE "V1";  # DOWN
+LOCATE COMP "gpio_input[2]" SITE "U1";  # LEFT
+LOCATE COMP "gpio_input[3]" SITE "H16"; # RIGHT
+IOBUF  PORT "gpio_input[0]" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+IOBUF  PORT "gpio_input[1]" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+IOBUF  PORT "gpio_input[2]" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+IOBUF  PORT "gpio_input[3]" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+
+# JTAG
+LOCATE COMP "jtag_tdo_o" SITE "C18";
+LOCATE COMP "jtag_tck_i" SITE "B15";
+LOCATE COMP "jtag_tms_i" SITE "B17";
+LOCATE COMP "jtag_tdi_i" SITE "C16";
+IOBUF PORT  "jtag_tdo_o" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT  "jtag_tck_i" PULLMODE=UP IO_TYPE=LVCMOS33;
+IOBUF PORT  "jtag_tms_i" PULLMODE=UP IO_TYPE=LVCMOS33;
+IOBUF PORT  "jtag_tdi_i" PULLMODE=UP IO_TYPE=LVCMOS33;
+

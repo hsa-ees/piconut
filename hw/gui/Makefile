@@ -2,13 +2,8 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2023 Felix Wagner <felix.wagner1@hs-augsburg.de
-#                2024 Lukas Bauer <lukas.bauer1.tha.de>
-#      Hochschule Augsburg, University of Applied Sciences
-#
-#  Description:
-#    Makefile of the module CPU which provides the PicoNut cores of
-#    all currently available Capability levels
+#  Copyright (C) 2026 Johannes Hofmann <johannes.hofmann1@tha.de>
+#      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -33,76 +28,201 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  -----------------------------------------------------------------------------
 
-##### EDIT HERE
-################# Module Configuration #########################################
 
-################ MAKEFILE FOR: peripheral modules ##############################
 
-################################## QT ONLY !!!!#################################
 
-##### To make Qt work, copy the following line in the .bashrc file
 
-# MODULE_SRC:               Sources that are used for Simulation as well as
-#                           synthesis. (including the testbench/sc_main file)
-MODULE_SRC =
+################################################################################
+#                                                                              #
+#   Configuration                                                              #
+#                                                                              #
+################################################################################
 
-# TESTBENCH_SRC:            Source that contains tb (and thus sc_main)
-TESTBENCH_SRC = gui_tb/gui_tb.cpp
 
-# SIM_SRC:                  Sources that are only used in simulationon
-SIM_SRC = \
-	framebuffer_to_image.cpp \
-	mainwindow.cpp \
-    gui.cpp
+# Include PicoNut setup ...
+include ../../piconut.mk
 
-# MEMBRANA_VERSION:             Version of the membrana that is used in this module
-MEMBRANA_VERSION = membrana_soft
 
-# MODULE_INCLUDES:          Include directives for the compiler (e.g. -I..)
-MODULE_INCLUDES = -I.. \
-                  -I$(QT_HOME)/include/QtCore \
-                  -I$(QT_HOME)/include/QtGui \
-                  -I$(QT_HOME)/include/QtWidgets \
-                  -I$(QT_HOME)/include
 
-# MODULE_CFLAGS:            Additional compiler flags this module needs
-MODULE_CFLAGS =
 
-# MODULE_LDFLAGS:           Additional linker flags this module needs
-MODULE_LDFLAGS = -fuse-ld=mold -L$(QT_HOME)/lib \
-                 -lQt6Core -lQt6Gui -lQt6Widgets -lsystemc -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB
 
-# SYNTHESIS_TOPMODULE:      Defines the Top Module for synthesis as defined inside
-#							the test bench cpp
-SYNTHESIS_TOP_MODULE =
+################################################################################
+#                                                                              #
+#   Source Files                                                               #
+#                                                                              #
+################################################################################
 
-# MOC_SRC						Files that need to be moced with qt
-MOC_SRC ?= mainwindow.h gui.h
 
-# UI_SRC						UI files to convert to .h files
+
+# Module name ...
+#   By convention,
+#   - the module name is equal to the directory name,
+#   - the top-level entity has the same name,
+#   - the top-level entity is defined in a file named $(MODULE).cpp,
+#   - the testbench is defined in a file named $(MODULE)_tb.cpp.
+#   The following lines can be copied to new modules with very little
+#   modifications. However, if required and adequate for some module, other
+#   variables may be used. Any variables not starting with "PN_" and which are
+#   not special variables (like DEBUG, VERBOSE, ... - see `make help`) are local
+#   and can be defined freely in this file.
+MODULE := $(PN_MODULE_NAME)
+
+
+# Module sources that are used for simulation and for synthesis ...
+MODULE_SRC := $(MODULE).cpp mainwindow.cpp framebuffer_to_image.cpp
+
+# Testbench and its source(s), containing `sc_main` ...
+TESTBENCH := $(MODULE)_tb/$(MODULE)_tb
+TESTBENCH_SRC := $(TESTBENCH).cpp
+
+
+#
+# Qt
+#
+
+# Module sources for Qt moc compiler ...
+MOC_SRC ?= mainwindow.h
+
+# Module sources for Qt ui files ...
 UI_SRC ?= mainwindow.ui
 
+# Tools
+MOC = $(QT_HOME)/libexec/moc
+UIC = $(QT_HOME)/libexec/uic
+
+
+
+
+
 ################################################################################
-##### DO NOT EDIT FROM HERE ON #################################################
+#                                                                              #
+#   Simulation                                                                 #
+#                                                                              #
 ################################################################################
 
-################# Module Makefile ##############################################
-SYSC_MODULE_DIR:= $(abspath $(CURDIR))
-PICONUT_HOME ?= $(CURDIR)/../../..
 
-################# Automatic Name Generation ####################################
-# Get Module name from folder name
-MODULE_NAME = $(subst module_,,$(lastword $(subst /, ,$(SYSC_MODULE_DIR))))
+# Define set of object files and output binaries ...
+#   As many hardware modules, this section builds
+#   a) a shared library with the simulation model of the module ('MODULE_*'),
+#   b) a simulation binary based on a testbench using this library ('TESTBENCH_*').
+MOC_SRC_H := $(filter %.h, $(MOC_SRC))
+MOC_SRC_CPP := $(filter %.cpp, $(MOC_SRC))
+MOC_FILES_H := $(MOC_SRC_H:%.h=$(PN_MODULE_BUILD_DIR)/sim/%_moc.cpp)
+MOC_FILES_CPP := $(MOC_SRC_CPP:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.moc)
+MODULE_SRC += $(MOC_FILES_CPP) $(MOC_FILES_H)
+
+UI_FILES_H := $(UI_SRC:%.ui=$(PN_MODULE_BUILD_DIR)/sim/%_ui.h)
 
 
-################# Directory Makefile Include #####################################
-include $(PICONUT_HOME)/directory-base.mk
+MODULE_OBJ := $(MODULE_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+MODULE_LIB := $(PN_MODULE_BUILD_DIR)/sim/lib$(MODULE).a
 
-################# Master Makefile Include #####################################
-# include make targets for the qt application
-# needs to be included before the systemc base mk in order
-# to have moc files built automatically with the other files
-# otherwise they need to be added to the SIM_SRC manually
-include $(QT_BASE_MK)
+TESTBENCH_OBJ := $(TESTBENCH_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH)
 
-include $(SYSC_BASE_MK)
+
+# Automatic dependencies ...
+#   The default compile command $(PN_HW_CC) generates a .d file for each .o file
+#   containing the .h files it depends on. These files are included here.
+-include $(MODULE_OBJ:%.o=%.d)
+-include $(TESTBENCH_OBJ:%.o=%.d)
+
+
+# Set object files to link ...
+#   The PicoNut setup script ('piconut.mk') contains predefined (implicit) rules
+#   for compiling and linking. If they are used (as in this file), an additional
+#   linking rule must be supplied here to identify all object files the binary
+#   depends on. The recipe must be left out, it is supplied by 'piconut.mk'.
+#
+
+#   dependencies of the library ...
+$(MODULE_LIB): $(MOC_FILES_H) $(MOC_FILES_CPP) $(UI_FILES_H) $(MODULE_OBJ) 
+
+#   dependencies of the executable ...
+$(TESTBENCH_BIN): $(TESTBENCH_OBJ) $(MODULE_LIB)
+
+QT_INCLUDES := \
+	-I$(QT_HOME)/include/QtCore \
+  -I$(QT_HOME)/include/QtGui \
+  -I$(QT_HOME)/include/QtWidgets \
+  -I$(QT_HOME)/include
+
+# Note: Build dir has to be added as include dir because .ui files translated to
+# to .h files have to be available for the module.
+PN_HW_CFLAGS += $(QT_INCLUDES) -I$(PN_MODULE_BUILD_DIR)/sim/
+
+PN_HW_LDFLAGS += \
+	-fuse-ld=mold \
+	-L$(QT_HOME)/lib \
+	-lQt6Core -lQt6Gui -lQt6Widgets \
+	-DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB
+
+
+# Qt moc build for header files
+$(PN_MODULE_BUILD_DIR)/sim/%_moc.cpp: %.h
+ifneq (0,$(VERBOSE))
+	@mkdir -p $(dir $@)
+	$(MOC) $(QT_INCLUDES) $< -o $@
+else
+	@echo $(PN_BUILD_PREFIX)HW-QT_MOC $(@:$(PN_MODULE_BUILD_DIR)/%=%); \
+	mkdir -p $(dir $@) && \
+	$(MOC) $(QT_INCLUDES) $< -o $@
+endif
+
+# Qt moc build for source files
+$(PN_MODULE_BUILD_DIR)/sim/%.moc: %.cpp
+ifneq (0,$(VERBOSE))
+	@mkdir -p $(dir $@)
+	$(MOC) $(QT_INCLUDES) $< -o $@
+else
+	@echo $(PN_BUILD_PREFIX)HW-QT_MOC $(@:$(PN_MODULE_BUILD_DIR)/%=%); \
+	mkdir -p $(dir $@) && \
+	$(MOC) $(QT_INCLUDES) $< -o $@
+endif
+
+# Qt moc build for ui files
+$(PN_MODULE_BUILD_DIR)/sim/%_ui.h: %.ui
+ifneq (0,$(VERBOSE))
+	@mkdir -p $(dir $@)
+	$(UIC) $< -o $@
+else
+	@echo $(PN_BUILD_PREFIX)HW-QT_UIC $(@:$(PN_MODULE_BUILD_DIR)/%=%); \
+	mkdir -p $(dir $@) && \
+	$(UIC) $< -o $@
+endif
+
+
+
+#################### Exported global targets ###################################
+
+
+# Build ...
+.PHONY: build-lib
+build-lib: $(MODULE_LIB)
+
+.PHONY: build-tb
+build-tb: $(TESTBENCH_BIN)
+
+build-sim: build-lib build-tb
+
+
+# Verify ...
+#   Run the main testbench.
+.PHONY: verify-sim
+verify-sim: $(TESTBENCH_BIN)
+ifeq ($(strip $(DISPLAY)$(WAYLAND_DISPLAY)),)
+		QT_QPA_PLATFORM=offscreen $(PN_HW_RUN) $<
+else
+		$(PN_HW_RUN) $<
+endif
+
+
+# Install ...
+.PHONY: install-all
+install-all:
+	$(PN_INSTALL_HW_INCLUDE) $(MODULE).h
+
+.PHONY: install-sim
+install-sim:
+	$(PN_INSTALL_HW_LIB) $(MODULE_LIB)
+

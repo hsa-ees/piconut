@@ -79,6 +79,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include "uart_soft_defs.h"
+
 // definitions of the different registers as structs
 typedef struct
 {

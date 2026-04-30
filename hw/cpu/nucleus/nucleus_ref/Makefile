@@ -3,10 +3,12 @@
 #  This file is part of the PicoNut project.
 #
 #  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#                     Tristan Kundrat <tristan.kundrat@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
-#    Makefile of the reference Nucleus.
+#    Makefile of the module CPU which provides the PicoNut cores of
+#    all currently available Capability levels
 #
 #  --------------------- LICENSE -----------------------------------------------
 #  Redistribution and use in source and binary forms, with or without modification,
@@ -32,10 +34,6 @@
 #  -----------------------------------------------------------------------------
 
 
-# Note: This module is configured for pre-synthesis and stages Verilog models
-#       - at RT level (nucleus_ref.v)
-#       - at gate level (nucleus_ref.<board>.*)
-
 
 
 
@@ -47,9 +45,19 @@
 ################################################################################
 
 
+# Submodules ...
+#   Define the submodules this module depends on.
+#
+#   The build system will automatically build them by the 'build' target before
+#   executing the 'build-all' recipe defined below. Submodules are "installed"
+#   into $PN_BUILD_DIR, so that no search paths for compiling/linking must be
+#   set here.
+#   Only PN_HW_LDFLAGS must be extended to load the submodules when linking.
+#
+
+
 # Include PicoNut setup ...
 include ../../../../piconut.mk
-
 
 
 
@@ -64,7 +72,7 @@ include ../../../../piconut.mk
 # Module name ...
 #   By convention,
 #   - the module name is equal to the directory name,
-#   - the top-level entity has the same name,
+#   - the top-level entity has the same name, prefixed with "m_",
 #   - the top-level entity is defined in a file named $(MODULE).cpp,
 #   - the testbench is defined in a file named $(MODULE)_tb.cpp.
 #   The following lines can be copied to new modules with very little
@@ -74,27 +82,75 @@ include ../../../../piconut.mk
 #   and can be defined freely in this file.
 MODULE := $(PN_MODULE_NAME)
 
-
-# Module sources that are used for simulation and for synthesis.
-MODULE_SRC := \
-	$(MODULE).cpp \
-	alu.cpp \
-	regfile.cpp \
-	pc.cpp \
-	ir.cpp \
-	extender.cpp \
-	byteselector.cpp \
-	controller.cpp \
-	immgen.cpp \
-	datahandler.cpp \
-	csr.cpp \
-	csr_master.cpp
+# Module sources that are used for simulation and for synthesis ...
+# Change the sources for the multiplication and division modules here.
+MODULE_SRC := $(MODULE).cpp \
+			  alu/alu.cpp \
+			  alu/m_extension/mul/shift_and_add.cpp \
+			  alu/m_extension/div/shift_and_subtract.cpp \
+			  alu/scalar_crypto/scalar_crypto.cpp \
+			  pc/pc.cpp \
+			  ir/ir.cpp \
+			  regfile/regfile.cpp \
+			  extender/extender.cpp \
+			  byteselector/byteselector.cpp \
+			  controller/controller.cpp \
+			  immgen/immgen.cpp \
+			  datahandler/datahandler.cpp \
+			  csr/csr.cpp \
+			  csr_master/csr_master.cpp
 
 
 # Testbench and its source(s), containing `sc_main` ...
 TESTBENCH := $(MODULE)_tb/$(MODULE)_tb
 TESTBENCH_SRC := $(TESTBENCH).cpp
 
+TESTBENCH_ALU := alu/alu_tb/alu_tb
+# Change the sources for the multiplication and division modules here.
+TESTBENCH_ALU_SRC := alu/alu.cpp \
+					 alu/m_extension/mul/shift_and_add.cpp \
+					 alu/m_extension/div/shift_and_subtract.cpp \
+					 alu/scalar_crypto/scalar_crypto.cpp \
+					 alu/alu_tb/alu_tb.cpp
+
+TESTBENCH_CRYPTO := alu/scalar_crypto/scalar_crypto_tb/scalar_crypto_tb
+TESTBENCH_CRYPTO_SRC := alu/scalar_crypto/scalar_crypto.cpp \
+						alu/scalar_crypto/scalar_crypto_tb/scalar_crypto_tb.cpp
+
+TESTBENCH_PC := pc/pc_tb/pc_tb
+TESTBENCH_PC_SRC := pc/pc.cpp pc/pc_tb/pc_tb.cpp
+
+TESTBENCH_IR := ir/ir_tb/ir_tb
+TESTBENCH_IR_SRC := ir/ir.cpp ir/ir_tb/ir_tb.cpp
+
+TESTBENCH_REGFILE := regfile/regfile_tb/regfile_tb
+TESTBENCH_REGFILE_SRC := regfile/regfile.cpp regfile/regfile_tb/regfile_tb.cpp
+
+TESTBENCH_EXTENDER := extender/extender_tb/extender_tb
+TESTBENCH_EXTENDER_SRC := extender/extender.cpp \
+						  extender/extender_tb/extender_tb.cpp
+
+TESTBENCH_BYTESELECTOR := byteselector/byteselector_tb/byteselector_tb
+TESTBENCH_BYTESELECTOR_SRC := byteselector/byteselector.cpp \
+							  byteselector/byteselector_tb/byteselector_tb.cpp
+
+TESTBENCH_CONTROLLER := controller/controller_tb/controller_tb
+TESTBENCH_CONTROLLER_SRC := controller/controller.cpp \
+							controller/controller_tb/controller_tb.cpp
+
+TESTBENCH_IMMGEN := immgen/immgen_tb/immgen_tb
+TESTBENCH_IMMGEN_SRC := immgen/immgen.cpp immgen/immgen_tb/immgen_tb.cpp
+
+TESTBENCH_DATAHANDLER := datahandler/datahandler_tb/datahandler_tb
+TESTBENCH_DATAHANDLER_SRC := datahandler/datahandler.cpp \
+							 datahandler/datahandler_tb/datahandler_tb.cpp
+
+TESTBENCH_CSR := csr/csr_tb/csr_tb
+TESTBENCH_CSR_SRC := csr/csr.cpp csr/csr_tb/csr_tb.cpp
+
+TESTBENCH_CSR_MASTER := csr_master/csr_master_tb/csr_master_tb
+TESTBENCH_CSR_MASTER_SRC := csr_master/csr_master.cpp \
+							csr_master/csr_master_tb/csr_master_tb.cpp
 
 
 
@@ -116,6 +172,41 @@ MODULE_LIB := $(PN_MODULE_BUILD_DIR)/sim/lib$(MODULE).a
 TESTBENCH_OBJ := $(TESTBENCH_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
 TESTBENCH_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH)
 
+TESTBENCH_ALU_OBJ := $(TESTBENCH_ALU_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_ALU_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_ALU)
+
+TESTBENCH_CRYPTO_OBJ := $(TESTBENCH_CRYPTO_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_CRYPTO_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_CRYPTO)
+
+TESTBENCH_PC_OBJ := $(TESTBENCH_PC_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_PC_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_PC)
+
+TESTBENCH_IR_OBJ := $(TESTBENCH_IR_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_IR_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_IR)
+
+TESTBENCH_REGFILE_OBJ := $(TESTBENCH_REGFILE_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_REGFILE_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_REGFILE)
+
+TESTBENCH_EXTENDER_OBJ := $(TESTBENCH_EXTENDER_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_EXTENDER_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_EXTENDER)
+
+TESTBENCH_BYTESELECTOR_OBJ := $(TESTBENCH_BYTESELECTOR_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_BYTESELECTOR_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_BYTESELECTOR)
+
+TESTBENCH_CONTROLLER_OBJ := $(TESTBENCH_CONTROLLER_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_CONTROLLER_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_CONTROLLER)
+
+TESTBENCH_IMMGEN_OBJ := $(TESTBENCH_IMMGEN_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_IMMGEN_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_IMMGEN)
+
+TESTBENCH_DATAHANDLER_OBJ := $(TESTBENCH_DATAHANDLER_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_DATAHANDLER_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_DATAHANDLER)
+
+TESTBENCH_CSR_OBJ := $(TESTBENCH_CSR_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_CSR_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_CSR)
+
+TESTBENCH_CSR_MASTER_OBJ := $(TESTBENCH_CSR_MASTER_SRC:%.cpp=$(PN_MODULE_BUILD_DIR)/sim/%.o)
+TESTBENCH_CSR_MASTER_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH_CSR_MASTER)
 
 # Automatic dependencies ...
 #   The default compile command $(PN_HW_CC) generates a .d file for each .o file
@@ -131,6 +222,7 @@ TESTBENCH_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH)
 #   depends on. The recipe must be left out, it is supplied by 'piconut.mk'.
 #
 
+
 #   dependencies of the library ...
 $(MODULE_LIB): $(MODULE_OBJ)
 
@@ -138,6 +230,111 @@ $(MODULE_LIB): $(MODULE_OBJ)
 $(TESTBENCH_BIN): $(TESTBENCH_OBJ) $(MODULE_LIB)
 
 
+$(TESTBENCH_ALU_BIN): $(TESTBENCH_ALU_OBJ) $(MODULE_LIB)
+
+TESTBENCH_ALU_RUN := verify-$(TESTBENCH_ALU_BIN)
+
+.PHONY: $(TESTBENCH_ALU_RUN)
+$(TESTBENCH_ALU_RUN): $(TESTBENCH_ALU_BIN)
+	$(PN_HW_RUN) $<
+
+$(TESTBENCH_CRYPTO_BIN): $(TESTBENCH_CRYPTO_OBJ) $(MODULE_LIB)
+
+TESTBENCH_CRYPTO_RUN := verify-crypto
+
+.PHONY: $(TESTBENCH_CRYPTO_RUN)
+$(TESTBENCH_CRYPTO_RUN): $(TESTBENCH_CRYPTO_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_PC_BIN): $(TESTBENCH_PC_OBJ) $(MODULE_LIB)
+
+TESTBENCH_PC_RUN := verify-$(TESTBENCH_PC_BIN)
+
+.PHONY: $(TESTBENCH_PC_RUN)
+$(TESTBENCH_PC_RUN): $(TESTBENCH_PC_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_IR_BIN): $(TESTBENCH_IR_OBJ) $(MODULE_LIB)
+
+TESTBENCH_IR_RUN := verify-$(TESTBENCH_IR_BIN)
+
+.PHONY: $(TESTBENCH_IR_RUN)
+$(TESTBENCH_IR_RUN): $(TESTBENCH_IR_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_REGFILE_BIN): $(TESTBENCH_REGFILE_OBJ) $(MODULE_LIB)
+
+TESTBENCH_REGFILE_RUN := verify-$(TESTBENCH_REGFILE_BIN)
+
+.PHONY: $(TESTBENCH_REGFILE_RUN)
+$(TESTBENCH_REGFILE_RUN): $(TESTBENCH_REGFILE_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_EXTENDER_BIN): $(TESTBENCH_EXTENDER_OBJ) $(MODULE_LIB)
+
+TESTBENCH_EXTENDER_RUN := verify-$(TESTBENCH_EXTENDER_BIN)
+
+.PHONY: $(TESTBENCH_EXTENDER_RUN)
+$(TESTBENCH_EXTENDER_RUN): $(TESTBENCH_EXTENDER_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_BYTESELECTOR_BIN): $(TESTBENCH_BYTESELECTOR_OBJ) $(MODULE_LIB)
+
+TESTBENCH_BYTESELECTOR_RUN := verify-$(TESTBENCH_BYTESELECTOR_BIN)
+
+.PHONY: $(TESTBENCH_BYTESELECTOR_RUN)
+$(TESTBENCH_BYTESELECTOR_RUN): $(TESTBENCH_BYTESELECTOR_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_CONTROLLER_BIN): $(TESTBENCH_CONTROLLER_OBJ) $(MODULE_LIB)
+
+TESTBENCH_CONTROLLER_RUN := verify-$(TESTBENCH_CONTROLLER_BIN)
+
+.PHONY: $(TESTBENCH_CONTROLLER_RUN)
+$(TESTBENCH_CONTROLLER_RUN): $(TESTBENCH_CONTROLLER_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_IMMGEN_BIN): $(TESTBENCH_IMMGEN_OBJ) $(MODULE_LIB)
+
+TESTBENCH_IMMGEN_RUN := verify-$(TESTBENCH_IMMGEN_BIN)
+
+.PHONY: $(TESTBENCH_IMMGEN_RUN)
+$(TESTBENCH_IMMGEN_RUN): $(TESTBENCH_IMMGEN_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_DATAHANDLER_BIN): $(TESTBENCH_DATAHANDLER_OBJ) $(MODULE_LIB)
+
+TESTBENCH_DATAHANDLER_RUN := verify-$(TESTBENCH_DATAHANDLER_BIN)
+
+.PHONY: $(TESTBENCH_DATAHANDLER_RUN)
+$(TESTBENCH_DATAHANDLER_RUN): $(TESTBENCH_DATAHANDLER_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_CSR_BIN): $(TESTBENCH_CSR_OBJ) $(MODULE_LIB)
+
+TESTBENCH_CSR_RUN := verify-$(TESTBENCH_CSR_BIN)
+
+.PHONY: $(TESTBENCH_CSR_RUN)
+$(TESTBENCH_CSR_RUN): $(TESTBENCH_CSR_BIN)
+	$(PN_HW_RUN) $<
+
+
+$(TESTBENCH_CSR_MASTER_BIN): $(TESTBENCH_CSR_MASTER_OBJ) $(MODULE_LIB)
+
+TESTBENCH_CSR_MASTER_RUN := verify-$(TESTBENCH_CSR_MASTER_BIN)
+
+.PHONY: $(TESTBENCH_CSR_MASTER_RUN)
+$(TESTBENCH_CSR_MASTER_RUN): $(TESTBENCH_CSR_MASTER_BIN)
+	$(PN_HW_RUN) $<
 
 
 
@@ -157,9 +354,8 @@ build-sim: build-lib build-tb
 # Verify ...
 #   Run the main testbench.
 .PHONY: verify-sim
-verify-sim: $(TESTBENCH_BIN)
+verify-sim: $(TESTBENCH_BIN) $(TESTBENCH_ALU_RUN) $(TESTBENCH_PC_RUN) $(TESTBENCH_IR_RUN) $(TESTBENCH_REGFILE_RUN) $(TESTBENCH_EXTENDER_RUN) $(TESTBENCH_BYTESELECTOR_RUN) $(TESTBENCH_CONTROLLER_RUN) $(TESTBENCH_BYTESELECTOR_RUN) $(TESTBENCH_CONTROLLER_RUN) $(TESTBENCH_IMMGEN_RUN) $(TESTBENCH_DATAHANDLER_RUN) $(TESTBENCH_CSR_RUN) $(TESTBENCH_CSR_MASTER_RUN)
 	$(PN_HW_RUN) $<
-
 
 # Install ...
 .PHONY: install-all
@@ -239,13 +435,20 @@ $(PN_NETLIST_OUTPUT): $(PN_NETLIST_SRC)
 
 
 # Build ...
+#   Synthesize only if a synthesizable Membrana is selected.
+ifneq (membrana_soft,$(PN_CFG_MEMBRANA))
 build-syn: build-netlist
+endif
 
 
 # Verify ...
+ifneq (membrana_soft,$(PN_CFG_MEMBRANA))
 verify-syn: build-netlist
+endif
 
 
 # Install ...
 install-syn: build-syn
+ifneq (membrana_soft,$(PN_CFG_MEMBRANA))
 	$(PN_INSTALL_HW_SYN) $(PN_SYSTEMC_OUTPUT) $(PN_NETLIST_OUTPUT)
+endif

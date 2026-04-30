@@ -3,6 +3,7 @@
 #  This file is part of the PicoNut project.
 #
 #  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#				 2026 Hermann Zoha <hermann.zoha@tha.de> 
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
@@ -77,7 +78,7 @@ EMEM_CONFIG := -m m_membrana_hw_emem -p 2 -a 32 -d 4x8 -s $(PN_CFG_MEMBRANA_EMEM
 ################################################################################
 
 
-# TBD+: Eliminate 'elf_reader' -> use the one from 'common'
+
 # TBD+: 'membrana_hw_emem.cpp' makes decisions on hard-coded constants
 #      PN_CFG_CPU_RESET_ADR (previously CFG_START_ADDRESS, the CPU reset vector)
 #      and 0x0001FFFF. This does not make sense: Eliminate them and
@@ -100,7 +101,7 @@ MODULE := $(PN_MODULE_NAME)
 
 
 # Module sources that are used for simulation and for synthesis ...
-MODULE_SRC := $(MODULE).cpp membrana_hw_emem.cpp elf_reader.cpp
+MODULE_SRC := $(MODULE).cpp membrana_hw_emem.cpp 
 
 
 # Testbench and its source(s), containing `sc_main` ...

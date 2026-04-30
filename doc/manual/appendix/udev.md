@@ -1,5 +1,5 @@
-(sec:apx:udev)=
-# Udev Rules
+(cha:apx:udev)=
+# Udev Rules for Supported Boards
 **Author: Johannes Hofmann 2025**
 
 (sec:apx:udev:setup)=
@@ -12,7 +12,7 @@ to be added to the `host system` not to the container.
 
 1. Create a New udev Rule:
 
-Create a new file called \<device-name\>.rules and place it in `/etc/udev/rules.d`.
+Create a new file called \<xx-device-name\>.rules and place it in `/etc/udev/rules.d/\<xx-device-name\>.rules`.
 Paste the udev rule of your board into the file.
 
 2. Reload udev Rules:
@@ -33,4 +33,12 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", \
 # this is for ujprog libusb access
 ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", \
   GROUP="dialout", MODE="666"
+```
+
+(sec:apx:udev:orangecrab)=
+## OrangeCrab
+
+```
+# /etc/udev/rules.d/50-fpga-orangecrab.rules
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="5af0", GROUP="plugdev", MODE="0666"
 ```

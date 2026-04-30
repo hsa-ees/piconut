@@ -34,45 +34,48 @@
 
 #include "pn_interconnect_backend.h"
 
+#include <algorithm>
+#include <numeric>
+
 namespace {
 
 std::vector<pn_wb_adr_t> extract_base_addresses(
     const std::vector<pn_module_if*>& modules)
 {
-    std::vector<pn_wb_adr_t> _base_addresses;
+    std::vector<pn_wb_adr_t> base_addresses;
     for(const auto& module : modules)
     {
-        for(const auto& wb_slave : module->wb_slaves)
-        {
-            _base_addresses.push_back(wb_slave->base_address);
-        }
+        std::transform(
+            module->wb_slaves.begin(), module->wb_slaves.end(),
+            std::back_inserter(base_addresses), //
+            [](const auto* wb_slave) { return wb_slave->base_address; });
     }
-    return _base_addresses;
+    return base_addresses;
 }
 
 std::vector<pn_wb_adr_t> extract_sizes(
     const std::vector<pn_module_if*>& modules)
 {
-    std::vector<pn_wb_adr_t> _sizes;
+    std::vector<pn_wb_adr_t> sizes;
     for(const auto& module : modules)
     {
-        for(const auto& wb_slave : module->wb_slaves)
-        {
-            _sizes.push_back(wb_slave->size);
-        }
+        std::transform(
+            module->wb_slaves.begin(), module->wb_slaves.end(),
+            std::back_inserter(sizes), //
+            [](const auto* wb_slave) { return wb_slave->size; });
     }
-    return _sizes;
+    return sizes;
 }
 
 size_t get_num_wb_slaves(
-    std::vector<pn_module_if*>& modules)
+    const std::vector<pn_module_if*>& modules)
 {
-    size_t num = 0;
-    for(size_t i = 0; i < modules.size(); i++)
-    {
-        num += modules[i]->wb_slaves.size();
-    }
-    return num;
+    return std::accumulate(
+        modules.begin(), modules.end(),
+        size_t(0), //
+        [](size_t sum, const pn_module_if* module) {
+            return sum + module->wb_slaves.size();
+        });
 }
 
 } // namespace

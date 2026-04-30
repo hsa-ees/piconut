@@ -31,97 +31,99 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  -----------------------------------------------------------------------------
 
-################# Directory Makefile Include ###################################
-PICONUT_HOME ?= $(CURDIR)/../../..
-include $(PICONUT_HOME)/directory-base.mk
+PN_BUILD_COMMON := 0
+PN_BUILD_HW := 0
+PN_BUILD_SW := 0
 
-################## Configuration ###############################################
+include ../../../piconut.mk
+
+# TBD: include in main piconut.mk as this is common for all python-based tools
+export PYTHONPYCACHEPREFIX := $(PN_MODULE_BUILD_DIR)/__pycache__
+
+
+## Configuration
 # Set this to update the riscv-arch-test version
-RISCV_ARCH_TEST_VERSION ?= 3.9.1
+RISCV_ARCH_TEST_VERSION ?= 3.10.0
+RISCV_ARCH_TEST ?= $(CURDIR)/riscv-arch-test
 
-################## Variables ###################################################
+## Variables
 RISCOF ?= $(shell command -v riscof)
 VERBOSE ?= 0
-TRACE_LVL ?= 0
-VERBOSE_SUB_CMD := $(if $(filter 1,$(VERBOSE)),--verbose debug,)
+SIMULATOR_BIN ?= $(PN_BUILD_DIR)/systems/refdesign/hw/sim/refdesign_sim
 
-# Colors
-PINK=\033[1;35m
-RED=\033[1;31m
-GREEN=\033[1;32m
-NC=\033[0m
+define HELP_TARGETS
+	@echo "	run                : Run riscof"
+	@echo "	update-arch-test   : Ensure riscv-arch-test is cloned and up to date"
+	@echo "	clean              : Delete files created from riscof"
+endef
 
-################## Targets #####################################################
+define HELP_PARAMETERS
+	@echo "	VERBOSE            : To enable verbose debug output"
+	@echo "	SIM_TRACE_LEVEL    : Set the vcd trace level (default: 0)" # From normal simulator
+	@echo "	SIMULATOR_BIN      : Set the system to build (default: $(PN_BUILD_DIR)/systems/refdesign/hw/sim/refdesign_sim)"
+endef
 
-all: help
+PN_HELP_PARAMETERS = $(HELP_PARAMETERS)
+PN_HELP_TARGETS = $(HELP_TARGETS)
 
-.PHONY: help
-help:
-	@echo "Makefile to run the RISC-V architecture test framework (Riscof)"
-	@echo "Targets:"
-	@echo "  run                : Run riscof"
-	@echo "  run-trace          : Run riscof with simulator trace enabled"
-	@echo "  update-arch-test   : Ensure riscv-arch-test is cloned and up to date"
-	@echo "  clean              : Delete files created from riscof"
-	@echo "  clean-system       : Delete files created during the build process of the specified system"
-	@echo "  clean-all          : Delete files created during the build process of the software and from riscof"
-	@echo "PARAMETERS:"
-	@echo "  VERBOSE            : To enable verbose debug output"
-	@echo "  TRACE_LVL          : Set the vcd trace level"
+## Targets
 
-.PHONY: run
-run: build-sim update-arch-test copy-custom-tests run-riscof
-
-.PHONY: run-trace
-run-trace: prepare-trace run
-
-prepare-trace:
-	@$(eval TRACE_LVL := 2)
-
-build-sim:
-	+$(MAKE) -C $(PNS_HW_DIR) build-sim
+	
 
 .PHONY: update-arch-test
 update-arch-test:
-	@if [ ! -d "riscv-arch-test" ]; then \
-		echo "$(PINK)Cloning riscv-arch-test...$(NC)"; \
-		git clone https://github.com/riscv-non-isa/riscv-arch-test; \
-		git -C riscv-arch-test checkout $(RISCV_ARCH_TEST_VERSION); \
+	@if [ ! -d "$(RISCV_ARCH_TEST)" ]; then \
+		echo "$(PN_BUILD_PREFIX) Cloning riscv-arch-test..."; \
+		git clone https://github.com/riscv-non-isa/riscv-arch-test $(RISCV_ARCH_TEST); \
+		git -C $(RISCV_ARCH_TEST) checkout $(RISCV_ARCH_TEST_VERSION); \
 	fi
 
-	@present_arch_test_version=$$(git -C riscv-arch-test describe --tags --abbrev=0 --match [0-9]*.[0-9]*.[0-9]* 2>/dev/null || true); \
+	@present_arch_test_version=$$(git -C $(RISCV_ARCH_TEST) describe --tags --abbrev=0 --match [0-9]*.[0-9]*.[0-9]* 2>/dev/null || true); \
 	if [ "$$present_arch_test_version" != "$(RISCV_ARCH_TEST_VERSION)" ]; then \
-		echo "$(PINK)Updating to riscv-arch-test version $(RISCV_ARCH_TEST_VERSION)$(NC)"; \
-		git -C riscv-arch-test fetch --tags; \
-		git -C riscv-arch-test reset --hard $(RISCV_ARCH_TEST_VERSION); \
+		echo "$(PN_BUILD_PREFIX) Updating to riscv-arch-test version $(RISCV_ARCH_TEST_VERSION)"; \
+		git -C $(RISCV_ARCH_TEST) fetch --tags; \
+		git -C $(RISCV_ARCH_TEST) reset --hard $(RISCV_ARCH_TEST_VERSION); \
 	fi
 
-copy-custom-tests:
-	@echo "$(PINK)Copying custom tests...$(NC)"
-	@cp -r custom-tests/* riscv-arch-test/riscv-test-suite/
-	@git -C riscv-arch-test add .
-	@git -C riscv-arch-test commit -m 'temp: custom-tests' >/dev/null 2>&1 || true
+copy-custom-tests: update-arch-test
+	@echo "$(PN_BUILD_PREFIX) Copying custom tests"
+	@cp -r custom-tests/* $(RISCV_ARCH_TEST)/riscv-test-suite/
+	@git -C $(RISCV_ARCH_TEST) add .
+	@git -C $(RISCV_ARCH_TEST) commit -m 'temp: custom-tests' >/dev/null 2>&1 || true
 
-run-riscof:
-	@echo "$(PINK)Running riscof...$(NC)"
-	@TRACE_LVL=$(TRACE_LVL) $(RISCOF) $(VERBOSE_SUB_CMD) run --config=config.ini \
-		--suite=riscv-arch-test/riscv-test-suite/ \
-		--env=riscv-arch-test/riscv-test-suite/env \
-		--no-browser; \
-		status=$$?; \
-		if [ $$status -eq 0 ]; then \
-			echo "$(GREEN)riscof completed successfully.$(NC)"; \
-		else \
-			echo "$(RED)riscof failed with exit code $$status.$(NC)"; \
-			exit $$status; \
-		fi
+RISCOF_WORK_DIR := $(PN_MODULE_BUILD_DIR)/riscof_work
+RISCOF_LOG_FILE := $(PN_MODULE_BUILD_DIR)/riscof.log
 
-.PHONY: clean-riscof, clean, clean-system, clean-all
+RISCOF_RUN_CMD := DUT_EXE=$(SIMULATOR_BIN) $(RISCOF) --verbose debug run --config=config.ini \
+	--suite=$(RISCV_ARCH_TEST)/riscv-test-suite/ \
+	--env=$(RISCV_ARCH_TEST)/riscv-test-suite/env \
+	--work-dir=$(RISCOF_WORK_DIR) \
+	--no-browser
+
+.PHONY: run
+run: update-arch-test copy-custom-tests
+	@if [ ! -f "$(SIMULATOR_BIN)" ]; then \
+		echo "$(PN_BUILD_PREFIX) Simulator binary '$(SIMULATOR_BIN)' not found. Aborting."; \
+		echo "$(PN_BUILD_PREFIX) Please build the simulator or use present verify target from the system"; \
+		exit 1; \
+	fi
+	@echo "$(PN_BUILD_PREFIX) Running riscof"
+ifneq ($(VERBOSE),0)
+	@$(RISCOF_RUN_CMD); \
+	if ! grep -iq '>0failed<' $(RISCOF_WORK_DIR)/report.html; then \
+		echo "$(PN_BUILD_PREFIX) riscof failed."; \
+		exit 1; \
+	fi; \
+	echo "$(PN_BUILD_PREFIX) riscof executed successfully" 
+else
+	@mkdir -p $(dir $(RISCOF_LOG_FILE))
+	@$(RISCOF_RUN_CMD) > $(RISCOF_LOG_FILE) 2>&1; \
+	if ! grep -iq '>0failed<' $(RISCOF_WORK_DIR)/report.html; then \
+		cat $(RISCOF_LOG_FILE); \
+		echo "$(PN_BUILD_PREFIX) riscof failed."; \
+		exit 1; \
+	fi
+endif
+
 clean-riscof:
-clean:
-	rm -rf riscv-arch-test riscof_work
-
-clean-system:
-	+$(MAKE) -C $(PNS_HW_DIR) clean
-
-clean-all: clean-riscof clean-system
+	rm -rf $(RISCV_ARCH_TEST)

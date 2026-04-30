@@ -51,7 +51,8 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-enum GUI_ACTION {
+enum class GUI_ACTION : int
+{
     SETTINGS_AUDIO
 };
 
@@ -93,7 +94,7 @@ public:
      * in the GUI. The image adapts to the QLabel size dynamically.
      */
     void image_to_gui(uint32_t* framebuffer, uint32_t framebuffer_size);
-    
+
     /**
      * @brief Check if the main window is open.
      * @return True if the main window is open, otherwise false.
@@ -112,7 +113,7 @@ protected:
      */
     void resizeEvent(QResizeEvent* event) override;
 
-    void closeEvent(QCloseEvent *event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private:
     Ui::MainWindow* ui;          ///< Pointer to the UI components.

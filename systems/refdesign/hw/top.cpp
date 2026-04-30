@@ -33,6 +33,13 @@
 
 #include "top.h"
 
+// TBD(jh): remove clock division for orangecrab board.
+#include <string_view>
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+constexpr std::string_view current_board = STR(PN_CFG_BOARD);
+
 void m_refdesign::pn_trace(sc_trace_file* tf, int level)
 {
 
@@ -50,19 +57,22 @@ void m_refdesign::pn_trace(sc_trace_file* tf, int level)
 
 void m_refdesign::init_submodules()
 {
-    pn_interconnect = sc_new<m_pn_interconnect>("i_pn_interconnect");
 
     // ----------- Create submodules -----------
+    pn_interconnect = sc_new<m_pn_interconnect>("i_pn_interconnect");
+
     // ----------- CPU -----------
     cpu = sc_new<m_cpu>("i_cpu");
-    cpu->clk(clk);
-    cpu->reset(reset);
+    if constexpr(current_board == "orangecrab")
+    {
+        cpu->clk(clk_half);
+    }
+    else
+    {
+        cpu->clk(clk);
+    }
 
-    // Issue: vh_const not working right now. Uncomment the line below
-    // after vh_const updated and remove dummy signal.
-    // cpu->debug_haltrequest_in(vh_const<bool>(0));
-    cpu->debug_haltrequest_in(dummy_low);
-    cpu->debug_haltrequest_ack_out(vh_open);
+    cpu->reset(reset);
 
     cpu->mtip_in(dummy_low);
     cpu->msip_in(dummy_low);
@@ -74,11 +84,18 @@ void m_refdesign::init_submodules()
 #ifdef __SYNTHESIS__
     uart = sc_new<m_uart>("i_uart", PN_CFG_UART_BASE_ADDRESS);
 
+    if constexpr(current_board == "orangecrab")
+    {
+        uart->clk(clk_half);
+    }
+    else
+    {
+        uart->clk(clk);
+    }
     uart->reset(reset);
-    uart->clk(clk);
 
-    uart->rx(rx_i);
-    uart->tx(tx_o);
+    uart->rx(uart_rx);
+    uart->tx(uart_tx);
 
     pn_interconnect->add_module(uart);
 #endif
@@ -89,4 +106,14 @@ void m_refdesign::init_submodules()
 void m_refdesign::proc_cmb()
 {
     dummy_low.write(0);
+}
+
+void m_refdesign::proc_clk()
+{
+    while(true)
+    {
+        wait();
+
+        clk_half = !clk_half.read();
+    }
 }
