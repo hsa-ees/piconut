@@ -62,7 +62,6 @@
 
 #include "../nucleus_ref_defs.h"
 
-
 typedef enum
 {
     FUNCT3_LB = 0x0,

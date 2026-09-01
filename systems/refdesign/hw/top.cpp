@@ -33,6 +33,8 @@
 
 #include "top.h"
 
+// TBD: implement and use 'pwroff' as soon as 'nucleus_ref' implements it
+
 // TBD(jh): remove clock division for orangecrab board.
 #include <string_view>
 
@@ -73,6 +75,7 @@ void m_refdesign::init_submodules()
     }
 
     cpu->reset(reset);
+    //~ cpu->pwroff(pwroff);
 
     cpu->mtip_in(dummy_low);
     cpu->msip_in(dummy_low);

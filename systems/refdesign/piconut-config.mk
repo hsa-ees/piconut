@@ -55,6 +55,8 @@ PN_CFG_MEMBRANA := membrana_soft
 # PN_MARCH ?= rv32i_zicsr_zmmul
 # Uncomment following line, if using M extension
 PN_MARCH ?= rv32im_zicsr
+# Uncomment following line, if using F extension:
+# export PN_MARCH := rv32imf_zicsr
 
 
 
@@ -83,6 +85,11 @@ PN_CFG_NUCLEUS := nucleus_ref
 PN_CFG_ALU_ENABLE_M_EXTENSION ?= 1
 #   Enable (1) or Disable (0) Zmmul-Extension
 PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION ?= 1
+#   Enable (1) or Disable (0) F-Extension
+#   Remember to also set:
+#   export PN_MARCH := rv32imf_zicsr
+#   for the compiler to actually use the extension
+PN_CFG_ENABLE_F_EXTENSION ?= 0
 
 
 # CPU/CSR ...

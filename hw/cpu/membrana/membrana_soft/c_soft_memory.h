@@ -45,7 +45,7 @@
 class c_soft_memory : public c_soft_peripheral
 {
 public:
-    char name[32] = "Memory";
+    char name[32] = "Memory soft";
     std::vector<uint8_t> memory;
     uint64_t size;
     uint64_t base_address; // Starting address of memory

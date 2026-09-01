@@ -81,7 +81,16 @@ PN_CFG_NUCLEUS := nucleus_ref
 PN_CFG_MEMBRANA := membrana_ref
 
 
+PN_CFG_VIDEO_FB_SIZE := 32768
+PN_CFG_VIDEO_FB_SCALING_DIVISOR := 4
 
+PN_CFG_MEMBRANA_EMEM_SIZE := 0x20000
+PN_CFG_SYS_CODE_SIZE ?= 0x0000FFFF
+PN_CFG_SYS_RAM_SIZE ?= 0x0000FFFF
+
+PN_SW_CFLAGS += -Os -ffunction-sections -fdata-sections -specs=nano.specs
+PN_SW_LDFLAGS += -Os -ffunction-sections -fdata-sections -specs=nano.specs
+PN_SW_LDFLAGS += -lvideo_driver
 
 
 ################################################################################

@@ -50,6 +50,33 @@
 #~ PN_OS ?= std
 
 
+# Need more RAM than standard ...
+PN_CFG_SYS_CODE_SIZE := 0x00080000
+PN_CFG_SYS_RAM_SIZE := 0x00180000
+
+# Voice control app ...
+#~ PN_CFG_SYS_CODE_SIZE  := 0x00060000 # VEXT=OFF
+#~ PN_CFG_SYS_CODE_SIZE  := 0x000A0000 # VEXT=ON (not tested)
+#~ PN_CFG_SYS_RAM_SIZE   := 0x01000000
+
+# Cone detection app ...
+#~ PN_CFG_SYS_CODE_SIZE  := 0x10500000 # VEXT=OFF
+#~ PN_CFG_SYS_CODE_SIZE  := 0x000A0000 # VEXT=ON (not tested)
+#~ PN_CFG_SYS_RAM_SIZE   := 0x10B00000
+
+# AWW app ...
+#~ PN_CFG_SYS_CODE_SIZE  := 0x00080000 # VEXT=OFF
+#~ PN_CFG_SYS_CODE_SIZE  := 0x000A0000 # VEXT=ON (not tested)
+#~ PN_CFG_SYS_RAM_SIZE   := 0x000A0000
+
+# LLM app ...
+#~ PN_CFG_SYS_CODE_SIZE  := 0x0A000000 # VEXT=OFF
+#~ PN_CFG_SYS_CODE_SIZE  := 0x0A000000 # VEXT=ON (not tested)
+#~ PN_CFG_SYS_RAM_SIZE   := 0x03000000
+
+
+PN_CFG_MEMBRANA_EMEM_SIZE := ( $(PN_CFG_SYS_CODE_SIZE) + $(PN_CFG_SYS_RAM_SIZE) )
+
 
 
 

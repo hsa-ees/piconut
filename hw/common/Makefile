@@ -2,7 +2,7 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#  Copyright (C) 2025-2026 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:

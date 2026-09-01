@@ -40,6 +40,7 @@
 #include <uart.h>
 #include <debugger.h>
 
+
 SC_MODULE(m_demo_debugger)
 {
 public:

@@ -2,7 +2,7 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#  Copyright (C) 2025-2026 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
@@ -642,7 +642,7 @@ PN_HW_LDFLAGS += -lpn_common -lsystemc
 
 
 # Activate these rules only if hardware is or may be built (PN_BUILD_HW=1) ...
-ifeq (1,$(PN_BUILD_SW))
+ifeq (1,$(PN_BUILD_HW))
 
 
 # Compiling C++ files: C++ (not C) files with a target directory containing "/sim/"
@@ -1238,6 +1238,16 @@ else
 	$(PN_SW_CC) -c -o $@ $(PN_SW_CFLAGS) $<
 endif
 
+# Compiling Cpp files:
+$(PN_MODULE_BUILD_DIR)/%.o: %.cpp
+ifneq (0,$(VERBOSE))
+	@mkdir -p $(dir $@)
+	$(PN_SW_CXX) -c -o $@ $(PN_SW_CFLAGS) $<
+else
+	@echo $(PN_BUILD_PREFIX)SW-CXX $<; \
+	mkdir -p $(dir $@) && \
+	$(PN_SW_CXX) -c -o $@ $(PN_SW_CFLAGS) $<
+endif
 
 # Compiling assembly files ...
 #   Note: Assembly files are automatically assumed to be software (RISC-V).
@@ -1338,8 +1348,10 @@ PN_INSTALL_TOOL_BIN := $(PN_INSTALL) -m 644 -t $(PN_STAGE_DIR)/bin
 #   are possible.
 ifneq (0,$(VERBOSE))
   PN_INSTALL_TREE := f() { dst=`realpath -m $(PN_STAGE_DIR)/$$1`; src="$$2"; mkdir -p $${dst%/*} && cp -vau $$src $$dst; }; f
+  PN_INSTALL_TREE_BRIEF := $(PN_INSTALL_TREE)
 else
   PN_INSTALL_TREE := @f() { dst=`realpath -m $(PN_STAGE_DIR)/$$1`; src="$$2"; mkdir -p $${dst%/*} && cp -vau $$src $$dst | sed -e "s!^.* '$(PN_BUILD_DIR)/!\[$(PN_MODULE_ID)\] STAGE !g" -e "s/.$$//g"; }; f
+  PN_INSTALL_TREE_BRIEF := @f() { dst=`realpath -m $(PN_STAGE_DIR)/$$1`; src="$$2"; echo $(PN_BUILD_PREFIX)STAGE $$dst "<-" $$src; mkdir -p $${dst%/*} && cp -au $$src $$dst; }; f
 #~   PN_INSTALL_TREE := @f() { dst="$(PN_STAGE_DIR)/$$1"; src="$$2"; echo $(PN_BUILD_PREFIX)STAGE $$dst "<-" $$src; rm -fr $$dst/$$src; mkdir -p $${dst%/*} && cp -r $$src $$dst; }; f
 endif
 

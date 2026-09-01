@@ -38,11 +38,20 @@ entity TOP_WRAPPER is
     reset: in std_logic;
     tx_o: out std_logic;
     rx_i: in std_logic;
+    pmod_c: in std_logic_vector(7 downto 0);
+
     gpio_up: in std_logic;
     gpio_down: in std_logic;
     gpio_left: in std_logic;
     gpio_right: in std_logic;
     gpio_fire: in std_logic;
+
+    vga_red_o: out std_logic_vector(3 downto 0);
+    vga_green_o: out std_logic_vector(3 downto 0);
+    vga_blue_o: out std_logic_vector(3 downto 0);
+    vga_hsync_o: out std_logic;
+    vga_vsync_o: out std_logic;
+
     i2c_scl: inout std_logic;
     i2c_sda: inout std_logic
   );
@@ -63,6 +72,12 @@ architecture RTL of TOP_WRAPPER is
            gpio_right: in std_logic;
            gpio_fire: in std_logic;
 
+           vga_red_o: out std_logic_vector(3 downto 0);
+           vga_green_o: out std_logic_vector(3 downto 0);
+           vga_blue_o: out std_logic_vector(3 downto 0);
+           vga_hsync_o: out std_logic;
+           vga_vsync_o: out std_logic;
+
            scl_i: in std_logic;
            scl_o: out std_logic;
            scl_oe: out std_logic;
@@ -74,8 +89,18 @@ architecture RTL of TOP_WRAPPER is
 
   signal scl_o, scl_oe, scl_i : std_logic;
   signal sda_o, sda_oe, sda_i : std_logic;
+  signal combined_up, combined_down, combined_left, combined_right, combined_fire : std_logic;
 
 begin
+
+  -- BUTTON LOGIC (OR-Mode, Active-Low)
+  -- PMOD Mapping: 0: A 1: B 2: TA 3: TB 4: Down 5: Up 6: R 7: L
+  combined_up    <= gpio_up    or  not pmod_c(5);
+  combined_down  <= gpio_down  or  not pmod_c(4);
+  combined_left  <= gpio_left  or  not pmod_c(7);
+  combined_right <= gpio_right or  not pmod_c(6);
+  -- Fire triggers if the main fire button OR PMOD Button A OR PMOD Button B is pressed
+  combined_fire  <= gpio_fire  or  not pmod_c(0) or  not pmod_c(1);
 
   i_dut: m_refdesign_demonstrator port map (
       clk   => clk, 
@@ -83,11 +108,17 @@ begin
       tx_o  => tx_o,
       rx_i  => rx_i,
 
-      gpio_up    => gpio_up,
-      gpio_down  => gpio_down,
-      gpio_left  => gpio_left,
-      gpio_right => gpio_right,
-      gpio_fire  => gpio_fire,
+      gpio_up    => combined_up,
+      gpio_down  => combined_down,
+      gpio_left  => combined_left,
+      gpio_right => combined_right,
+      gpio_fire  => combined_fire,
+
+      vga_red_o   => vga_red_o,
+      vga_green_o => vga_green_o,
+      vga_blue_o  => vga_blue_o,
+      vga_hsync_o => vga_hsync_o,
+      vga_vsync_o => vga_vsync_o,
 
       scl_i => scl_i,
       scl_o => scl_o,

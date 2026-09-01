@@ -2,8 +2,8 @@
 
   This file is part of the PicoNut project.
 
-  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
-                     Johannes Hofmann <johannes.hofmann1@tha.de>
+  Copyright (C)      2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+                2025-2026 Johannes Hofmann <johannes.hofmann1@tha.de>
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
   Description:
@@ -58,17 +58,24 @@
  * @{
  */
 
-#define PN_IPORT_ALEN_MAX 64 ///< maximum number of address bits for an instruction port (*IPort*).
-#define PN_IPORT_DLEN_MAX 64 ///< maximum number of data bits for an instruction port (*IPort*).
+// TBD: Change the following to 64/64/64/512 after CPU has been ported to use these types.
 
-#define PN_DPORT_ALEN_MAX 64  ///< maximum number of address bits for a data port (*DPort*).
-#define PN_DPORT_DLEN_MAX 512 ///< maximum number of data bits for a data port (*DPort*).
+#define PN_IPORT_ALEN_MAX 32 ///< maximum number of address bits for an instruction port (*IPort*).
+#define PN_IPORT_DLEN_MAX 32 ///< maximum number of data bits for an instruction port (*IPort*).
+
+#define PN_DPORT_ALEN_MAX 32 ///< maximum number of address bits for a data port (*DPort*).
+#define PN_DPORT_DLEN_MAX 32 ///< maximum number of data bits for a data port (*DPort*).
 
 #define PN_IPORT_BSEL_MAX (PN_IPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*IPort*)
 #define PN_DPORT_BSEL_MAX (PN_DPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*DPort*)
 
-#define PN_IPORT_BSEL_MAX (PN_IPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*IPort*)
-#define PN_DPORT_BSEL_MAX (PN_DPORT_ALEN_MAX / 8) ///< maximum number of byte selection bits (*DPort*)
+typedef sc_uint<PN_IPORT_ALEN_MAX> pn_iport_adr_t;      ///< *IPort* address
+typedef sc_uint<PN_IPORT_DLEN_MAX> pn_iport_dat_t;      ///< *IPort* data
+typedef sc_uint<PN_IPORT_DLEN_MAX / 8> pn_iport_bsel_t; ///< *IPort* byte selection
+
+typedef sc_uint<PN_DPORT_ALEN_MAX> pn_dport_adr_t;      ///< *DPort* address
+typedef sc_uint<PN_DPORT_DLEN_MAX> pn_dport_dat_t;      ///< *DPort* data
+typedef sc_uint<PN_DPORT_DLEN_MAX / 8> pn_dport_bsel_t; ///< *DPort* byte selection
 
 typedef sc_uint<PN_IPORT_ALEN_MAX> pn_iport_adr_t;      ///< *IPort* address
 typedef sc_uint<PN_IPORT_DLEN_MAX> pn_iport_dat_t;      ///< *IPort* data

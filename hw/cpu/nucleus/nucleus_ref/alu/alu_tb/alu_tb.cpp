@@ -653,6 +653,55 @@ int sc_main(int argc, char** argv)
     run_cycle();
 
     PN_INFOF(("\n"));
+    PN_INFOF(("------- Test 27c -------"));
+    PN_INFOF(("Test 27c: mul (-1073741824, 1073741824) + mulh (-1073741824, 1073741824)"));
+    force_amo = 0;
+    alu_mode = ALU_MODE_REG_REG;
+    funct3 = FUNCT3_ADD_SUB_MUL;
+    funct7 = FUNCT7_M_EXTENSION;
+    a = -1073741824;
+    b = 1073741824;
+    y_expected = (int32_t)((int64_t)1073741824 * (int64_t)-1073741824);
+    for(int i = 0; i < 100; i++)
+    {
+        run_cycle();
+        if(valid.read() == 1)
+            break;
+    }
+    PN_ASSERTM(valid.read() == 1, "Test 27c timed out (signal valid not 1 after 100 cycles)");
+    PN_INFOF(("mul (-1073741824, 1073741824)"));
+    PN_INFOF(("Operand A: 0x%x", (uint32_t)a.read()));
+    PN_INFOF(("Operand B: 0x%x", (uint32_t)b.read()));
+    PN_INFOF(("Result Y: 0x%x", (uint32_t)y.read()));
+    PN_ASSERTM(y.read() == y_expected.read(), "Test 27c failed");
+
+    funct3 = FUNCT3_SLL_MULH;
+    // parameters unchanged
+    a = -1073741824;
+    b = 1073741824;
+    y_expected = (uint64_t)((int64_t)-1073741824 * (int64_t)1073741824) >> 32;
+    for(int i = 0; i < 100; i++)
+    {
+        run_cycle();
+        if(valid.read() == 1)
+        {
+            PN_INFOF(("Needed %d cycles", i));
+            break;
+        }
+    }
+    PN_ASSERTM(valid.read() == 1, "Test 27c timed out (signal valid not 1 after 100 cycles)");
+    PN_INFOF(("mulh (-1073741824, 1073741824)"));
+    PN_INFOF(("Operand A: 0x%x", (uint32_t)a.read()));
+    PN_INFOF(("Operand B: 0x%x", (uint32_t)b.read()));
+    PN_INFOF(("Result Y: 0x%x", (uint32_t)y.read()));
+    PN_ASSERTM(y.read() == y_expected.read(), "Test 27c failed");
+    PN_INFOF(("Test 27c passed"));
+
+    // reset alu_mode, so start_in for mul/div is zero
+    alu_mode = ALU_MODE_IDLE;
+    run_cycle();
+
+    PN_INFOF(("\n"));
     PN_INFOF(("------- Test 28 -------"));
     PN_INFOF(("Test 28: mulhu  (500000, 400000)"));
     alu_mode = ALU_MODE_REG_REG;

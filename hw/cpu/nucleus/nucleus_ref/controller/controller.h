@@ -161,6 +161,18 @@ typedef enum
     STATE_CSRRCI2,
     STATE_CSRRSI1,
     STATE_CSRRSI2,
+    // F-EXT
+    STATE_LOAD_FLOAT1,
+    STATE_LOAD_FLOAT2,
+    STATE_LOAD_FLOAT3,
+    STATE_LOAD_FLOAT4,
+    STATE_STORE_FLOAT1,
+    STATE_STORE_FLOAT2,
+    STATE_STORE_FLOAT3,
+    STATE_REQUEST_FLOAT,
+    STATE_BUSY_FLOAT,
+    STATE_WRITEBACK_FLOAT,
+    STATE_MOVE_FLOAT,
     // A-EXT
     STATE_LR1,
     STATE_LR2,
@@ -191,7 +203,7 @@ typedef enum
     STATE_TRAP_LOAD_HANDLER,
     // At max 2^STATE_WIDTH states
 } e_controller_states;
-#define STATE_WIDTH 6
+#define STATE_WIDTH 7
 
 typedef enum
 {
@@ -217,6 +229,18 @@ typedef enum
     INTERRUPT_TYPE_MACHINE_TIMER = 7,
     INTERRUPT_TYPE_MACHINE_EXTERNAL = 11,
 } e_interrupt_type;
+
+typedef enum
+{
+    FLOAT_ADD = 0b00000,
+    FLOAT_SUB = 0b00001,
+    FLOAT_MUL = 0b00010,
+    FLOAT_DIV = 0b00011,
+    FLOAT_SQRT = 0b01011,
+    FLOAT_CVT_S_W = 0b11010,
+    FLOAT_SGNJ = 0b00100,
+    FLOAT_MV_W_X = 0b11110
+} e_register_float_route;
 
 SC_MODULE(m_controller)
 {
@@ -260,6 +284,13 @@ public:
 
     /* Regfile load enable*/
     sc_out<bool> PN_NAME(c_reg_ld_en_out);
+    
+    /* F-Extension */
+    sc_out<bool> PN_NAME(c_reg_float_ld_en_out);
+    sc_out<bool> PN_NAME(c_reg_rs2_float_out);
+    sc_out<bool> PN_NAME(c_reg_ldfext_out);
+    sc_out<bool> PN_NAME(c_f_ext_stb_out);
+    sc_in<bool> PN_NAME(s_f_ext_ready_in);
 
     /* ALU */
     sc_out<bool> PN_NAME(c_alu_pc_out);
@@ -331,7 +362,7 @@ public:
                   << s_debug_step_in << s_interrupt_pending_in
                   << s_mip_msip_in << s_mie_msie_in << s_mip_meip_in
                   << s_mie_meie_in << s_mip_mtip_in << s_mie_mtie_in
-                  << s_mstatus_mie_in;
+                  << s_mstatus_mie_in << s_f_ext_ready_in;
     }
 
     void pn_trace(sc_trace_file * tf, int level = 1);

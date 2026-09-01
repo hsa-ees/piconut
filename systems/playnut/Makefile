@@ -70,7 +70,8 @@ SW ?= sw/apps/tiny_games/tiny_tris
 
 # Prebuild all required PicoNut modules ...
 build-prepare:
-	$(PN_PREBUILD) MODULES=hw/cpu:hw/interconnect:hw/peripherals/uart:hw/peripherals/gpio:hw/peripherals/i2c:$(SW)
+	$(PN_PREBUILD) MODULES=hw/cpu:hw/interconnect:hw/peripherals/uart:hw/peripherals/gpio:hw/peripherals/i2c:hw/peripherals/video
+	$(PN_PREBUILD) MODULES=$(SW)
 
 
 

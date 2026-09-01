@@ -40,7 +40,7 @@ USER root
 # Environment
 
 # RISC-V GNU Compiler Toolchain
-ENV RISCV_TOOLCHAIN_HOME="/opt/riscv-gnu-toolchain"
+ENV RISCV="/opt/riscv"
 ENV RISCV_TOOLCHAIN_VERSION="2026.02.13"
 
 # RISC-V Compliance Test Framework
@@ -49,7 +49,7 @@ ENV SAILC_HOME="/opt/sail_riscv-Linux-x86_64"
 
 ################################################################################
 
-#### RISC-V Toolchain #########################################################
+#### RISC-V  #########################################################
 # get new gcc 12.2.0 for test
 RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
@@ -79,13 +79,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-dev \
     libslirp-dev \
     libncurses-dev \
-    python-is-python3 && \
+    python-is-python3 \
+    # For Spike
+    device-tree-compiler \
+    libboost-regex-dev \
+    libboost-system-dev && \
     \
     rm -rf /var/lib/apt/lists/* && \
     apt-get -y autoremove && \
     apt-get -y autoclean && \
     rm -rf /var/lib/apt/lists/*
 
+# RISC-V GNU Compiler Toolchain
 RUN mkdir -p /build && \
     cd /build && \
     # clone repository
@@ -93,14 +98,42 @@ RUN mkdir -p /build && \
     cd riscv-gnu-toolchain && \
     git checkout ${RISCV_TOOLCHAIN_VERSION} && git submodule update --init --recursive && \
     # build toolchain
-    mkdir -p ${RISCV_TOOLCHAIN_HOME} && \
-    ./configure --prefix=${RISCV_TOOLCHAIN_HOME} --with-multilib-generator="rv32i-ilp32--;rv32im-ilp32--;rv32ima-ilp32--;rv32ia-ilp32--" && \
+    mkdir -p ${RISCV} && \
+    ./configure --prefix=${RISCV} --with-multilib-generator="rv32i-ilp32--;rv32im-ilp32--;rv32ima-ilp32--;rv32ia-ilp32--;rv32im_zve32x-ilp32--" && \
     make -j$(nproc) && \
     cd / && \
     rm -rf /build
 
-# add toolchain to path
-ENV PATH="${RISCV_TOOLCHAIN_HOME}/bin:$PATH"
+ENV PATH="${RISCV}/bin:$PATH"
+
+# Spike RISC-V ISA Simulator for rv32 target
+RUN mkdir -p /build && \
+    cd /build && \
+    git clone https://github.com/riscv-software-src/riscv-isa-sim.git && \
+    cd riscv-isa-sim && \
+    mkdir build && \
+    cd build && \
+    mkdir -p ${RISCV} && \
+    ../configure --prefix=${RISCV} --with-target=riscv32-unknown-elf && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && \
+    rm -rf /build
+
+# RISC-V Proxy Kernel and Boot Loader
+RUN mkdir -p /build && \
+    cd /build && \
+    git clone https://github.com/riscv-software-src/riscv-pk.git && \
+    cd riscv-pk && \
+    mkdir build && \
+    cd build && \
+    mkdir -p ${RISCV} && \
+    # Bare-metal + rv32 (default: rv64)
+    ../configure --prefix=${RISCV} --host=riscv64-unknown-elf --with-arch=rv32i_zicsr_zifencei && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && \
+    rm -rf /build
 
 ##### Dev Tools ################################################################
 
@@ -145,5 +178,31 @@ RUN pipx ensurepath && \
 
 # add compliance test framework to path
 ENV PATH="${SAILC_HOME}/bin:${RISCOF_HOME}/bin:${PATH}"
+
+
+
+##### Float Tests #############################################################
+
+# Install float number test generation tool.
+# See: https://www.jhauser.us/arithmetic/SoftFloat-3/doc/SoftFloat-source.html
+# See: https://www.jhauser.us/arithmetic/TestFloat-3/doc/TestFloat-source.html
+
+RUN mkdir -p /build && \
+    cd /build && \
+    wget https://www.jhauser.us/arithmetic/SoftFloat-3e.zip && \
+    unzip SoftFloat-3e.zip && \
+    cd SoftFloat-3e/build/Linux-x86_64-GCC && \
+    make -j$(nproc) && \
+    \
+    cd /build && \
+    wget https://www.jhauser.us/arithmetic/TestFloat-3e.zip && \
+    unzip TestFloat-3e.zip && \
+    cd TestFloat-3e/build/Linux-x86_64-GCC && \
+    make -j$(nproc) && \
+    cp testfloat_gen /usr/local/bin/ && \
+    \
+    cd / && \
+    rm -rf /build/
+
 
 ################################################################################

@@ -57,7 +57,13 @@
 #   set here.
 #   Only PN_HW_LDFLAGS must be extended to load the submodules when linking.
 #
-PN_SUBMODULES := nucleus/nucleus_ref membrana/membrana_soft membrana/membrana_hw membrana/membrana_ref
+PN_SUBMODULES := \
+	nucleus/nucleus_ref \
+	nucleus/nucleus_ai \
+	membrana/membrana_ref \
+	membrana/membrana_ai \
+	membrana/membrana_soft \
+	membrana/membrana_hw
 
 
 # Include PicoNut setup ...
@@ -136,9 +142,11 @@ TESTBENCH_BIN := $(PN_MODULE_BUILD_DIR)/sim/$(TESTBENCH)
 #     needs to link with the CPU module.
 SUBMOD_OBJ := \
 	$(PN_MODULE_BUILD_DIR)/nucleus/nucleus_ref/sim/libnucleus_ref.a \
+	$(PN_MODULE_BUILD_DIR)/nucleus/nucleus_ai/sim/libnucleus_ai.a \
+	$(PN_MODULE_BUILD_DIR)/membrana/membrana_ref/sim/libmembrana_ref.a \
+	$(PN_MODULE_BUILD_DIR)/membrana/membrana_ai/sim/libmembrana_ai.a \
 	$(PN_MODULE_BUILD_DIR)/membrana/membrana_soft/sim/libmembrana_soft.a \
-	$(PN_MODULE_BUILD_DIR)/membrana/membrana_hw/sim/libmembrana_hw.a \
-	$(PN_MODULE_BUILD_DIR)/membrana/membrana_ref/sim/libmembrana_ref.a
+	$(PN_MODULE_BUILD_DIR)/membrana/membrana_hw/sim/libmembrana_hw.a
 
 
 #   dependencies of the library ...

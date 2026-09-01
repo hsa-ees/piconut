@@ -1,0 +1,48 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Thu Nov 27 22:19:14 2025
+[*]
+[dumpfile] "/data/tha/piconut_ai/hw/cpu/membrana/membrana_ai/membrana_ai_tb.vcd"
+[dumpfile_mtime] "Thu Nov 27 22:18:00 2025"
+[dumpfile_size] 3433
+[savefile] "/data/tha/piconut_ai/hw/cpu/membrana/membrana_ai/membrana_ai_tb.gtkw"
+[timestart] 74300
+[size] 1902 1078
+[pos] 14 159
+*-15.000000 90000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] SystemC.
+[sst_width] 276
+[signals_width] 347
+[sst_expanded] 1
+[sst_vpaned_height] 325
+@28
+SystemC.i_dut.clk
+SystemC.i_dut.reset
+@200
+-
+@28
+SystemC.i_dut.iport_stb(0)
+SystemC.i_dut.iport_ack(0)
+@22
+SystemC.i_dut.iport_adr(0)[31:0]
+@28
+SystemC.i_dut.iport_bsel(0)[3:0]
+@22
+SystemC.i_dut.iport_rdata(0)[31:0]
+@200
+-
+@28
+SystemC.i_dut.dport_stb(0)
+@29
+SystemC.i_dut.dport_we(0)
+@28
+SystemC.i_dut.dport_ack(0)
+@22
+SystemC.i_dut.dport_adr(0)[31:0]
+@28
+SystemC.i_dut.dport_bsel(0)[3:0]
+@22
+SystemC.i_dut.dport_rdata(0)[31:0]
+SystemC.i_dut.dport_wdata(0)[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

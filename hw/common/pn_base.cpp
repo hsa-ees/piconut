@@ -48,6 +48,7 @@
 
 // *********** Dynamic Configuration ************
 
+std::string pn_cfg_vcd_file = "piconut";
 int pn_cfg_vcd_level = 0;
 int pn_cfg_itrace_level = 0;
 bool pn_cfg_disable_cache = 0;
@@ -100,6 +101,7 @@ sc_trace_file* pn_trace_file = NULL;
 
 sc_trace_file* pn_tb_start_trace(const char* filename)
 {
+    if (!filename) filename = pn_cfg_vcd_file.c_str ();
     if(pn_cfg_vcd_level > 0)
     {
         pn_trace_file = sc_create_vcd_trace_file(filename);
@@ -138,6 +140,10 @@ void pn_tb_parse_cmd_args(const int argc, char** argv)
     {
         pn_cfg_dump_memory = 1;
     }
+
+    // Preset VCD file name ...
+    pn_cfg_vcd_file = argv[0];
+    //~ pn_cfg_vcd_file.append (".vcd");
 
     // Define long options
     static struct option long_options[] = {
@@ -383,11 +389,18 @@ void pn_info_file(const char* msg, const char* filename, const int line, FILE* c
     fprintf(core_dump_file, "(INFO): %*s, %s:%i:   %s\n", time_size, sc_time_stamp().to_string().c_str(), filename, line, msg);
 }
 
+
+
+
+
+
 // ********************** Disassembler *****************************************
+
 
 #ifndef __SYNTHESIS__
 
-const char* pn_disassemble_legacy(uint32_t insn)
+
+const char *pn_disassemble_legacy (uint32_t insn)
 {
     static char ret[80] = "";
     sc_uint<32> opcode, funct3, funct7, rs1, rs2, rd, bit30, bit20, bit21, bit25, bit28, bit29, itype, utype, btype, jtype, stype;
@@ -521,5 +534,6 @@ const char* pn_disassemble_legacy(uint32_t insn)
 
     return ret;
 }
+
 
 #endif //__SYNTHESIS__

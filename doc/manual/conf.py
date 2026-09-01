@@ -203,6 +203,21 @@ raw_breathe_projects_source = {
             "alu/scalar_crypto/scalar_crypto.h",
         ],
     ),
+    "f_extension": (
+        "hw/cpu/nucleus/nucleus_ref/f_extension",
+        [
+            "f_extension.h",
+            "regfile_float/regfile_float.h",
+            "adder_float/adder_float.h",
+            "multiplier_float/multiplier_float.h",
+            "divisor_float/divisor_float.h",
+            "sqrt_float/sqrt_float.h",
+            "mul_add_float/mul_add_float.h",
+            "classifier_float/classifier_float.h",
+            "compare_float/compare_float.h",
+            "converter_float/converter_float.h",
+        ]
+    ),
     "remote_bitbang": (
         "hw/cpu_peripherals/debugger_soft/remote_bitbang",
         ["remote_bitbang.h"],
@@ -277,6 +292,14 @@ raw_breathe_projects_source = {
             "gpio.h",
             "gpio_defs.h",
             "gpio_driver/gpio_driver.h"
+        ]
+    ),
+    "sdram_controller":
+    (
+        "hw/peripherals/sdram_controller",
+        [
+            "sdram_controller.h",
+            "sdram_controller_defs.h"
         ]
     )
 }

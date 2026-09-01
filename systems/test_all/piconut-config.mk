@@ -98,6 +98,9 @@ else
 endif
 
 
+PN_CFG_MEMBRANA_EMEM_SIZE ?= 0x400000
+
+
 
 
 

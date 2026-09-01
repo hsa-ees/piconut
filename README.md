@@ -40,7 +40,15 @@ More information about the project can be found on the [PicoNut Project Website]
 
 # Getting started
 
-Instructions on how to set up the project and create the first simulation or run the PicoNut on the ULX3S FPGA Board can be found in the Chapter [Getting Started](https://ees.tha.de/piconut/manual/getting-started.html) in the projects documentation.
+After cloning the repository, initialize the Git submodules:
+
+```console
+$ git submodule update --init --recursive
+```
+
+For step-by-step setup instructions, including how to create your first simulation
+or run PicoNut on the ULX3S FPGA board, refer to the [Getting Started](https://ees.tha.de/piconut/manual/getting-started.html)
+chapter of the project documentation.
 
 # Manual
 

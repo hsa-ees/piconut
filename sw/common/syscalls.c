@@ -80,6 +80,7 @@ void _exit(int status)
 {
     // kill(status, -1);
 
+    asm volatile("li a7, 93");    // 93 = pn_syscall_pk_e::sys_exit
     asm volatile("ecall");
     while(1)
     {
@@ -92,35 +93,32 @@ int _read(int file, char* ptr, int len)
     if(file != STDIN_FILENO)
     {
         errno = EBADF;
-        return -1; // Only support reading from stdin
+        return -1;
     }
+
+    if(len == 0)
+        return 0;
 
     volatile uint32_t* uart_rxdata = (uint32_t*)0x30000004;
-    int DataIdx;
+    char* buf = (char*)ptr;
+    int i = 0;
 
-    for(DataIdx = 0; DataIdx < len; DataIdx++)
+    while(i < len)
     {
-        uint32_t last_uart_rxdata;
+        uint32_t v;
         do
         {
-            // read the char from the rx fifo
-            last_uart_rxdata = *uart_rxdata;
-            // wait until the rx fifo is not empty
-        } while(((last_uart_rxdata >> 31) & 0x1) == 1);
+            v = *uart_rxdata;
+        } while(((v >> 31) & 1u) == 1u); // wait while RX empty
 
-        char c = last_uart_rxdata & 0xFF;
+        char c = (char)(v & 0xFF);
+        buf[i++] = c;
 
-        if((c == '\n') || (c == '\r'))
-        { // also terminate on [press enter]
-            *ptr++ = '\0';
+        if(c == '\n')
             break;
-        }
-
-        // store the char in the buffer
-        *ptr++ = c;
     }
 
-    return DataIdx;
+    return i;
 }
 
 // needs to disable optimization to handle the if (pn_checkuart) correctly

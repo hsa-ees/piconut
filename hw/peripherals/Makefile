@@ -55,7 +55,7 @@
 #   set here.
 #   Only PN_HW_LDFLAGS must be extended to load the submodules when linking.
 #
-PN_SUBMODULES := uart_soft uart audio video i2c gpio
+PN_SUBMODULES := uart_soft uart audio video i2c gpio sdram_controller
 
 
 # Include PicoNut setup ...

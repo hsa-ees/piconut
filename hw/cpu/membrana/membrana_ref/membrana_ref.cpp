@@ -720,7 +720,7 @@ void m_membrana_ref::load_elf(const std::string& elf_fileName)
     }
 
     // Initialize the memory for the ELF file and some additional space if needed
-    init_memory(elf_reader.get_size(), elf_reader.get_base_addr());
+    init_memory(PN_CFG_MEMBRANA_EMEM_SIZE, elf_reader.get_base_addr());
 
     // Check if there is a memory peripheral at the start address
     c_soft_peripheral* peripheral = peripheral_interface.find_peripheral(elf_reader.get_base_addr());
@@ -730,6 +730,7 @@ void m_membrana_ref::load_elf(const std::string& elf_fileName)
         c_soft_memory* mem = dynamic_cast<c_soft_memory*>(peripheral);
         if(mem)
         {
+            PN_INFOF((" Memory start: 0x%x; Size: 0x%x", mem->base_address, mem->size));
 
             // Copy from char* to memory vector in c_soft_memory
             if(!mem->copy_into_memory((char*)elf_reader.get_memory(), elf_reader.get_size()))

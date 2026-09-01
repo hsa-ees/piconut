@@ -51,6 +51,7 @@ RUN apt-get update && apt install -y --no-install-recommends \
     wget \
     curl \
     unzip \
+    xxd \
     # git+deps
     git \
     vim \

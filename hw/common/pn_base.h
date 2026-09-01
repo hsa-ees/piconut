@@ -246,6 +246,10 @@ namespace sc_core {
 // *************************** SystemC Tracing *********************************
 
 
+// TBD: Rename all VCD tracing accordingly to avoid confusion with
+//      instruction tracing (itrac) and memory access tracing (mtrace).
+
+
 /// @name SystemC tracing...
 /// @{
 
@@ -497,13 +501,14 @@ extern sc_trace_file *pn_trace_file;
 /// Creates a trace file if the global variable \p pn_cfg_vcd_level is greater than 0.
 /// It also returns a pointer to the trace file.
 ///
-/// @param filename the name of the trace file that is created.
+/// @param filename the name of the VCD file that is created.
+///   By default, the VCD file path is derived from the name of the executable.
 /// @return a pointer to the trace file saved in the global variable \p pn_trace_file.
 // TBD: What happens and what is returned if pn_cfg_vcd_level == 0?
 // TBD: Change to let it always create a trace file.
 // TBD: Eliminate global variable pn_trace_file & adapt doc.
 // TBD: Establish constistent naming ("pn_cfg_vcd_level" vs. "pn_trace_file") -> "*vcd*"
-sc_trace_file* pn_tb_start_trace(const char* filename);
+sc_trace_file* pn_tb_start_trace(const char* filename = NULL);
 
 /// @brief Closes the trace file.
 ///
@@ -859,3 +864,4 @@ const char *pn_disassemble_legacy (uint32_t insn);
 
 
 #endif // __PN_BASE_H__
+

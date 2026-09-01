@@ -74,6 +74,8 @@ sc_signal<bool> PN_NAME(mie_mtie_out);
 sc_signal<bool> PN_NAME(mie_meie_out);
 sc_signal<bool> PN_NAME(interrupt_pending_out);
 
+sc_signal<sc_uint<3>> PN_NAME(fcsr_frm_out);
+
 // write mode signal
 sc_signal<sc_uint<2>> PN_NAME(write_mode_in);
 
@@ -161,6 +163,10 @@ void test_mip_outputs();
 // Interrupt functionality
 void test_interrupt_pending_detection();
 
+// fcsr
+void test_fcsr_initialized();
+void test_fcsr_access_readwrite();
+
 int sc_main(int argc, char** argv)
 {
     PN_PARSE_CMD_ARGS(argc, argv);
@@ -201,6 +207,8 @@ int sc_main(int argc, char** argv)
     i_dut.mie_mtie_out(mie_mtie_out);
     i_dut.mie_meie_out(mie_meie_out);
     i_dut.interrupt_pending_out(interrupt_pending_out);
+
+    i_dut.fcsr_frm_out(fcsr_frm_out);
 
     // Connect write mode signal
     i_dut.write_mode_in(write_mode_in);
@@ -270,6 +278,9 @@ int sc_main(int argc, char** argv)
     test_mip_outputs(); // TODO: fix
 
     test_interrupt_pending_detection();
+
+    test_fcsr_initialized();
+    test_fcsr_access_readwrite();
 
     PN_END_TRACE();
     cout << "\n\t\t*****Simulation complete*****" << endl;
@@ -1064,6 +1075,39 @@ void test_interrupt_pending_detection()
     run_cycle();
     PN_ASSERT(mstatus_mie_out.read() == 0);
     PN_ASSERT(interrupt_pending_out.read() == 0); // Should be disabled by global MIE
+
+    PN_INFO("csr_tb: passed.");
+}
+
+void test_fcsr_initialized()
+{
+    run_reset();
+    PN_INFO("csr_tb: run test test_fcsr_initialized() ...");
+
+    // FCSR is typically initialized to 0
+    sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH> expected = 0x0;
+    sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH> actual = csr_read(e_csr_address::csr_adr_fcsr);
+
+    PN_ASSERT(expected == actual);
+    PN_INFO("csr_tb: passed.");
+}
+
+void test_fcsr_access_readwrite()
+{
+    run_reset();
+    PN_INFO("csr_tb: run test test_fcsr_access_readwrite() ...");
+
+    // Write a test pattern (e.g., 0x1F is standard for rounding mode + flags)
+    sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH> test_val = 0x1F;
+    
+    csr_write(e_csr_address::csr_adr_fcsr, test_val);
+    sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH> actual = csr_read(e_csr_address::csr_adr_fcsr);
+
+    PN_ASSERT(actual == test_val);
+    
+    // Check if the output port is updated correctly
+    run_cycle();
+    PN_ASSERT(fcsr_frm_out.read() == test_val.range(7, 5));
 
     PN_INFO("csr_tb: passed.");
 }

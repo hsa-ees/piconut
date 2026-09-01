@@ -2,7 +2,7 @@
 #
 #  This file is part of the PicoNut project.
 #
-#  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+#  Copyright (C) 2025-2026 Gundolf Kiefer <gundolf.kiefer@tha.de>
 #      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 #
 #  Description:
@@ -71,16 +71,16 @@ PN_SW_OS ?= std
 #   TBD: Clarify the variables and memory layout:
 #        - Where exactly are read-only and uninitialized writeable sections are located?
 #        - Where exactly is ROM and RAM to be placed?
-PN_CFG_SYS_CODE_SIZE ?= 0x0001FFFF
-  # Size of the code section in the linker script.
-PN_CFG_SYS_RAM_SIZE ?= 0x0001FFFF
-  # Size of the ram section in the linker script.
+PN_CFG_SYS_CODE_SIZE ?= 0x00020000
+  # Size of the code (ROM) section in the linker script.
+PN_CFG_SYS_RAM_SIZE ?= 0x00020000
+  # Size of the RAM (data) section in the linker script.
 PN_CFG_SYS_STACK_SIZE ?= 0x00001000
   # Size of the stack section in the linker script.
-  # Note: stack size + heap size must be less than ram size.
+  # Note: stack size + heap size must be less than RAM size.
 PN_CFG_SYS_HEAP_SIZE ?= 0x00001000
   # Size of the heap section in the linker script.
-  # Note: stack size + heap size must be less than ram size.
+  # Note: stack size + heap size must be less than RAM size.
 
 
 

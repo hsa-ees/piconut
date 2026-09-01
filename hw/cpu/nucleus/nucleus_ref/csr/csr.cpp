@@ -68,6 +68,8 @@ void m_csr::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, debug_step_out);
 
     // Registers
+    PN_TRACE(tf, fcsr_reg);
+    PN_TRACE(tf, fcsr_frm_out);
     PN_TRACE(tf, mstatus_reg);
     PN_TRACE(tf, misa_reg);
     PN_TRACE(tf, dcsr_reg);
@@ -100,6 +102,15 @@ void m_csr::proc_clk_bus_read()
         {
             switch(adr_in_var)
             {
+                case e_csr_address::csr_adr_fcsr:
+                    data_out_var = fcsr_reg.read();
+                    break;
+                case e_csr_address::csr_adr_fflags:
+                    data_out_var = fcsr_reg.read().range(4, 0); // fflags is bits 4:0
+                    break;
+                case e_csr_address::csr_adr_frm:
+                    data_out_var = fcsr_reg.read().range(7, 5); // frm is bits 7:5
+                    break;
                 case e_csr_address::csr_adr_mstatus:
                     data_out_var = mstatus_reg.read();
                     break;
@@ -144,6 +155,40 @@ void m_csr::proc_clk_bus_read()
         }
 
         csr_bus_rdata_out = data_out_var;
+    }
+}
+
+void m_csr::proc_clk_fcsr()
+{
+    // Reset
+    fcsr_reg = 0;
+
+    while(true)
+    {
+        wait();
+
+        bool write_en = csr_bus_write_en_in.read();
+        auto adr = csr_bus_adr_in.read();
+        auto data_in = csr_bus_wdata_in.read();
+        auto current_fcsr = fcsr_reg.read();
+
+        if (write_en)
+        {
+            if(adr == e_csr_address::csr_adr_fcsr)
+            {
+                fcsr_reg = data_in;
+            } 
+            else if(adr == e_csr_address::csr_adr_fflags)
+            {
+                current_fcsr.range(4, 0) = data_in.range(4, 0);
+                fcsr_reg = current_fcsr;
+            }
+            else if(adr == e_csr_address::csr_adr_frm)
+            {
+                current_fcsr.range(7, 5) = data_in.range(2, 0);
+                fcsr_reg = current_fcsr;
+            }
+        }
     }
 }
 
@@ -460,6 +505,11 @@ void m_csr::proc_clk_dscratch1()
 
         dscratch1_reg = dscratch1_reg_var;
     }
+}
+
+void m_csr::proc_cmb_fcsr_outputs()
+{
+    fcsr_frm_out = fcsr_reg.read().range(7, 5);
 }
 
 void m_csr::proc_cmb_dpc()

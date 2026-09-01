@@ -193,26 +193,6 @@ int sc_main(int argc, char** argv)
     run_cycle(2);
     run_cycle(20000);
 
-    uint64_t memory_address = 0x10000000;
-    c_soft_peripheral* found_peripheral = i_dut.membrana->find_peripheral(memory_address); // search for peripheral in the list of peripherals
-    if(found_peripheral)
-    {
-        c_soft_memory* memory = dynamic_cast<c_soft_memory*>(found_peripheral); // cast the found peripheral to Memory object
-        if(memory)
-        {
-            // If the peripheral is correctly identified as a Memory object, dump its contents
-            memory->dump_memory("memory_dump.txt");
-            std::cout << "Memory dump successful." << std::endl;
-        }
-        else
-        {
-            std::cerr << "Found peripheral is not a Memory object." << std::endl;
-        }
-    }
-    else
-    {
-        std::cerr << "No peripheral found at address 0x" << std::hex << memory_address << "." << std::endl;
-    }
 #endif // PN_CFG_MEMBRANA_IS_MEMBRANA_AI
 
     PN_END_TRACE();

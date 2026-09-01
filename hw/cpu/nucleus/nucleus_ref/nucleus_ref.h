@@ -138,12 +138,15 @@ public:
                   << signal_alu_out << signal_ir_out << signal_pc_out << signal_bsel_out
                   << signal_extend_out << signal_immgen_out << signal_reg_out_rs1 << signal_reg_out_rs2
                   << signal_c_reg_ldpc << signal_c_reg_ldmem << signal_c_reg_ldimm << signal_c_reg_ldalu
-                  << signal_c_reg_ldcsr << signal_c_alu_imm << signal_c_alu_pc << reg_dport_adr
+                  << signal_c_reg_ldcsr << signal_c_reg_ldfext_in
+                  << signal_reg_float_out_rs2
+                  << signal_c_alu_imm << signal_c_alu_pc<< reg_dport_adr
                   << reg_dport_bsel << reg_dport_stb << reg_dport_we << dport_lrsc_out << dport_amo_out
                   << reg_dport_wdata << reg_iport_adr << reg_iport_bsel << reg_iport_stb << dport_wdata_out << signal_datahandler_out << signal_csr_bus_rdata
                   << signal_c_rs1_adr_bsel << signal_c_alu_out_to_wdata << reg_dport_rdata << signal_c_alu_rdata_reg << reg_dport_lrsc << reg_dport_amo
                   << signal_csr_bus_write_en
-                  << signal_mtvec_trap_address;
+                  << signal_mtvec_trap_address
+                  << signal_c_reg_float_rs2 << signal_f_ext_result_out;
 
         SC_METHOD(proc_cmb_csr_bus_wdata_mux);
         sensitive << signal_controller_csr_bus_wdata
@@ -174,6 +177,10 @@ public:
     class m_csr_master* csr_master;
     class m_csr* csr;
 
+#if (PN_CFG_ENABLE_F_EXTENSION == 1)
+    class m_f_extension* f_extension;
+#endif
+
     // Software interface methods
     bool state_is_not_halt();
 
@@ -181,14 +188,12 @@ public:
     }
 
     void pn_trace(sc_trace_file * tf, int level = 1) {}
-    bool state_is_not_halt()
-    {
-        return false;
-    }
+    bool state_is_not_halt () { return false; }
 
 #endif // !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
 
 protected:
+
 #if !PN_PRESYNTHESIZED_H_ONLY(NUCLEUS_REF)
 
     void init_submodules();
@@ -239,6 +244,7 @@ protected:
     sc_signal<sc_uint<5>> PN_NAME(signal_rd);
     sc_signal<sc_uint<5>> PN_NAME(signal_rs1);
     sc_signal<sc_uint<5>> PN_NAME(signal_rs2);
+    sc_signal<sc_uint<5>> PN_NAME(signal_rs3);
 
     sc_signal<bool> PN_NAME(signal_c_ir_ld_en);
 
@@ -281,8 +287,10 @@ protected:
     sc_signal<bool> PN_NAME(signal_controller_mret);
     sc_signal<bool> PN_NAME(signal_controller_interrupt);
     sc_signal<bool> PN_NAME(signal_s_interrupt_pending);
+    sc_signal<bool> PN_NAME(signal_c_reg_float_rs2);
 
     /* Data Handler */
+    sc_signal<sc_uint<32>> PN_NAME(signal_datahandler_in);
     sc_signal<sc_uint<32>> PN_NAME(signal_datahandler_out);
 
     /* Csr master */
@@ -317,6 +325,16 @@ protected:
     sc_signal<bool> PN_NAME(signal_trap_handler);
     sc_signal<bool> PN_NAME(signal_interrupt_pending);
     sc_signal<sc_uint<32>> PN_NAME(signal_mtvec_trap_address);
+
+    /* F-Extension */
+    sc_signal<bool> PN_NAME(signal_c_reg_float_ld_en);
+    sc_signal<bool> PN_NAME(signal_c_reg_ldfext_in);
+    sc_signal<sc_uint<32>> PN_NAME(signal_reg_float_in);
+    sc_signal<bool> PN_NAME(signal_f_ext_stb_in);
+    sc_signal<sc_uint<32>> PN_NAME(signal_f_ext_result_out);
+    sc_signal<bool> PN_NAME(signal_f_ext_ready_out);
+    sc_signal<sc_uint<32>> PN_NAME(signal_reg_float_out_rs2);
+    sc_signal<sc_uint<3>> PN_NAME(signal_fcsr_frm_out);
 
     /* Output registers */
     sc_signal<bool> PN_NAME(reg_iport_stb);

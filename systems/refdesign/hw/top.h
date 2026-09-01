@@ -36,6 +36,7 @@
 
 #include <piconut.h>
 
+
 // PicoNut modules used ...
 #include <pn_interconnect.h>
 #include <cpu.h>
@@ -45,12 +46,14 @@
 #include <uart_soft.h>
 #endif
 
+
 SC_MODULE(m_refdesign)
 {
 public:
     // Ports ...
     sc_in_clk PN_NAME(clk);
     sc_in<bool> PN_NAME(reset);
+    //~ sc_out<bool>  PN_NAME(pwroff);
 
 #ifdef __SYNTHESIS__
     sc_in<bool> PN_NAME(uart_rx);

@@ -7,14 +7,12 @@
                           Alexander Bahle <alexander.bahle@hs-augsburg.de>
                           Nico Borgsmüller <nico.borgsmueller@hs-augsburg.de>
                      2023 Lukas Bauer <lukas.bauer@hs-augsburg.de>
-                     2025 Johannes Hofmann <johannes.hofmann1@tha.de>
+                2025-2026 Johannes Hofmann <johannes.hofmann1@tha.de>
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
   Description:
     This file contains the startup code (bootrom) for a PicoNut
-    processor. It is usable with software compiled with or without
-    the libparanut (see example applications).
-    Gets the PicoNut processor into a known state, invalidates
+    processor. Gets the PicoNut processor into a known state, invalidates
     the cache, sets up a default trap handler and afterwards jumps into
     _init function.
 
@@ -88,128 +86,159 @@ __vector_table:
 
 /*Functions********************************************************************/
 
+
+// ************************************************************************************************
+// Setup Registers
+// ************************************************************************************************
+
 _start:
 
-  /*
-   * Set all registers to 0 (except x0, of course, which is hardwired 0).
-   */
-
-   li    x1,      0
-   li    x2,      0
-   li    x3,      0
-   li    x4,      0
-   li    x5,      0
-   li    x6,      0
-   li    x7,      0
-   li    x8,      0
-   li    x9,      0
-   li    x10,     0
-   li    x11,     0
-   li    x12,     0
-   li    x13,     0
-   li    x14,     0
-   li    x15,     0
-   li    x16,     0
-   li    x17,     0
-   li    x18,     0
-   li    x19,     0
-   li    x20,     0
-   li    x21,     0
-   li    x22,     0
-   li    x23,     0
-   li    x24,     0
-   li    x25,     0
-   li    x26,     0
-   li    x27,     0
-   li    x28,     0
-   li    x29,     0
-   li    x30,     0
-   li    x31,     0
+    /*
+     * Set stack pointer (sp) and global pointer (gp) regsiters.
+     */
+    .option push
+    .option norelax
+        la    tp, __stack_top     /* first address after last RAM byte, stack pointer (sp) starts here */
+        andi  sp, tp, -16         /* align stack to 16-bytes */
+        
+        la gp, __global_pointer$  /* set global pointer */
+    .option pop
 
 
-init_gp:
+    /*
+     * Set all other registers to zero.
+     */
+    li    x1,      0
+//    li    x2,      0 // sp
+//    li    x3,      0 // gp
+    li    x4,      0
+    li    x5,      0
+    li    x6,      0
+    li    x7,      0
+    li    x8,      0
+    li    x9,      0
+    li    x10,     0
+    li    x11,     0
+    li    x12,     0
+    li    x13,     0
+    li    x14,     0
+    li    x15,     0
+    li    x16,     0
+    li    x17,     0
+    li    x18,     0
+    li    x19,     0
+    li    x20,     0
+    li    x21,     0
+    li    x22,     0
+    li    x23,     0
+    li    x24,     0
+    li    x25,     0
+    li    x26,     0
+    li    x27,     0
+    li    x28,     0
+    li    x29,     0
+    li    x30,     0
+    li    x31,     0
 
-  /*
-   * The global pointer is supposed to be an absolute location for all cores
-   * to orient themselves on. We cannot let the linker throw it around at will
-   * for the sake of optimizing away an auipc+jalr!
-   * This means we are using the option .norelax whenever we get the gp from
-   * __global_pointer$.
-   */
 
-   .option push
-   .option norelax
-   la gp, __global_pointer$            /* set global pointer                  */
-   .option pop
+// init_gp:
+//   /*
+//    * The global pointer is supposed to be an absolute location for all cores
+//    * to orient themselves on. We cannot let the linker throw it around at will
+//    * for the sake of optimizing away an auipc+jalr!
+//    * This means we are using the option .norelax whenever we get the gp from
+//    * __global_pointer$.
+//    */
+// 
+//    .option push
+//    .option norelax
+//    la gp, __global_pointer$            /* set global pointer                  */
+//    .option pop
+// 
+// 
+// init_sp:
 
 
-init_sp:
 
-   la    tp,      _end + 63
-   and   tp,      tp,      -64
-   mv    sp,      tp                   /* set sp to tp                        */
 
-   mv    t0,      a0                   /* copy core id to t0                  */
-   la    t1,      __usr_stack_heap_size/* load the offset/size into t1        */
-   add   sp,      sp,      t1          /* add offset to sp                    */
+// ************************************************************************************************
+// Copy .data section from ROM (Code) to RAM.
+// ************************************************************************************************
 
+// TBD+: Set registeres right at the start before set to zero. (reduce instructions for startup)
 
 reloc_data:
-   la    t2,      __data_start         /* load target address                */
-  /*
-   * Function to realocate the data from rom to ram
-   */
-  la    x7,  __start_copy_data_src_begin // .data: start of copy-source (in .rodata)
-  la    x8,  __start_copy_data_dst_begin // .data: start of actual data region
-  la    x9,  __start_copy_data_dst_end   // .data: end of actual data region
+    la    t2,  __data_start              /* load target address */
+    la    x7,  __copy_data_src_begin     /* .data: start of copy-source (in .rodata) */
+    la    x8,  __copy_data_dst_begin     /* .data: start of actual data region       */
+    la    x9,  __copy_data_dst_end       /* .data: end of actual data region         */
+    
+    beq   x7, x8, __start_data_copy_end  /* __copy_data_src_begin = __copy_data_dst_begin */
 
-  beq   x7, x8, __start_data_copy_end // __start_copy_data_src_begin = __start_copy_data_dst_begin
-
-   __start_data_copy:
-      bge   x8, x9,  __start_data_copy_end
-      lw    x15, 0(x7)
-      sw    x15, 0(x8)
-      addi  x7, x7, 4          // word-wise operations; section begins and ends on word boundary
-      addi  x8, x8, 4
-      j     __start_data_copy
+ __start_data_copy:
+    bge   x8, x9,  __start_data_copy_end
+    lw    x15, 0(x7)
+    sw    x15, 0(x8)
+    addi  x7, x7, 4                       /* word-wise operations; section begins and ends
+                                             on word boundary */
+    addi  x8, x8, 4
+    j     __start_data_copy
 
 __start_data_copy_end:
 
-clear_bss:
-   /*
-    * Function to clear the bss section.
-    * The bss section is not loaded from the executable, but cleared by the startup code.
-    * This is done to save space in the executable and to speed up loading.
-    */
-   la    x10, __bss_start            // .bss: start of bss section
-   la    x11, __bss_end              // .bss: end of bss section
 
-   __start_bss_clear:
-      bge   x10, x11, __start_bss_clear_end
-      sw    zero, 0(x10)
-      addi  x10, x10, 4        // word-wise operations; section begins and ends on word boundary
-      j     __start_bss_clear
+
+
+// ************************************************************************************************
+// Clear .bss section.
+// ************************************************************************************************
+
+// TBD+: Set registeres right at the start before set to zero. (reduce instructions for startup)
+
+clear_bss:
+    /*
+     * Function to clear the bss section.
+     * The bss section is not loaded from the executable, but cleared by the startup code.
+     * This is done to save space in the executable and to speed up loading.
+     */
+    la    x10, __bss_start            // .bss: start of bss section
+    la    x11, __bss_end              // .bss: end of bss section
+
+__start_bss_clear:
+    bge   x10, x11, __start_bss_clear_end
+    sw    zero, 0(x10)
+    addi  x10, x10, 4        // word-wise operations; section begins and ends on word boundary
+    j     __start_bss_clear
 
 __start_bss_clear_end:
 
 
+
+
+// ************************************************************************************************
+// Initialize UART
+// ************************************************************************************************
+
 init_uart:
 
-   li    t0,      0x30000000           /* load UART base address into t0      */
-   li    t1,      0x00000001           /* enable the UART RX/TX and 1 stop bit*/
+   li    t0,      0x30000000          /* load UART base address into t0       */
+   li    t1,      0x00000001          /* enable the UART RX/TX and 1 stop bit */
 
-   sb    t1,      0x08(t0)             /* enable the UART TX                   */
-   sb    t1,      0x0C(t0)             /* enable the UART RX                   */
-   li    t1,       216                 /* Set UART baudrate to 115200 @ 25 MHz */
+   sb    t1,      0x08(t0)            /* enable the UART TX                   */
+   sb    t1,      0x0C(t0)            /* enable the UART RX                   */
+   li    t1,      216                 /* Set UART baudrate to 115200 @ 25 MHz */
    sw    t1,      0x18(t0)
 
-jump_c:
-  /*
-   * Jump into C code.
-   */
 
+
+
+// ************************************************************************************************
+// Jump to C code
+// ************************************************************************************************
+
+jump_c:
    call __libc_init_array              /* Call __libc_init_array              */
-   j     _init                         /* jump into _init (syscalls.c)        */
+   j    _init                          /* jump into _init (syscalls.c)        */
    call __libc_fini_array              /* Call __libc_fini_array - never reached
                                           but should be executed by exit()    */
 
@@ -228,13 +257,16 @@ error_string:                          /* prepare error message               */
 
 /*Handlers*********************************************************************/
 
-/*Debug************************************************************************/
+// ************************************************************************************************
+// Debug Handler
+// ************************************************************************************************
+
 .section ".text.debug_handler"
 .align   2                            
 debug_handler:
    csrrw x0,      dscratch0, x8
    addi  x8,      x0,        1
-   sw    x8,      0x38(x0)       /* set hartstatus halted flag */
+   sw    x8,      0x38(x0)                /* set hartstatus halted flag */
 
 loop:
    lw    x8,      0x34(x0)
@@ -245,15 +277,15 @@ run_commands:
    andi  x8,      x8,        2
    beq   x8,      x0,        resume
    addi  x8,      x0,        9
-   sw    x8,      0x38(x0)      /* set hartstatus run_commands flag */
+   sw    x8,      0x38(x0)                /* set hartstatus run_commands flag */
    csrrw x8,      dscratch0, x0
    jalr  x0,      0x14(x0)
 
 resume:
    addi  x8,      x0,        2
-   sw    x8,      0x38(x0)       /* set hartstatus running flag */
+   sw    x8,      0x38(x0)                /* set hartstatus running flag */
    csrrw x8,      dscratch0, x0
-   .word 0x7b200073           /* dret */
-/******************************************************************************/
+   .word 0x7b200073                       /* dret */
+
 
 /*EOF**************************************************************************/

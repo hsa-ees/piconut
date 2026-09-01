@@ -1,0 +1,9 @@
+# Replace these with the absolute paths to your converted images
+train: @TRAIN_PATH@
+val: @VAL_PATH@
+
+# Number of classes
+nc: 5
+
+# Class names (FSOCO standard classes)
+names: ['blue_cone', 'yellow_cone', 'orange_cone', 'large_orange_cone', 'unknown_cone']

@@ -33,7 +33,6 @@
 #ifndef __TOP_H__
 #define __TOP_H__
 
-#include <systemc.h>
 #include <piconut.h>
 
 // PicoNut modules used ...

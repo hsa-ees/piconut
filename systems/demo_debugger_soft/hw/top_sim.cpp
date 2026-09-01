@@ -104,6 +104,11 @@ int sc_main(int argc, char** argv)
     reset = 0;
     run_cycle(2);
 
+    while(!debugger_soft->is_remote_bitbang_connected())
+    {
+        debugger_soft->tick();
+    }
+
     while(i_dut.cpu->state_is_not_halt())
     {
         debugger_soft->tick();

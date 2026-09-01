@@ -65,6 +65,11 @@ def extract_section(
     command = [objdump_path, "-j", f"{section_name}", "-s", filename]
     result = subprocess.run(command, capture_output=True, text=True, check=True)
 
+    if "Contents of" not in result.stdout:
+        raise ValueError(
+            f"Section {section_name} not found in objdump output. Maybe it has removed by linker e.g. with --gc-sections"
+        )
+
     # Extract the hex values from the output
     output_lines = result.stdout.split("\n")
 

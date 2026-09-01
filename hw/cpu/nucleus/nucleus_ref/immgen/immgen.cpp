@@ -53,12 +53,14 @@ void m_immgen::proc_cmb_immgen()
     {
         case OP_ALUI:
         case OP_LOAD:
+        case OP_F_LOAD:
         case OP_JALR:
         case OP_SYSTEM:
             immediate_type = IMMG_I_type;
             break;
 
         case OP_STORE:
+        case OP_F_STORE:
             immediate_type = IMMG_S_Type;
             break;
 

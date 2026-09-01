@@ -48,6 +48,8 @@
 // initialize TB signals
 sc_signal<bool> PN_NAME(clk);
 sc_signal<bool> PN_NAME(reset);
+//~ sc_signal<bool> PN_NAME(pwroff);
+
 
 void run_cycle(int cycles = 1)
 {
@@ -59,6 +61,7 @@ void run_cycle(int cycles = 1)
         sc_start(PERIOD_NS / 2, SC_NS);
     }
 }
+
 
 int sc_main(int argc, char** argv)
 {
@@ -75,6 +78,7 @@ int sc_main(int argc, char** argv)
     // Connect the signals
     i_dut.clk(clk);
     i_dut.reset(reset);
+    //~ i_dut.pwroff(pwroff);
 
     std::unique_ptr<c_soft_uart> uart = std::make_unique<c_soft_uart>(0x22, UART_BASE_ADDR);
     i_dut.cpu->membrana->add_peripheral(UART_BASE_ADDR, std::move(uart));

@@ -6,6 +6,7 @@ services:
     command: bash
     entrypoint: ["/home/piconut-user/piconut/compose-entrypoint.sh"]
     working_dir: /home/piconut-user/piconut
+    shm_size: '1gb'
     volumes:
       # X11 support
       - /tmp/.X11-unix:/tmp/.X11-unix

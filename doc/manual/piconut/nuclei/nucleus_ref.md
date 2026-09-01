@@ -291,6 +291,96 @@ PN_CFG_ALU_ENABLE_ZMMUL_EXTENSION ?= 0
 Keep in mind, that the `PN_CFG_...` variables may be set by the `piconut-config.mk` in the root
 directory of this project, so comment those lines out or change them accordingly.
 
+(sec:nucleus:fpu)=
+## Floating-Point Unit (FPU) &ndash; F-Extension
+
+The reference nucleus includes a Floating-Point Unit that implements hardware-support for Floating-Point Numbers.
+
+The module currently supports the following extensions:
+
+- F (Single-Precision)
+
+This module sits inside the nucleus and works alongside the ALU.
+
+```{figure} figures/nucleus_ref/fpu.drawio.svg
+:align: center
+fpu / f-extension block diagram
+```
+
+```{doxygenfunction} SC_MODULE(m_f_extension)
+:project: f_extension
+```
+
+### Regfile (Float)
+```{doxygenfunction} SC_MODULE(m_regfile_float)
+:project: f_extension
+```
+
+### Adder (Float)
+```{doxygenfunction} SC_MODULE(m_adder_float)
+:project: f_extension
+```
+
+### Multiplier (Float)
+```{doxygenfunction} SC_MODULE(m_multiplier_float)
+:project: f_extension
+```
+
+### Divisor (Float)
+```{doxygenfunction} SC_MODULE(m_divisor_float)
+:project: f_extension
+```
+
+### Square Root (Float)
+```{doxygenfunction} SC_MODULE(m_sqrt_float)
+:project: f_extension
+```
+
+### Fused Multiply-Adder (Float)
+```{doxygenfunction} SC_MODULE(m_mul_add_float)
+:project: f_extension
+```
+
+### Classifier (Float)
+```{doxygenfunction} SC_MODULE(m_classifier_float)
+:project: f_extension
+```
+
+### Comparer (Float)
+```{doxygenfunction} SC_MODULE(m_compare_float)
+:project: f_extension
+```
+
+### Converter (Float)
+```{doxygenfunction} SC_MODULE(m_converter_float)
+:project: f_extension
+```
+
+#### Enabling and disabling the F-Extension
+Enabling and disabling the F-Extension is possible.
+
+For enabling the entire F-Extension the variable `PN_MARCH` in the `piconut-config.mk`
+has to be updated to `rv32if_zicsr` in the system using this nucleus.
+
+Also the `PN_CFG_ENABLE_F_EXTENSION` variable in the same file has to be changed.
+As an example, look at the file `piconut/systems/refdesign/piconut-config.mk`:
+```make
+## RISC-V ISA and extensions ...
+# Uncomment following line, if using F extension:
+# export PN_MARCH := rv32imf_zicsr
+
+# ...
+
+#   Enable (1) or Disable (0) F-Extension
+#   Remember to also set:
+#   export PN_MARCH := rv32imf_zicsr
+#   for the compiler to actually use the extension
+PN_CFG_ENABLE_F_EXTENSION ?= 0
+```
+
+Keep in mind, that the `PN_CFG_...` variables may be set by the `piconut-config.mk` in the root
+directory of this project, so comment those lines out or change them accordingly.
+
 (sec:nucleus:scalar_crypto)=
 ## Scalar Cryptography
 

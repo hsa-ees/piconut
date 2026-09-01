@@ -441,6 +441,7 @@ In the **pre-configuration** section (1.), the following optional variables may 
 * `PN_BUILD_INIT`: Build initializer / Root module. If set, force the build process to prebuilt the config and common layer modules. Usually, these base modules are built automatically on the primary invocation of `make`, which is adequate in most cases. Only if this mechanism fails, this variable may be set. (Default: 1 for the PicoNut source tree root or the current system's root, else 0)
 * `PN_BUILD_HW`: If set (= 1), automatic rules for building hardware are activated. (Default: 1)
 * `PN_BUILD_SW`: If set (= 1), automatic rules for building software are activated. (Default: 1)
+* `PN_BOARD_CONSTRAINTS`: A custom constraints file for the board in use. (Default is defined by board configuration, see `PICONUT_BOARD`)
 
 By default, C++ source files (.cpp) are assumed to by hardware (SystemC) code, and C sources are treated as software (for RISC-V). Software modules using C++ may set `PN_BUILD_HW = 0` to clarify that C++ sources are not meant to be build for the host system.
 
@@ -1099,9 +1100,9 @@ build-syn: build-netlist
 **Input:**
 
 - A successful run of phase 2.
-- `PN_BOARD_CONSTRAINTS` (optional): A custom constraints file for the board in use.
+- `PN_BOARD_CONSTRAINTS` (optional): A custom constraints file for the board in use (to be set in the pre-configuration).
 
-The variable `$(PN_LAYOUT_SRC)` is set by the build system and cannot by set manually. It points to the file used for layout generation. A may but does not need to be identical to `$(PN_NETLIST_OUTPUT)`.
+The variable `$(PN_LAYOUT_SRC)` is set by the build system and cannot by set manually. It points to the file used for layout generation. It may but does not need to be identical to `$(PN_NETLIST_OUTPUT)`.
 
 **Output:**
 

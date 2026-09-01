@@ -36,8 +36,18 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "gpio_driver.h"
-#include "i2c_driver.h"
+#include <gpio_driver.h>
+#include <i2c_driver.h>
+#include <video_driver.h>
+
+static video_t video_driver = {};
+
+/**
+ * ROTATE_CONTROLS:
+ * If defined, the controls are rotated 90 degrees counter-clockwise.
+ * This is useful for games that are designed to be played in landscape mode with
+ * a non-rotated controller.
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +77,14 @@ static inline void JOY_init(void)
 {
     gpio_init(&global_gpio_instance, 0x40000000);
 
+    video_init(&video_driver, 0, RESOLUTION_MODE_640x480, COLOR_MODE_1_MONO);
+    if(video_driver.fb_width < 128 || video_driver.fb_height < 64)
+    {
+        // Framebuffer too small (no printf because of resource constraints)
+        while(1)
+            ;
+        // TODO GPIO alarm
+    }
     JOY_OLED_init();
 }
 
@@ -128,8 +146,32 @@ void JOY_OLED_send_range(uint8_t page, uint8_t start, uint8_t end, uint8_t* data
     i2c_stop(&global_i2c_instance);
 }
 
+void write_video_framebuffer(uint8_t current_buffer[8][128])
+{
+    int32_t fb_width = video_driver.fb_width;
+    for(uint8_t page = 0; page < 8; page++)
+    {
+        volatile uint32_t* fb_ptr = video_get_framebuffer(&video_driver);
+        for(uint8_t col = 0; col < 128; col++)
+        {
+            for(uint8_t bit = 0; bit < 8; bit++)
+            {
+                if(current_buffer[page][col] & (1 << bit))
+                {
+                    fb_ptr[(col) + ((page * 8 + bit) * fb_width)] = 0xFFFFFFFF;
+                }
+                else
+                {
+                    fb_ptr[(col) + ((page * 8 + bit) * fb_width)] = 0x00000000;
+                }
+            }
+        }
+    }
+}
+
 void JOY_OLED_update(uint8_t current_buffer[8][128])
 {
+    write_video_framebuffer(current_buffer);
     for(int page = 0; page < 8; page++)
     {
         int start_col = -1;
@@ -215,22 +257,38 @@ static inline uint8_t JOY_act_released()
 
 static inline uint8_t JOY_up_pressed()
 {
+#ifdef ROTATE_CONTROLS
+    return read_button(2);
+#else
     return read_button(0);
+#endif
 }
 
 static inline uint8_t JOY_down_pressed()
 {
+#ifdef ROTATE_CONTROLS
+    return read_button(3);
+#else
     return read_button(1);
+#endif
 }
 
 static inline uint8_t JOY_left_pressed()
 {
+#ifdef ROTATE_CONTROLS
+    return read_button(1);
+#else
     return read_button(2);
+#endif
 }
 
 static inline uint8_t JOY_right_pressed()
 {
+#ifdef ROTATE_CONTROLS
+    return read_button(0);
+#else
     return read_button(3);
+#endif
 }
 
 void JOY_sound(uint8_t freq, uint8_t dur)

@@ -18,10 +18,22 @@ For synthesizing:
   - OSS CAD Suite (tested with 2025-07-24) ([latest release](https://github.com/YosysHQ/oss-cad-suite-build/releases/tag/2025-07-24))
   - Intel® Compiler for SystemC (tested with releases 1.25.1 and 1.6.8) ([latest release](https://github.com/intel/systemc-compiler))
 
-Alternativly, you can use a docker image with all the necessary software preinstalled.
+Alternativly, you can use a docker image with all the necessary software preinstalled (see setup section).
 
 
-Clone the PicoNut repository and navigate to the base directory of the source tree.
+## Setup
+
+1. Clone the PicoNut repository.
+
+2. Initialize Git submodules:
+
+```console
+$ git submodule update --init --recursive
+```
+
+3. (Optional) Setup docker image:
+
+Navigate to the base directory of the source tree, then use:
 
 ```console
 $ cd tools/docker

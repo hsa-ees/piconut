@@ -50,7 +50,7 @@ include ../../../../piconut.mk
 
 # Prebuild all required PicoNut modules ...
 build-prepare:
-	$(PN_PREBUILD) MODULES=hw/peripherals/gpio:hw/peripherals/i2c
+	$(PN_PREBUILD) MODULES=hw/peripherals/gpio:hw/peripherals/i2c:hw/peripherals/video
 
 
 ################################################################################
@@ -95,7 +95,7 @@ $(BIN): $(OBJ)
 
 # Include shared driver functions ...
 PN_SW_CFLAGS += -I../common
-PN_SW_LDFLAGS += -li2c_driver -lgpio_driver
+PN_SW_LDFLAGS += -lvideo_driver -li2c_driver -lgpio_driver
 
 
 

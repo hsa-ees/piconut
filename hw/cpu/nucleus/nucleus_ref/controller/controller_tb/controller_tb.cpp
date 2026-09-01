@@ -135,6 +135,12 @@ sc_signal<bool> PN_NAME(s_mip_meip);    // External interrupt pending
 sc_signal<bool> PN_NAME(s_mie_meie);    // External interrupt enable
 sc_signal<bool> PN_NAME(s_mstatus_mie); // Global machine interrupt enable
 
+sc_signal<bool> PN_NAME(c_reg_float_ld_en_out);
+sc_signal<bool> PN_NAME(c_reg_rs2_float_out);
+sc_signal<bool> PN_NAME(c_reg_ldfext_out);
+sc_signal<bool> PN_NAME(c_f_ext_stb_out);
+sc_signal<bool> PN_NAME(s_f_ext_ready_in);
+
 ///////////////// Helpers /////////////////
 void run_cycle(int cycles = 1)
 {
@@ -242,6 +248,12 @@ int sc_main(int argc, char** argv)
     i_dut.s_mip_meip_in(s_mip_meip);
     i_dut.s_mie_meie_in(s_mie_meie);
     i_dut.s_mstatus_mie_in(s_mstatus_mie);
+
+    i_dut.c_reg_float_ld_en_out(c_reg_float_ld_en_out);
+    i_dut.c_reg_rs2_float_out(c_reg_rs2_float_out);
+    i_dut.c_reg_ldfext_out(c_reg_ldfext_out);
+    i_dut.c_f_ext_stb_out(c_f_ext_stb_out);
+    i_dut.s_f_ext_ready_in(s_f_ext_ready_in);
 
     // Initialize interrupt signals
     s_mip_msip = 0;

@@ -5,11 +5,12 @@
   Copyright (C) 2019-2022 Anna Pfuetzner <anna.pfuetzner@hs-augsburg.de>
                           Alexander Bahle <alexander.bahle@hs-augsburg.de>
                           Nico Borgsmüller <nico.borgsmueller@hs-augsburg.de>
-                2023      Lukas Bauer <lukas.bauer@hs-augsburg.de>
+                     2023 Lukas Bauer <lukas.bauer@hs-augsburg.de>
+                2025-2026 Johannes Hofmann <johannes.hofmann1@tha.de>
       Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
   Description:
-     This is the linker script used when building software for the PicoNut.
+      Linker script for software built for the PicoNut.
 
   Redistribution and use in source and binary forms, with or without modification,
   are permitted provided that the following conditions are met:
@@ -38,13 +39,17 @@
 /* PicoNut linker script                                           */
 /*======================================================================*/
 
-/*
 PROVIDE_HIDDEN (CFG_START_ADDRESS = 0x10000000);
-PROVIDE_HIDDEN (CFG_CODE_SIZE = 0x0001FFFF);
-PROVIDE_HIDDEN (CFG_RAM_SIZE = 0x0001FFFF);
-PROVIDE_HIDDEN (CFG_STACK_SIZE = 0x00001000);
-PROVIDE_HIDDEN (CFG_HEAP_SIZE = 0x00001000);
-*/
+PROVIDE_HIDDEN (CFG_CODE_SIZE     = 0x0001FFFF);
+PROVIDE_HIDDEN (CFG_RAM_SIZE      = 0x0001FFFF);
+PROVIDE_HIDDEN (CFG_STACK_SIZE    = 0x00001000);
+PROVIDE_HIDDEN (CFG_HEAP_SIZE     = 0x00001000);
+
+__pn_code_size = CFG_CODE_SIZE;
+__pn_ram_size  = CFG_RAM_SIZE;
+
+__pn_code_start = CFG_START_ADDRESS;
+__pn_ram_start  = __pn_code_start + __pn_code_size + 1;
 
 /*----------------------------------------------------------------------*/
 /* Setup                                                                */
@@ -66,12 +71,12 @@ ENTRY(_start)
    checks (e.g. read only) and the relocation of the data to the ram memory */
 MEMORY
 {
-    code (rx)  : ORIGIN = CFG_START_ADDRESS, LENGTH = CFG_CODE_SIZE /* sometimes also called rom */
-    ram  (rwx) : ORIGIN = CFG_START_ADDRESS + CFG_CODE_SIZE + 1, LENGTH = CFG_RAM_SIZE
+    code (rx)  : ORIGIN = __pn_code_start, LENGTH = __pn_code_size /* sometimes also called rom */
+    ram  (rwx) : ORIGIN = __pn_ram_start, LENGTH = __pn_ram_size
 }
 
 /* This constant is used to check that at least STACK_SIZE of RAM
-  is available for stack. If not, linker will issue an error. */
+   is available for stack. If not, linker will issue an error. */
 STACK_SIZE = CFG_STACK_SIZE; 
 
 /* This constant is used to check that at least HEAP_SIZE of RAM
@@ -85,7 +90,9 @@ HEAP_SIZE = CFG_HEAP_SIZE;
 
 SECTIONS
 {
-  /* text section - Program code and read only data section */
+  /** **************************************************************************
+  * .text section - Program code and read-only data.
+  * ***************************************************************************/
   .text :
   {
    /* Vector table storing the jump instructions to the start or handler sections */
@@ -195,12 +202,20 @@ SECTIONS
 
 }
 
-/* Exports for startup.S */
-PROVIDE(__start_copy_data_src_begin = LOADADDR(.data));
-PROVIDE(__start_copy_data_dst_begin = ADDR(.data));
-PROVIDE(__start_copy_data_dst_end   = ADDR(.data) + SIZEOF(.data));
-PROVIDE(__start_ram_last            = (ORIGIN(ram) + LENGTH(ram)) - 1);
-PROVIDE(__usr_stack_heap_size = SIZEOF(._usr_stack_heap));
+/* ********************************************************************************************** */
+/* Export symbols for start-up code                                                               */
+/* ********************************************************************************************** */
+PROVIDE(__max_heap            = HEAP_SIZE);
+PROVIDE(__stack_top           = ORIGIN(ram) + LENGTH(ram));
+PROVIDE(__bss_start           = ADDR(.bss));
+PROVIDE(__bss_end             = ADDR(.bss) + SIZEOF(.bss));
+PROVIDE(__copy_data_src_begin = LOADADDR(.data));
+PROVIDE(__copy_data_dst_begin = ADDR(.data));
+PROVIDE(__copy_data_dst_end   = ADDR(.data) + SIZEOF(.data));
+PROVIDE(__code_base           = ORIGIN(code));
+PROVIDE(__code_size           = LENGTH(code));
+PROVIDE(__ram_base            = ORIGIN(ram));
+PROVIDE(__ram_size            = LENGTH(ram));
 
 /* size helpers */
 __text_size = SIZEOF(.text);

@@ -43,6 +43,7 @@
 #include <uart.h>
 #include <gpio.h>
 #include <i2c.h>
+#include <video.h>
 
 SC_MODULE(m_refdesign_demonstrator)
 {
@@ -59,6 +60,12 @@ public:
     sc_in<bool> PN_NAME(gpio_left);
     sc_in<bool> PN_NAME(gpio_right);
     sc_in<bool> PN_NAME(gpio_fire);
+
+    sc_out<sc_uint<4>> PN_NAME(vga_red_o);
+    sc_out<sc_uint<4>> PN_NAME(vga_green_o);
+    sc_out<sc_uint<4>> PN_NAME(vga_blue_o);
+    sc_out<bool> PN_NAME(vga_hsync_o);
+    sc_out<bool> PN_NAME(vga_vsync_o);
 
     sc_in<bool> PN_NAME(scl_i);
     sc_out<bool> PN_NAME(scl_o);
@@ -89,6 +96,7 @@ public:
     m_uart* uart;
     m_gpio* gpio;
     m_i2c* i2c;
+    m_video* video;
 
 protected:
     // Internal Signals

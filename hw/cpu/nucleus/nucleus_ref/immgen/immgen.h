@@ -29,7 +29,7 @@
 
  *************************************************************************/
 
- /** immgen (Immediate Generator)
+/** immgen (Immediate Generator)
  * The immgen module is responsible for decoding the immediate value of an instruction.
  *
  * Input ports:
@@ -76,7 +76,6 @@
 #include <stdint.h>
 
 #include "../nucleus_ref_defs.h"
-
 
 typedef enum
 {

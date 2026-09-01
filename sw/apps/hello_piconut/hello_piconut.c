@@ -58,7 +58,7 @@ int main()
         printf("%s| |_/ /_  ___ ___ |  \\| |_   _| |_   %s/ /%s| |_/ / | | \\ `--.| /  \\/%s_____| | | |\n", KMAG, KNRM, KBLU, KYEL);
         printf("%s|  __/| |/ __/ _ \\| . ` | | | | __| %s/ /%s |    /  | |  `--. \\ |  %s|______| | | |\n", KMAG, KNRM, KBLU, KYEL);
         printf("%s| |   | | (_| (_) | |\\  | |_| | |_ %s/ /%s  | |\\ \\ _| |_/\\__/ / \\__/\\     %s\\ \\_/ /\n", KMAG, KNRM, KBLU, KYEL);
-        printf("%s\\_|   |_|\\___\\___/\\_| \\_/\\__,_|\\__%s/_/%s   \\_| \\_|\\___/\\____/ \\____/      %s\\___/%s \n\n\n", KMAG, KNRM, KBLU, KYEL, KNRM);
+        printf("%s\\_|   |_|\\___\\___/\\_| \\_/\\__,_|\\__%s/_/%s   \\_| \\_|\\___/\\____/ \\____/      %s\\___/%s \n\n", KMAG, KNRM, KBLU, KYEL, KNRM);
     } while(DO_LOOP);
 
 #ifdef ENABLE_GPIO

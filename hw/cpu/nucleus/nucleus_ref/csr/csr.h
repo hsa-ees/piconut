@@ -143,6 +143,11 @@
 
 typedef enum
 {
+    // Floating-Point CSRs
+    csr_adr_fflags = 0x001,
+    csr_adr_frm    = 0x002,
+    csr_adr_fcsr   = 0x003,
+
     // Machine trap setup
     csr_adr_mstatus = 0x300,
     csr_adr_misa = 0x301,
@@ -226,6 +231,8 @@ public:
     sc_out<bool> PN_NAME(mie_mtie_out);
     sc_out<bool> PN_NAME(mie_meie_out);
 
+    sc_out<sc_uint<3>> PN_NAME(fcsr_frm_out);
+
     // MEPC access port
     sc_out<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(mepc_out);
 
@@ -240,6 +247,8 @@ public:
         reset_signal_is(reset, true);
 
         // Registers
+        SC_CTHREAD(proc_clk_fcsr, clk.pos());
+        reset_signal_is(reset, true);
         SC_CTHREAD(proc_clk_mstatus, clk.pos());
         reset_signal_is(reset, true);
         SC_CTHREAD(proc_clk_misa, clk.pos());
@@ -299,6 +308,9 @@ public:
 
         SC_METHOD(proc_cmb_mtvec_address);
         sensitive << mtvec_reg << mcause_reg << interrupt_in;
+
+        SC_METHOD(proc_cmb_fcsr_outputs);
+        sensitive << fcsr_reg;
     }
 
     void pn_trace(sc_trace_file * tf, int level = 1);
@@ -307,6 +319,7 @@ public:
     void proc_clk_bus_read();
 
     // Registers
+    void proc_clk_fcsr();
     void proc_clk_mstatus();
     void proc_clk_misa();
 
@@ -316,6 +329,8 @@ public:
     void proc_cmb_dpc();
     void proc_clk_dscratch0();
     void proc_clk_dscratch1();
+
+    void proc_cmb_fcsr_outputs();
 
     // Interrupt
     void proc_clk_mie();
@@ -437,6 +452,7 @@ protected:
 
 protected:
     // Registers
+    sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(fcsr_reg);
     sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(mstatus_reg);
     sc_signal<sc_uint<PN_CFG_CSR_BUS_DATA_WIDTH>> PN_NAME(misa_reg);
 

@@ -93,6 +93,8 @@ public:
 
     void tick();
 
+    bool is_remote_bitbang_connected() const;
+
 private:
     std::unique_ptr<c_soft_dm> dm;
     std::unique_ptr<c_dtm> dtm;

@@ -29,7 +29,7 @@
 
  *************************************************************************/
 
- /** datahndler (Data Handler)
+/** datahndler (Data Handler)
  *
  * The purpose of this model is to arrange the outgoing data to the DPort interface.
  *
@@ -81,7 +81,6 @@
 #include <stdint.h>
 
 #include "../nucleus_ref_defs.h"
-
 
 SC_MODULE(m_datahandler)
 {

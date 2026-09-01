@@ -81,8 +81,6 @@
 
 #include <cstdint>
 
-
-
 SC_MODULE(m_csr_master)
 {
 public:

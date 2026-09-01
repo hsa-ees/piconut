@@ -101,6 +101,20 @@ void m_refdesign_demonstrator::init_submodules()
     i2c->sda_oe(sda_oe);
     i2c->scl_oe(scl_oe);
 
+    // ----------- VGA  -----------
+    video = sc_new<m_video>("i_video", PN_CFG_VIDEO_BASE_ADDRESS);
+
+    video->reset(reset);
+    video->clk(clk);
+
+    pn_interconnect->add_module(video);
+
+    video->vga_red_out(vga_red_o);
+    video->vga_green_out(vga_green_o);
+    video->vga_blue_out(vga_blue_o);
+    video->vga_hsync_out(vga_hsync_o);
+    video->vga_vsync_out(vga_vsync_o);
+
     pn_interconnect->elaborate();
 }
 

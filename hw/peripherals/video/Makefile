@@ -199,7 +199,7 @@ endif
 # Install ...
 .PHONY: install-all
 install-all:
-	$(PN_INSTALL_HW_INCLUDE) $(MODULE).h $(MODULE)_defs.h
+	$(PN_INSTALL_HW_INCLUDE) $(MODULE).h $(MODULE)_defs.h $(MODULE)_defs_hw.h
 	$(PN_INSTALL_SW_INCLUDE) $(MODULE)_defs.h
 	$(PN_INSTALL_SW_INCLUDE) $(DRIVER_NAME).h
 	$(PN_INSTALL_SW_LIB) $(DRIVER_LIB)

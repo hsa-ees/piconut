@@ -458,6 +458,10 @@ void m_alu::proc_cmb_alu_output()
             }
             break;
 
+        case ALU_MODE_PASS_A:
+            y_out = a_in.read();
+            break;
+
         default:
             y_out = 0x0;
             PN_ERROR("ALU: Unknown operation");

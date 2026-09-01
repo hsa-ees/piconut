@@ -39,8 +39,8 @@ Ensure that the selected version of the documentation on the previously linked p
 
 ## How to build
 
-To build the documentation, navigate to `piconut/doc/manuals` and invoke `make` and the doc will be installed in your $PN_BUILD_DIR.
-Open the file `$PN_BUILD_DIR/html/index.html` in a web browser to view the documentation.
+To build the documentation, navigate to `piconut/doc` and invoke `make build` and the doc will be installed in your $PN\_BUILD\_DIR.
+Open the file  `$PN\_BUILD\_DIR/html/index.html` in a web browser to view the documentation.
 Install the documentation with `PREFIX=your-prefix make install`.
 
 To see all available options use `make help`.

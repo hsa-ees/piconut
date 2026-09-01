@@ -46,7 +46,19 @@
 
 
 # Submodules ...
-PN_SUBMODULES := apps/hello_piconut apps/animation
+PN_SUBMODULES := \
+	apps/animation \
+	apps/crypto \
+	apps/demo_i2c \
+	apps/hello_piconut \
+	apps/m_ext_demo \
+	apps/tiny_games/tiny_tris \
+	apps/video_spectrum \
+	\
+	libs/rv_crypto \
+	libs/piconut_muriscv-nn \
+	libs/ai/models/cone_detection_model \
+	libs/ai/models/voice_control_model
 
 
 # Include PicoNut setup ...

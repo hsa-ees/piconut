@@ -31,6 +31,7 @@
 
 #include "shift_and_add.h"
 #include "pn_base.h"
+#include <unistd.h>
 
 void m_shift_and_add::pn_trace(sc_trace_file* tf, int level)
 {
@@ -77,18 +78,18 @@ void m_shift_and_add::proc_cmb_sign()
     switch(funct3_in.read())
     {
         case FUNCT3_ADD_SUB_MUL:
-            // lower half of bits: treat as unsigned
-        case FUNCT3_SLTU_MULHU:
-            // unsigned * unsigned: always positive
-            abs_a = a_cache.read();
-            abs_b = b_cache.read();
-            break;
-
+            // lower half of bits: treat as signed*signed so we can reuse upper half easiely
         case FUNCT3_SLL_MULH:
             // signed * signed: negative, when numbers have different sign
             negative_result = (a_neg != b_neg);
             abs_a = abs((sc_int<NUCLEUS_DATA_WIDTH>)a_cache.read());
             abs_b = abs((sc_int<NUCLEUS_DATA_WIDTH>)b_cache.read());
+            break;
+
+        case FUNCT3_SLTU_MULHU:
+            // unsigned * unsigned: always positive
+            abs_a = a_cache.read();
+            abs_b = b_cache.read();
             break;
 
         case FUNCT3_SLT_MULHSU:
@@ -108,6 +109,7 @@ void m_shift_and_add::proc_clk_shift_and_add()
     state = S_MUL_IDLE;
     a_cache = 0x0;
     b_cache = 0x0;
+    funct3_cache = 0x0;
 
     while(true)
     {
@@ -119,6 +121,7 @@ void m_shift_and_add::proc_clk_shift_and_add()
         sc_uint<NUCLEUS_DATA_WIDTH_LOG2> new_digit = digit.read();
         sc_uint<NUCLEUS_DATA_WIDTH> new_a_cache = a_cache.read();
         sc_uint<NUCLEUS_DATA_WIDTH> new_b_cache = b_cache.read();
+        sc_uint<NUCLEUS_DATA_WIDTH> new_funct3_cache = funct3_cache.read();
 
         switch(state.read())
         {
@@ -127,11 +130,15 @@ void m_shift_and_add::proc_clk_shift_and_add()
                 if(start_in.read() == 0x1)
                 {
 #if MUL_SECURITY <= 0
-                    if(a_cache.read() == a_in.read() && b_cache.read() == b_in.read())
+                    if(a_cache.read() == a_in.read() && b_cache.read() == b_in.read() &&
+                        (funct3_cache.read() == funct3_in.read() ||
+                            (funct3_cache.read() == FUNCT3_ADD_SUB_MUL && funct3_in.read() == FUNCT3_SLL_MULH) ||
+                            (funct3_in.read() == FUNCT3_ADD_SUB_MUL && funct3_cache.read() == FUNCT3_SLL_MULH)))
                     {
                         // skip actual multiplication, if input is the same.
                         new_state = S_MUL_DONE;
-                    } else
+                    }
+                    else
 #endif // MUL_SECURITY <= 0
                     {
                         new_state = S_MUL_WORKING;
@@ -139,6 +146,7 @@ void m_shift_and_add::proc_clk_shift_and_add()
                     }
                     new_a_cache = a_in.read();
                     new_b_cache = b_in.read();
+                    new_funct3_cache = funct3_in.read();
                 }
                 break;
 
@@ -164,6 +172,7 @@ void m_shift_and_add::proc_clk_shift_and_add()
         digit = new_digit;
         a_cache = new_a_cache;
         b_cache = new_b_cache;
+        funct3_cache = new_funct3_cache;
     }
 }
 
@@ -178,7 +187,14 @@ void m_shift_and_add::proc_cmb_output()
         {
             case FUNCT3_ADD_SUB_MUL:
                 // lower half of bits
-                y_out = (sc_uint<NUCLEUS_DATA_WIDTH>)result.read();
+                if(negative_result.read())
+                {
+                    y_out = (sc_uint<NUCLEUS_DATA_WIDTH>)(0 - result.read());
+                }
+                else
+                {
+                    y_out = (sc_uint<NUCLEUS_DATA_WIDTH>)result.read();
+                }
                 break;
 
             case FUNCT3_SLL_MULH:

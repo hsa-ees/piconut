@@ -78,6 +78,7 @@ public:
     void proc_cmb_output();
 
 protected:
+    sc_signal<sc_uint<3>> PN_NAME(funct3_cache);
     sc_signal<sc_uint<NUCLEUS_DATA_WIDTH>> PN_NAME(a_cache);
     sc_signal<sc_uint<NUCLEUS_DATA_WIDTH>> PN_NAME(b_cache);
     sc_signal<sc_uint<NUCLEUS_DATA_WIDTH>> PN_NAME(abs_a);
@@ -92,10 +93,11 @@ private:
     sc_uint<NUCLEUS_DATA_WIDTH> abs(sc_int<NUCLEUS_DATA_WIDTH>);
 
     // enums
-    enum shift_and_add_state_t {
-      S_MUL_IDLE = 0b00,
-      S_MUL_WORKING = 0b01,
-      S_MUL_DONE = 0b10,
+    enum shift_and_add_state_t
+    {
+        S_MUL_IDLE = 0b00,
+        S_MUL_WORKING = 0b01,
+        S_MUL_DONE = 0b10,
     };
 };
 

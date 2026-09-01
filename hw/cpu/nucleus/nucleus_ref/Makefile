@@ -84,6 +84,8 @@ MODULE := $(PN_MODULE_NAME)
 
 # Module sources that are used for simulation and for synthesis ...
 # Change the sources for the multiplication and division modules here.
+
+#TBD: Add a conditional include to the M-Extension here, like it is done with the F-Extension
 MODULE_SRC := $(MODULE).cpp \
 			  alu/alu.cpp \
 			  alu/m_extension/mul/shift_and_add.cpp \
@@ -98,7 +100,21 @@ MODULE_SRC := $(MODULE).cpp \
 			  immgen/immgen.cpp \
 			  datahandler/datahandler.cpp \
 			  csr/csr.cpp \
-			  csr_master/csr_master.cpp
+			  csr_master/csr_master.cpp \
+
+# Conditionally append the implementation files if F_EXTENSION is enabled
+ifeq ($(PN_CFG_ENABLE_F_EXTENSION),1)
+MODULE_SRC += f_extension/f_extension.cpp \
+			  f_extension/regfile_float/regfile_float.cpp \
+              f_extension/classifier_float/classifier_float.cpp \
+              f_extension/adder_float/adder_float.cpp \
+              f_extension/multiplier_float/multiplier_float.cpp \
+              f_extension/divisor_float/divisor_float.cpp \
+              f_extension/compare_float/compare_float.cpp \
+              f_extension/converter_float/converter_float.cpp \
+              f_extension/sqrt_float/sqrt_float.cpp \
+              f_extension/mul_add_float/mul_add_float.cpp
+endif
 
 
 # Testbench and its source(s), containing `sc_main` ...

@@ -45,8 +45,8 @@ ENV OSS_CAD_SUITE_HOME="/opt/oss-cad-suite"
 # get oss-cad-suite
 RUN mkdir -p /opt && \
     cd /opt && \
-    wget -q https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2025-10-06/oss-cad-suite-linux-x64-20251006.tgz && \
-    tar axvf oss-cad-suite-linux-x64-20251006.tgz && rm -f oss-cad-suite-linux-x64-20251006.tgz
+    wget -q -O oss-cad-suite-linux-x64.tgz https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-03-19/oss-cad-suite-linux-x64-20260319.tgz && \
+    tar axvf oss-cad-suite-linux-x64.tgz && rm -f oss-cad-suite-linux-x64.tgz 
 # add to path enviroment variable
 ENV PATH="${OSS_CAD_SUITE_HOME}/bin:$PATH"
 

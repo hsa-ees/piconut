@@ -29,6 +29,8 @@
 
  *************************************************************************/
 
+// TBD+: Rename signal_reg_out_rs1, signal_reg_out_rs2 and signal_reg_float_out_rs2 to use "out" as the suffix.
+
 #include "nucleus_ref.h"
 // Include all submodules of the Nucleus
 #include "alu/alu.h"
@@ -42,6 +44,10 @@
 #include "datahandler/datahandler.h"
 #include "csr_master/csr_master.h"
 #include "csr/csr.h"
+
+#if (PN_CFG_ENABLE_F_EXTENSION == 1)
+#include "f_extension/f_extension.h"
+#endif
 
 void m_nucleus_ref::pn_trace(sc_trace_file* tf, int level)
 {
@@ -80,6 +86,16 @@ void m_nucleus_ref::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, signal_alu_in_b);
     PN_TRACE(tf, signal_dport_wdata);
 
+    PN_TRACE(tf, signal_datahandler_in);
+    PN_TRACE(tf, signal_c_reg_float_rs2);
+    PN_TRACE(tf, signal_reg_float_out_rs2);
+    PN_TRACE(tf, signal_f_ext_result_out);
+    PN_TRACE(tf, signal_f_ext_ready_out);
+    PN_TRACE(tf, signal_f_ext_stb_in);
+    PN_TRACE(tf, signal_fcsr_frm_out);
+    PN_TRACE(tf, signal_c_reg_ldfext_in);
+    PN_TRACE(tf, signal_reg_float_in);
+
     PN_TRACE_INTERFACE(tf, debug_slave);
 
     if(level >= 2)
@@ -95,6 +111,9 @@ void m_nucleus_ref::pn_trace(sc_trace_file* tf, int level)
         datahandler->pn_trace(tf, level);
         csr_master->pn_trace(tf, level);
         csr->pn_trace(tf, level);
+#if (PN_CFG_ENABLE_F_EXTENSION == 1)
+        f_extension->pn_trace(tf, level);
+#endif
     }
 }
 
@@ -113,6 +132,10 @@ void m_nucleus_ref::init_submodules()
     datahandler = sc_new<m_datahandler>("datahandler");
     csr_master = sc_new<m_csr_master>("csr_master");
     csr = sc_new<m_csr>("csr");
+
+#if (PN_CFG_ENABLE_F_EXTENSION == 1)
+    f_extension = sc_new<m_f_extension>("f_extension");
+#endif
 
     alu->a_in(signal_alu_in_a);
     alu->b_in(signal_alu_in_b);
@@ -177,7 +200,7 @@ void m_nucleus_ref::init_submodules()
 
     /* Datahandler */
     datahandler->bsel_in(signal_bsel_out); // bsel from immediate address calculation. (Datahandler does not get the bsel from register but immediate to ensure wdata is valid on strobe.)
-    datahandler->data_in(signal_reg_out_rs2);
+    datahandler->data_in(signal_datahandler_in);
     datahandler->data_out(signal_datahandler_out);
 
     /* Controller ------------------------------------------------------------*/
@@ -228,6 +251,12 @@ void m_nucleus_ref::init_submodules()
     controller->c_reg_ldalu_out(signal_c_reg_ldalu);
     controller->c_reg_ldimm_out(signal_c_reg_ldimm);
     controller->c_reg_ldcsr_out(signal_c_reg_ldcsr);
+
+    controller->c_reg_float_ld_en_out(signal_c_reg_float_ld_en);
+    controller->c_reg_ldfext_out(signal_c_reg_ldfext_in);
+    controller->c_reg_rs2_float_out(signal_c_reg_float_rs2);
+    controller->c_f_ext_stb_out(signal_f_ext_stb_in);
+    controller->s_f_ext_ready_in(signal_f_ext_ready_out);
 
     /* Debug */
     controller->c_debug_level_enter_ebreak_out(signal_c_debug_level_enter_ebreak);
@@ -320,6 +349,28 @@ void m_nucleus_ref::init_submodules()
     csr->csr_bus_write_en_in(signal_csr_bus_write_en);
 
     csr->write_mode_in(signal_c_csr_write_mode);
+
+    csr->fcsr_frm_out(signal_fcsr_frm_out);
+
+#if (PN_CFG_ENABLE_F_EXTENSION == 1)
+    /* F-Extension */
+    f_extension->clk(clk);
+    f_extension->reset(reset);
+    f_extension->data_in(signal_reg_float_in);
+    f_extension->select_in(signal_rd);
+    f_extension->rs1_select_in(signal_rs1);
+    f_extension->rs2_select_in(signal_rs2);
+    f_extension->rs3_select_in(signal_rs3);
+    f_extension->en_load_in(signal_c_reg_float_ld_en);
+
+    f_extension->stb_in(signal_f_ext_stb_in);
+    f_extension->instruction_in(signal_ir_out);
+    f_extension->rounding_mode_in(signal_fcsr_frm_out);
+
+    f_extension->rs2_out(signal_reg_float_out_rs2);
+    f_extension->f_out(signal_f_ext_result_out);
+    f_extension->ready_out(signal_f_ext_ready_out);
+#endif
 }
 
 void m_nucleus_ref::proc_cmb_nucleus()
@@ -345,6 +396,7 @@ void m_nucleus_ref::proc_cmb_nucleus()
     signal_funct3 = signal_ir_out.read().range(14, 12); // funct3 block
     signal_rs1 = signal_ir_out.read().range(19, 15);    // source register 1
     signal_rs2 = signal_ir_out.read().range(24, 20);    // source register 2
+    signal_rs3 = signal_ir_out.read().range(31, 27);    // source register 3
     signal_funct7 = signal_ir_out.read().range(31, 25); // funct7 block
 
     /* Byteselector and adr signals */
@@ -358,9 +410,10 @@ void m_nucleus_ref::proc_cmb_nucleus()
         signal_bsel_input = signal_alu_out.read().range(1, 0);
         signal_adr_reg_input = (signal_alu_out.read().range(31, 2), sc_uint<2>(0x0));
     }
-
+    
     /* Regfile input selection */
     signal_reg_in = 0x0;
+    signal_reg_float_in = 0x0;
 
     if(signal_c_reg_ldpc == 0x1)
     {
@@ -369,6 +422,7 @@ void m_nucleus_ref::proc_cmb_nucleus()
     else if(signal_c_reg_ldmem == 0x1)
     {
         signal_reg_in = signal_extend_out.read();
+        signal_reg_float_in = signal_extend_out.read();
     }
     else if(signal_c_reg_ldimm == 0x1)
     {
@@ -377,10 +431,16 @@ void m_nucleus_ref::proc_cmb_nucleus()
     else if(signal_c_reg_ldalu == 0x1)
     {
         signal_reg_in = signal_alu_out.read();
+        signal_reg_float_in = signal_alu_out.read();
     }
     else if(signal_c_reg_ldcsr == 0x1)
     {
         signal_reg_in = signal_csr_bus_rdata.read();
+    }
+    else if (signal_c_reg_ldfext_in == 0x1)
+    {
+        signal_reg_in = signal_f_ext_result_out.read();
+        signal_reg_float_in = signal_f_ext_result_out.read();
     }
     else
     {
@@ -399,6 +459,15 @@ void m_nucleus_ref::proc_cmb_nucleus()
     else
     {
         signal_alu_in_a = signal_reg_out_rs1; // select regfile output 0 as operand A
+    }
+
+    if(signal_c_reg_float_rs2)
+    {
+        signal_datahandler_in = signal_reg_float_out_rs2;
+    }
+    else
+    {
+        signal_datahandler_in = signal_reg_out_rs2;
     }
 
     if(signal_c_alu_imm == 0x1)
@@ -485,7 +554,7 @@ void m_nucleus_ref::proc_cmb_csr_bus_wdata_mux()
     }
 }
 
-bool m_nucleus_ref::state_is_not_halt()
-{
+
+bool m_nucleus_ref::state_is_not_halt () {
     return nucleus_get_controller_state() != STATE_HALT;
 }

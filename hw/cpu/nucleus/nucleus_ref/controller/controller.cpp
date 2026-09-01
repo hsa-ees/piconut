@@ -113,9 +113,15 @@ void m_controller::pn_trace(sc_trace_file* tf, int level)
     PN_TRACE(tf, c_reg_ldimm_out);
     PN_TRACE(tf, c_reg_ldalu_out);
     PN_TRACE(tf, c_reg_ldcsr_out);
+    PN_TRACE(tf, c_reg_ldfext_out);
 
     /* Regfile load enable */
     PN_TRACE(tf, c_reg_ld_en_out);
+    PN_TRACE(tf, c_reg_float_ld_en_out);
+
+    /* Regfile float input */
+    PN_TRACE(tf, c_reg_float_ld_en_out);
+    PN_TRACE(tf, c_reg_rs2_float_out);
 
     /* ALU */
     PN_TRACE(tf, c_alu_pc_out);
@@ -184,6 +190,11 @@ void m_controller::proc_cmb_controller()
     c_ld_en_rdata_out = 0x0;
     c_ld_en_wdata_out = 0x0;
     c_ld_en_adr_bsel_out = 0x0;
+
+    c_reg_float_ld_en_out = 0x0;
+    c_reg_rs2_float_out = 0x0;
+    c_f_ext_stb_out = 0x0;
+    c_reg_ldfext_out = 0x0;
 
     // Debug
     debug_slave.haltrequest_ack_o = 0x0;
@@ -680,6 +691,208 @@ void m_controller::proc_cmb_controller()
 
             break;
 
+#if (PN_CFG_ENABLE_F_EXTENSION == 0)
+        case STATE_LOAD_FLOAT1:
+        case STATE_LOAD_FLOAT2:
+        case STATE_LOAD_FLOAT3:
+        case STATE_LOAD_FLOAT4:
+        case STATE_STORE_FLOAT1:
+        case STATE_STORE_FLOAT2:
+        case STATE_STORE_FLOAT3:
+        case STATE_MOVE_FLOAT:
+        case STATE_REQUEST_FLOAT:
+        case STATE_BUSY_FLOAT:
+        case STATE_WRITEBACK_FLOAT:
+            PN_ERROR("F-Extension is disabled!");
+            next_state = STATE_HALT;
+            break;
+#else
+        case STATE_LOAD_FLOAT1:
+            if(s_dport_ack_in.read() == 0)
+            {
+                next_state = STATE_LOAD_FLOAT2;
+            }
+            else
+            {
+                // If ack != 0, remain
+                next_state = STATE_LOAD_FLOAT1;
+            }
+            break;
+
+        case STATE_LOAD_FLOAT2:
+            // Now the bus is ready for a new transaction
+
+            // Set dport strobe to begin transaction
+            c_dport_stb_out = 1;
+            // Let ALU calculate the target address (rs1 + imm)
+            c_force_add_out = 1;
+            c_alu_imm_out = 1;
+            c_ld_en_adr_bsel_out = 1;
+            // advance PC
+            c_pc_inc4_out = 1;
+
+            next_state = STATE_LOAD_FLOAT3;
+            break;
+
+        case STATE_LOAD_FLOAT3:
+            // Wait for dport ack
+
+            // save to rdata until data is vaild then go to next state
+            c_ld_en_rdata_out = 1;
+
+            // Await dport ack = 1
+            if(s_dport_ack_in.read() == 1)
+            {
+                // Move to next instruction
+                next_state = STATE_LOAD_FLOAT4;
+            }
+            else
+            {
+                // If ack != 1, remain
+                next_state = STATE_LOAD_FLOAT3;
+            }
+            break;
+
+        case STATE_LOAD_FLOAT4:
+            // ack was received ->  valid data was saved to reg_rdata and it can be stored in the register file
+
+            // Set control signals
+            c_reg_ldmem_out = 1;       // set regfile float input to memory
+            c_reg_float_ld_en_out = 1; // regfile load enable
+
+            // instruction_finished();
+            next_state = STATE_IPORT_STB;
+            break;
+
+        case STATE_STORE_FLOAT1:
+            //  Wait for dport ack = 0 -> bus is ready for a new transaction
+            if(s_dport_ack_in.read() == 0)
+            {
+                next_state = STATE_STORE_FLOAT2;
+            }
+            else
+            {
+                // If ack != 0, remain
+                next_state = STATE_STORE_FLOAT1;
+            }
+            break;
+
+        case STATE_STORE_FLOAT2:
+            // Bus is ready for a new transaction
+
+            // Set dport strobe to begin transaction
+            c_dport_stb_out = 1;
+            // Set dport write enable
+            c_dport_we_out = 1;
+            // Let ALU calculate the target address (rs1 + imm)
+            c_force_add_out = 1;
+            c_alu_imm_out = 1;
+            c_ld_en_adr_bsel_out = 1;
+            c_ld_en_wdata_out = 1;
+            c_reg_rs2_float_out = 1;
+            // advance PC
+            c_pc_inc4_out = 1;
+
+            next_state = STATE_STORE_FLOAT3;
+
+            break;
+
+        case STATE_STORE_FLOAT3:
+            // Keep address stable for datahandler.
+            // Datahandler does not get the bsel from register but immediate to
+            // ensure valid data from strobe until ready.
+            c_force_add_out = 1;
+            c_alu_imm_out = 1;
+
+            c_reg_rs2_float_out = 1;
+
+            // Await dport ack = 1 -> the transaction is complete and data has been stored
+            if(s_dport_ack_in.read() == 1)
+            {
+                // Move to next instruction
+                instruction_finished();
+            }
+            else
+            {
+                // If ack != 1, remain
+                next_state = STATE_STORE_FLOAT3;
+            }
+
+            break;
+
+        case STATE_MOVE_FLOAT:
+            c_force_add_out = 1;
+            next_state = STATE_WRITEBACK_FLOAT;
+            break;
+
+        case STATE_REQUEST_FLOAT:
+            c_f_ext_stb_out = 1;
+            c_alu_mode_out = ALU_MODE_PASS_A;
+            c_reg_ldalu_out = 1;
+            if(s_f_ext_ready_in.read() == 0)
+            {
+                next_state = STATE_BUSY_FLOAT;
+            }
+            else
+            {
+                next_state = STATE_REQUEST_FLOAT;
+            }
+            break;
+
+        case STATE_BUSY_FLOAT:
+            c_alu_mode_out = ALU_MODE_PASS_A;
+            c_reg_ldalu_out = 1;
+            if(s_f_ext_ready_in.read() == 1)
+            {
+                next_state = STATE_WRITEBACK_FLOAT;
+            }
+            else
+            {
+                next_state = STATE_BUSY_FLOAT;
+            }
+            break;
+
+        case STATE_WRITEBACK_FLOAT:
+            if(opcode(s_instruction_in.read()) == OP_F_FMADD ||
+                opcode(s_instruction_in.read()) == OP_F_FMSUB ||
+                opcode(s_instruction_in.read()) == OP_F_FNMSUB ||
+                opcode(s_instruction_in.read()) == OP_F_FNMADD)
+            {
+                c_reg_ldfext_out = 1;
+                c_reg_float_ld_en_out = 1;
+            }
+            else
+            {
+                switch(funct5(s_instruction_in.read()))
+                {
+                    case FLOAT_ADD:
+                    case FLOAT_SUB:
+                    case FLOAT_MUL:
+                    case FLOAT_DIV:
+                    case FLOAT_SQRT:
+                    case FLOAT_CVT_S_W:
+                    case FLOAT_SGNJ:
+                        c_reg_ldfext_out = 1;
+                        c_reg_float_ld_en_out = 1;
+                        break;
+
+                    case FLOAT_MV_W_X: // fmv.w.x
+                        c_force_add_out = 1;
+                        c_reg_ldalu_out = 1;
+                        c_reg_float_ld_en_out = 1;
+                        break;
+
+                    default:
+                        c_reg_ldfext_out = 1;
+                        c_reg_ld_en_out = 1;
+                        break;
+                }
+            }
+            c_pc_inc4_out = 1;
+            instruction_finished();
+            break;
+#endif
+
         case STATE_NOP:
             // Do nothing
             c_pc_inc4_out = 1;
@@ -1111,6 +1324,37 @@ void m_controller::handle_state_decode()
         case OP_STORE:
             next_state = STATE_STORE1;
             break;
+#if (PN_CFG_ENABLE_F_EXTENSION == 1)
+        case OP_F_LOAD:
+            next_state = STATE_LOAD_FLOAT1;
+            break;
+        case OP_F_STORE:
+            next_state = STATE_STORE_FLOAT1;
+            break;
+        case OP_F_EXT:
+            switch(funct5(s_instruction_in.read()))
+            {
+                case FLOAT_MV_W_X:
+                    next_state = STATE_MOVE_FLOAT;
+                    break;
+                default:
+                    next_state = STATE_REQUEST_FLOAT;
+                    break;
+            }
+            break;
+        case OP_F_FMADD:
+            next_state = STATE_REQUEST_FLOAT;
+            break;
+        case OP_F_FMSUB:
+            next_state = STATE_REQUEST_FLOAT;
+            break;
+        case OP_F_FNMSUB:
+            next_state = STATE_REQUEST_FLOAT;
+            break;
+        case OP_F_FNMADD:
+            next_state = STATE_REQUEST_FLOAT;
+            break;
+#endif
         case OP_BRANCH:
             handle_branch_decode();
             break;
@@ -1285,6 +1529,18 @@ std::string m_controller::state_to_string(sc_uint<32> state) const
         "STATE_CSRRCI2",
         "STATE_CSRRSI1",
         "STATE_CSRRSI2",
+        // F-Ext
+        "STATE_LOAD_FLOAT1",
+        "STATE_LOAD_FLOAT2",
+        "STATE_LOAD_FLOAT3",
+        "STATE_LOAD_FLOAT4",
+        "STATE_STORE_FLOAT1",
+        "STATE_STORE_FLOAT2",
+        "STATE_STORE_FLOAT3",
+        "STATE_REQUEST_FLOAT",
+        "STATE_BUSY_FLOAT",
+        "STATE_WRITEBACK_FLOAT",
+        "STATE_MOVE_FLOAT",
         // A-Ext
         "STATE_LR1",
         "STATE_LR2",

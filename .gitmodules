@@ -1,0 +1,6 @@
+[submodule "sw/libs/piconut_muriscv-nn"]
+	path = sw/libs/piconut_muriscv-nn
+	url = https://github.com/JoHofmann/piconut_muriscv-nn.git
+[submodule "sw/libs/ai/models/ecg_classification_model/piconut_ecg-diagnosis"]
+	path = sw/libs/ai/models/ecg_classification_model/piconut_ecg-diagnosis
+	url = https://github.com/JoHofmann/piconut_ecg-diagnosis.git

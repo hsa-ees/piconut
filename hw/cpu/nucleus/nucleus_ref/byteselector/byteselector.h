@@ -89,7 +89,6 @@
 
 #include "../nucleus_ref_defs.h"
 
-
 typedef enum
 {
     LB_SB = 0x0,

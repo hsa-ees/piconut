@@ -1,0 +1,86 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Tue Dec  2 08:43:15 2025
+[*]
+[dumpfile] "/var/tmp/piconut-build/systems/demo_ai/hw/sim/demo_ai_sim.vcd"
+[dumpfile_mtime] "Tue Dec  2 08:35:41 2025"
+[dumpfile_size] 29077448
+[savefile] "/var/tmp/piconut-build/systems/demo_ai/hw/sim/demo_ai_sim.gtkw"
+[timestart] 0
+[size] 1423 1078
+[pos] 3 32
+*-17.148344 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] SystemC.
+[treeopen] SystemC.i_dut.
+[treeopen] SystemC.i_dut.i_cpu.
+[treeopen] SystemC.i_dut.i_cpu.nucleus.
+[sst_width] 276
+[signals_width] 220
+[sst_expanded] 1
+[sst_vpaned_height] 325
+@28
+SystemC.i_dut.clk
+SystemC.i_dut.reset
+SystemC.i_dut.pwroff
+@200
+-
+@28
+SystemC.i_dut.i_cpu.nucleus.iport_stb
+SystemC.i_dut.i_cpu.nucleus.iport_ack
+@22
+SystemC.i_dut.i_cpu.nucleus.iport_adr[31:0]
+SystemC.i_dut.i_cpu.nucleus.iport_bsel[3:0]
+SystemC.i_dut.i_cpu.nucleus.iport_rdata[31:0]
+@200
+-
+@28
+SystemC.i_dut.i_cpu.nucleus.dport_stb
+SystemC.i_dut.i_cpu.nucleus.dport_we
+SystemC.i_dut.i_cpu.nucleus.dport_ack
+@22
+SystemC.i_dut.i_cpu.nucleus.dport_adr[31:0]
+SystemC.i_dut.i_cpu.nucleus.iport_bsel[3:0]
+SystemC.i_dut.i_cpu.nucleus.dport_rdata[31:0]
+SystemC.i_dut.i_cpu.nucleus.dport_wdata[31:0]
+@200
+-
+@22
+SystemC.i_dut.i_cpu.nucleus.reg_pc[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_ir[31:0]
+@200
+-
+@23
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(1)[31:0]
+@22
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(2)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(3)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(4)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(5)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(6)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(7)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(8)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(9)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(10)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(11)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(12)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(13)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(14)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(15)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(16)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(17)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(18)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(19)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(20)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(21)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(22)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(23)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(24)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(25)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(26)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(27)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(28)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(29)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(30)[31:0]
+SystemC.i_dut.i_cpu.nucleus.reg_gpr(31)[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

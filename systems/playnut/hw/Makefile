@@ -133,7 +133,7 @@ $(SIMULATOR_BIN): $(SIMULATOR_OBJ) $(MODULE_LIB)
 
 
 # Add libraries used ...
-PN_HW_LDFLAGS += -lcpu -luart_soft -lpn_interconnect -lgpio -li2c
+PN_HW_LDFLAGS += -lcpu -luart_soft -lpn_interconnect -lgpio -li2c -lvideo
 
 
 # Add dependencies for libraries used (optional) ...
@@ -196,7 +196,7 @@ PN_SYSTEMC_SRC := $(MODULE_SRC) $(TESTBENCH_SRC)
 
 # Submodules for ICSC ...
 #   Define the submodules that ICSC must process together with this one.
-PN_SYSTEMC_SUBMODULES := $(PN_SOURCE_DIR)/hw/interconnect $(PN_SOURCE_DIR)/hw/peripherals/gpio $(PN_SOURCE_DIR)/hw/peripherals/i2c
+PN_SYSTEMC_SUBMODULES := $(PN_SOURCE_DIR)/hw/interconnect $(PN_SOURCE_DIR)/hw/peripherals/gpio $(PN_SOURCE_DIR)/hw/peripherals/i2c  $(PN_SOURCE_DIR)/hw/peripherals/video
 
 
 

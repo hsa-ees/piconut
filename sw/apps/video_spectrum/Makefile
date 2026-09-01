@@ -47,7 +47,11 @@ PN_SW_OS = bare
 include ../../../piconut.mk
 
 
-PN_SW_LDFLAGS += -lvideo_driver
+# Prebuild all required PicoNut modules ...
+build-prepare:
+	$(PN_PREBUILD) MODULES=hw/peripherals/video
+
+
 
 
 
@@ -75,6 +79,9 @@ BIN := $(PN_MODULE_BUILD_DIR)/$(APP).rv32
 #   The default compile command $(PN_SW_CC) generates a .d file for each .o file
 #   containing the .h files it depends on. These files are included here.
 -include $(OBJ:%.o=%.d)
+
+
+PN_SW_LDFLAGS += -lvideo_driver
 
 
 # Set object files to link ...

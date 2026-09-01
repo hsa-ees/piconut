@@ -108,3 +108,8 @@ void c_soft_debugger::tick()
 {
     remote_bitbang->process();
 }
+
+bool c_soft_debugger::is_remote_bitbang_connected() const
+{
+    return remote_bitbang->connected();
+}

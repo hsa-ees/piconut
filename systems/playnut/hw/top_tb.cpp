@@ -50,14 +50,19 @@ sc_signal<bool> PN_NAME(gpio_left);
 sc_signal<bool> PN_NAME(gpio_right);
 sc_signal<bool> PN_NAME(gpio_fire);
 
-sc_signal<bool> PN_NAME(sda_i); 
+sc_signal<sc_uint<4>> PN_NAME(vga_red_o);
+sc_signal<sc_uint<4>> PN_NAME(vga_green_o);
+sc_signal<sc_uint<4>> PN_NAME(vga_blue_o);
+sc_signal<bool> PN_NAME(vga_hsync_o);
+sc_signal<bool> PN_NAME(vga_vsync_o);
+
+sc_signal<bool> PN_NAME(sda_i);
 sc_signal<bool> PN_NAME(sda_o);
 sc_signal<bool> PN_NAME(sda_oe);
 
 sc_signal<bool> PN_NAME(scl_i);
 sc_signal<bool> PN_NAME(scl_o);
 sc_signal<bool> PN_NAME(scl_oe);
-
 
 void run_cycle(int cycles = 1)
 {
@@ -90,6 +95,12 @@ int sc_main(int argc, char** argv)
     i_dut.gpio_left(gpio_left);
     i_dut.gpio_right(gpio_right);
     i_dut.gpio_fire(gpio_fire);
+
+    i_dut.vga_red_o(vga_red_o);
+    i_dut.vga_green_o(vga_green_o);
+    i_dut.vga_blue_o(vga_blue_o);
+    i_dut.vga_hsync_o(vga_hsync_o);
+    i_dut.vga_vsync_o(vga_vsync_o);
 
     i_dut.sda_i(sda_i);
     i_dut.sda_o(sda_o);

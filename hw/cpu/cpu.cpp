@@ -35,17 +35,90 @@
 void m_cpu::pn_trace(sc_trace_file* tf, int level)
 {
 
-    // calling trace of submodules
+    // Ports ...
+    PN_TRACE(tf, clk);
+    PN_TRACE(tf, reset);
+#ifndef PN_CFG_NUCLEUS_IS_NUCLEUS_REF
+    PN_TRACE(tf, pwroff);
+#endif
+
+    // ... Debugging ...
+    PN_TRACE_INTERFACE(tf, debug_slave);
+
+    // ... Interrupts ...
+    PN_TRACE(tf, msip_in);
+    PN_TRACE(tf, mtip_in);
+    PN_TRACE(tf, meip_in);
+
+    // ... Wishbone interface ...
+#if defined(PN_CFG_MEMBRANA_IS_MEMBRANA_HW) || defined(PN_CFG_MEMBRANA_IS_MEMBRANA_REF)
+    PN_TRACE_INTERFACE(tf, wb_master);
+#endif
+
+    // ... CLINT signals ...
+    PN_TRACE(tf, signal_clint_stb);
+    PN_TRACE(tf, signal_clint_we);
+    PN_TRACE(tf, signal_clint_bsel);
+    PN_TRACE(tf, signal_clint_addr);
+    PN_TRACE(tf, signal_clint_wdata);
+    PN_TRACE(tf, signal_clint_rdata);
+    PN_TRACE(tf, signal_clint_ack);
+
+    // Local signals ...
+    //   (non yet)
+
+    // Submodules ...
     if(level >= 2)
     {
-        nucleus->pn_trace(tf, level);
-        membrana->pn_trace(tf, level);
+        nucleus->pn_trace(tf, level - 1);
+        membrana->pn_trace(tf, level - 1);
     }
-    // Internal traces
 }
 
+// TBD: Unify Nucleus interfaces based on NUCLEUS_AI
 void m_cpu::init_submodules()
 {
+
+#ifdef PN_CFG_NUCLEUS_IS_NUCLEUS_AI
+    nucleus->clk(clk);
+    nucleus->reset(reset);
+    nucleus->pwroff(pwroff);
+
+    nucleus->debug_halt_req(debug_slave.haltrequest_i);
+    nucleus->debug_halt_ack(debug_slave.haltrequest_ack_o);
+
+    nucleus->msip_in(msip_in);
+    nucleus->mtip_in(mtip_in);
+    nucleus->meip_in(meip_in);
+
+    nucleus->iport_stb(stb_iport[0]);
+    nucleus->iport_adr(adr_iport[0]);
+    nucleus->iport_bsel(bsel_iport[0]);
+    nucleus->iport_rdata(rdata_iport[0]);
+    nucleus->iport_ack(ack_iport[0]);
+
+    nucleus->dport_stb(stb_dport[0]);
+    nucleus->dport_we(we_dport[0]);
+    nucleus->dport_lrsc(lrsc_dport[0]);
+    nucleus->dport_amo(amo_dport[0]);
+    nucleus->dport_adr(adr_dport[0]);
+    nucleus->dport_wdata(wdata_dport[0]);
+    nucleus->dport_bsel(bsel_dport[0]);
+    nucleus->dport_rdata(rdata_dport[0]);
+    nucleus->dport_ack(ack_dport[0]);
+
+    nucleus->vport_stb(stb_vport[0]);
+    nucleus->vport_we(we_vport[0]);
+    nucleus->vport_lrsc(lrsc_vport[0]);
+    nucleus->vport_amo(amo_vport[0]);
+    nucleus->vport_adr(adr_vport[0]);
+    nucleus->vport_wdata(wdata_vport[0]);
+    nucleus->vport_bsel(bsel_vport[0]);
+    nucleus->vport_rdata(rdata_vport[0]);
+    nucleus->vport_ack(ack_vport[0]);
+
+#else
+
     nucleus->clk(clk);
     nucleus->reset(reset);
     nucleus->debug_slave(debug_slave);
@@ -69,8 +142,9 @@ void m_cpu::init_submodules()
     nucleus->dport_bsel_out(bsel_dport[0]);
     nucleus->dport_rdata_in(rdata_dport[0]);
     nucleus->dport_ack_in(ack_dport[0]);
+#endif
 
-// TBD: Unify Membrana interfaces
+// TBD: Unify Membrana interfaces based on MEMBRANA_AI
 #ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_HW
     membrana->clk(clk);
     membrana->reset(reset);
@@ -176,17 +250,29 @@ void m_cpu::init_submodules()
 
     membrana->dport_stb(stb_dport);
     membrana->dport_we(we_dport);
-    membrana->dport_load_reserve(lrsc_dport);
+    membrana->dport_lrsc(lrsc_dport);
     membrana->dport_amo(amo_dport);
     membrana->dport_adr(adr_dport);
     membrana->dport_wdata(wdata_dport);
     membrana->dport_bsel(bsel_dport);
     membrana->dport_rdata(rdata_dport);
     membrana->dport_ack(ack_dport);
+
+    membrana->vport_stb(stb_vport);
+    membrana->vport_we(we_vport);
+    membrana->vport_lrsc(lrsc_vport);
+    membrana->vport_amo(amo_vport);
+    membrana->vport_adr(adr_vport);
+    membrana->vport_wdata(wdata_vport);
+    membrana->vport_bsel(bsel_vport);
+    membrana->vport_rdata(rdata_vport);
+    membrana->vport_ack(ack_vport);
 #endif
 }
 
+#ifdef PN_CFG_NUCLEUS_IS_NUCLEUS_REF
 bool m_cpu::state_is_not_halt()
 {
     return nucleus->state_is_not_halt();
 }
+#endif

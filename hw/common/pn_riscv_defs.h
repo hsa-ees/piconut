@@ -2,7 +2,7 @@
 
   This file is part of the PicoNut project.
 
-  Copyright (C) 2025 Gundolf Kiefer <gundolf.kiefer@tha.de>
+  Copyright (C) 2025-2026 Gundolf Kiefer <gundolf.kiefer@tha.de>
                      Technische Hochschule Augsburg, Technical University of Applied Sciences Augsburg
 
   Description:
@@ -145,7 +145,7 @@ typedef enum {
   sys_stat = 1038,
   sys_lstat = 1039,
   sys_time = 1062,
-} pn_pk_syscall_e;
+} pn_syscall_pk_e;
 
 
 /** @brief CSR write modes

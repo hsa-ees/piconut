@@ -40,6 +40,7 @@ typedef enum
     ALU_MODE_IDLE = 0x0,
     ALU_MODE_REG_REG = 0x1,
     ALU_MODE_REG_IMM = 0x2,
+    ALU_MODE_PASS_A = 0x3,
 } e_alu_mode;
 
 typedef enum
@@ -78,6 +79,13 @@ typedef enum
     OP_ALUI = 0x4,
     OP_LOAD = 0x0,
     OP_STORE = 0x8,
+    OP_F_LOAD = 0x1,
+    OP_F_STORE = 0x9,
+    OP_F_FMADD = 0x10,
+    OP_F_FMSUB = 0x11,
+    OP_F_FNMSUB = 0x12,
+    OP_F_FNMADD = 0x13,
+    OP_F_EXT = 0x14,
     OP_BRANCH = 0x18,
     OP_JAL = 0x1B,
     OP_JALR = 0x19,

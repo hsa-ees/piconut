@@ -36,6 +36,7 @@
 
 #include "../nucleus_ref.h"
 
+
 #define PERIOD_NS 10.0
 
 sc_signal<bool> PN_NAME(clk);

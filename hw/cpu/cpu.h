@@ -64,10 +64,14 @@
 SC_MODULE(m_cpu), pn_module_if
 {
 public:
+
     // General ports ...
     sc_in_clk PN_NAME(clk);
     sc_in<bool> PN_NAME(reset);
-
+#ifndef PN_CFG_NUCLEUS_IS_NUCLEUS_REF
+    // TBD: Add and implement 'pwroff' in 'nucleus_ref'.
+    sc_out<bool> PN_NAME(pwroff);
+#endif
     pn_debug_slave_t debug_slave;
 
     // Interrupts ...
@@ -136,7 +140,9 @@ public:
 
     // Functions
     void pn_trace(sc_trace_file * tf, int level = 1);
+#ifdef PN_CFG_NUCLEUS_IS_NUCLEUS_REF
     bool state_is_not_halt();
+#endif
 
     // Processes
 
@@ -176,6 +182,7 @@ protected:
 #if !PN_PRESYNTHESIZED_H_ONLY(CPU)
 
     // Internal Signals
+
     // ------------ Interconnect Signals ------------
     // ------------ IPort Signals ------------
     sc_vector<sc_signal<bool>> PN_NAME_VEC(stb_iport, PN_CFG_CPU_CORES);
@@ -190,10 +197,25 @@ protected:
     sc_vector<sc_signal<bool>> PN_NAME_VEC(lrsc_dport, PN_CFG_CPU_CORES);
     sc_vector<sc_signal<bool>> PN_NAME_VEC(amo_dport, PN_CFG_CPU_CORES);
     sc_vector<sc_signal<bool>> PN_NAME_VEC(ack_dport, PN_CFG_CPU_CORES);
-    sc_vector<sc_signal<sc_uint<32>>> PN_NAME_VEC(adr_dport, PN_CFG_CPU_CORES);
-    sc_vector<sc_signal<sc_uint<32>>> PN_NAME_VEC(wdata_dport, PN_CFG_CPU_CORES);
-    sc_vector<sc_signal<sc_uint<32>>> PN_NAME_VEC(rdata_dport, PN_CFG_CPU_CORES);
-    sc_vector<sc_signal<sc_uint<4>>> PN_NAME_VEC(bsel_dport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_bsel_t>> PN_NAME_VEC(bsel_dport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_adr_t>> PN_NAME_VEC(adr_dport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_dat_t>> PN_NAME_VEC(wdata_dport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_dat_t>> PN_NAME_VEC(rdata_dport, PN_CFG_CPU_CORES);
+
+#ifdef PN_CFG_MEMBRANA_IS_MEMBRANA_AI
+
+    // ------------ VPort Signals ------------
+    sc_vector<sc_signal<bool>> PN_NAME_VEC(stb_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<bool>> PN_NAME_VEC(we_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<bool>> PN_NAME_VEC(lrsc_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<bool>> PN_NAME_VEC(amo_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<bool>> PN_NAME_VEC(ack_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_bsel_t>> PN_NAME_VEC(bsel_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_adr_t>> PN_NAME_VEC(adr_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_dat_t>> PN_NAME_VEC(wdata_vport, PN_CFG_CPU_CORES);
+    sc_vector<sc_signal<pn_dport_dat_t>> PN_NAME_VEC(rdata_vport, PN_CFG_CPU_CORES);
+
+#endif // PN_CFG_MEMBRANA_IS_MEMBRANA_AI
 
     // Methods
     void init_submodules();

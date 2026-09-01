@@ -1,0 +1,8 @@
+data/
+.ipynb_checkpoints/
+*.pt
+*.pth
+lenet2l/*.dump
+lenet2l/*.[hc]
+lenet5.x86
+lenet5.rv32

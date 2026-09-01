@@ -46,7 +46,7 @@ sc_signal<bool> PN_NAME(uart_tx);
 
 void run_cycle(int cycles = 1)
 {
-    for(int i = 0; i < cycles; i++)
+    for (int i = 0; i < cycles; i++)
     {
         clk = 0;
         sc_start(PERIOD_NS / 2, SC_NS);
@@ -55,11 +55,11 @@ void run_cycle(int cycles = 1)
     }
 }
 
-int sc_main(int argc, char** argv)
+int sc_main(int argc, char **argv)
 {
     pn_cfg_enable_application_path = 1;               // enable application path in program args
     PN_PARSE_CMD_ARGS(argc, argv);                    // parse command line arguments
-    sc_trace_file* tf = PN_BEGIN_TRACE("piconut_tb"); // create trace file
+    sc_trace_file *tf = PN_BEGIN_TRACE("piconut_tb"); // create trace file
 
     // Initialliaze the Design under Testing (DUT)
     m_refdesign i_dut{"i_dut"}; // this is the Design name needed by the svc_tool
@@ -84,8 +84,7 @@ int sc_main(int argc, char** argv)
     run_cycle(2);
     reset = 0;
 
-    while(i_dut.cpu->state_is_not_halt())
-    {
+    while (i_dut.cpu->state_is_not_halt()) {
         run_cycle();
     }
 
@@ -98,8 +97,7 @@ int sc_main(int argc, char** argv)
 
     cout << "\n\t\t*****Simulation waiting reset and repeat*****" << endl;
 
-    while(i_dut.cpu->state_is_not_halt())
-    {
+    while (i_dut.cpu->state_is_not_halt()) {
         run_cycle();
     }
 
